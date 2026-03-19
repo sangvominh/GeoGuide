@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MauiApp1.Pages.SplashPermissionPage"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{StaticResource Surface}">
+
+    <Grid>
+        <!-- Background Gradient -->
+        <BoxView>
+            <BoxView.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#D8E2FF" Offset="0.0"/>
+                    <GradientStop Color="#FAF9FE" Offset="0.5"/>
+                    <GradientStop Color="#FAF9FE" Offset="1.0"/>
+                </LinearGradientBrush>
+            </BoxView.Background>
+        </BoxView>
+
+        <!-- Main Splash Content -->
+        <VerticalStackLayout
+            VerticalOptions="Center"
+            HorizontalOptions="Center"
+            Spacing="0"
+            Padding="24,0">
+
+            <!-- Logo Icon -->
+            <Border
+                x:Name="LogoIcon"
+                WidthRequest="96"
+                HeightRequest="96"
+                BackgroundColor="{StaticResource PrimaryContainer}"
+                HorizontalOptions="Center"
+                Margin="0,0,0,24"
+                StrokeThickness="0">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="28"/>
+                </Border.StrokeShape>
+                <Border.Shadow>
+                    <Shadow Brush="Black" Offset="0,4" Radius="16" Opacity="0.15"/>
+                </Border.Shadow>
+                <Label
+                    Text="&#xf71d;"
+                    FontFamily="MaterialIcons"
+                    FontSize="48"
+                    TextColor="{StaticResource OnPrimaryContainer}"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center"/>
+            </Border>
+
+            <!-- App Title -->
+            <Label
+                x:Name="AppTitle"
+                Text="The Sonic Lens"
+                FontSize="32"
+                FontAttributes="Bold"
+                TextColor="{StaticResource OnSurface}"
+                HorizontalTextAlignment="Center"
+                Margin="0,0,0,8"/>
+
+            <!-- Subtitle -->
+            <Label
+                x:Name="AppSubtitle"
+                Text="Audio-first urban exploration"
+                FontSize="16"
+                TextColor="{StaticResource OnSurfaceVariant}"
+                HorizontalTextAlignment="Center"
+                Margin="0,0,0,48"/>
+
+            <!-- Language Selector Button -->
+            <Border
+                x:Name="LanguageSelector"
+                BackgroundColor="{StaticResource SurfaceContainerLow}"
+                Padding="20,16"
+                StrokeThickness="0"
+                HorizontalOptions="Fill"
+                Margin="0,0,0,16">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12"/>
+                </Border.StrokeShape>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnLanguageSelectorTapped"/>
+                </Border.GestureRecognizers>
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                    <Label
+                        Grid.Column="0"
+                        Text="&#xe894;"
+                        FontFamily="MaterialIcons"
+                        FontSize="24"
+                        TextColor="{StaticResource Primary}"
+                        VerticalOptions="Center"/>
+                    <Label
+                        x:Name="LanguageLabel"
+                        Grid.Column="1"
+                        Text="English (US)"
+                        FontSize="16"
+                        FontAttributes="Bold"
+                        TextColor="{StaticResource OnSurface}"
+                        VerticalOptions="Center"/>
+                    <Label
+                        Grid.Column="2"
+                        Text="&#xe5cf;"
+                        FontFamily="MaterialIcons"
+                        FontSize="24"
+                        TextColor="{StaticResource OnSurfaceVariant}"
+                        VerticalOptions="Center"/>
+                </Grid>
+            </Border>
+
+            <Button
+                x:Name="ContinueButton"
+                Text="Continue"
+                FontSize="16"
+                FontAttributes="Bold"
+                HorizontalOptions="Fill"
+                Margin="0,0,0,96"
+                Clicked="OnContinueClicked" />
+        </VerticalStackLayout>
+
+        <!-- Footer -->
+        <Label
+            x:Name="FooterLabel"
+            Text="INITIALIZING NARRATIVE ENGINE"
+            FontSize="11"
+            FontAttributes="Bold"
+            TextColor="{StaticResource OutlineVariant}"
+            HorizontalTextAlignment="Center"
+            CharacterSpacing="2"
+            VerticalOptions="End"
+            Margin="0,0,0,40"/>
+    </Grid>
+
+</ContentPage>
