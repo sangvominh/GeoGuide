@@ -17,6 +17,7 @@ namespace MauiApp1.Pages
         private bool _isNavigating;
         private bool _languageChosen;
         private string _selectedLanguageCode = "en-US";
+        private CancellationTokenSource? _warmupCts;
 
         public SplashPermissionPage()
         {
@@ -26,7 +27,7 @@ namespace MauiApp1.Pages
             LoadLanguagePreference();
         }
 
-        protected override async void OnAppearing()
+        protected override void OnAppearing()
         {
             base.OnAppearing();
 
@@ -40,24 +41,30 @@ namespace MauiApp1.Pages
             ConfigureFlowUi();
             ApplyLanguageSelection();
 
-            await RunSplashAnimationsAsync();
+            _ = RunSplashAnimationsAsync();
 
-            // Run warmup asynchronously so Splash UI never blocks.
-            _ = ExecuteWarmupAsync();
+            // Warmup runs in the background and never blocks first interaction.
+            _warmupCts = new CancellationTokenSource();
+            _ = ExecuteWarmupAsync(_warmupCts.Token);
 
-            var status = await _locationService.CheckLocationPermissionAsync();
+            _ = InitializeContinueStateAsync();
 
-            if (_isFirstRun)
+            if (!_isFirstRun)
             {
-                ContinueButton.Text = status == PermissionStatus.Granted
-                    ? GetText("Continue")
-                    : GetText("ContinueAndAllowLocation");
-                ContinueButton.IsEnabled = _languageChosen;
-                return;
+                _ = AutoNavigateReturningUserAsync();
             }
+        }
 
-            ContinueButton.Text = GetText("OpenMap");
-            ContinueButton.IsEnabled = true;
+        protected override void OnDisappearing()
+        {
+            base.OnDisappearing();
+
+            if (_warmupCts != null)
+            {
+                _warmupCts.Cancel();
+                _warmupCts.Dispose();
+                _warmupCts = null;
+            }
         }
 
         private async Task RunSplashAnimationsAsync()
@@ -70,9 +77,10 @@ namespace MauiApp1.Pages
             AppSubtitle.TranslationY = 20;
             ReturningUserPanel.Opacity = 0;
             ReturningUserPanel.TranslationY = 20;
-            LanguageSelector.Opacity = 0;
-            LanguageSelector.TranslationY = 20;
+            LanguageSelectionPanel.Opacity = 0;
+            LanguageSelectionPanel.TranslationY = 20;
             ContinueButton.Opacity = 0;
+            ProgressLabel.Opacity = 0;
 
             await Task.WhenAll(
                 LogoIcon.FadeToAsync(1, 400, Easing.CubicOut),
@@ -92,8 +100,8 @@ namespace MauiApp1.Pages
             if (_isFirstRun)
             {
                 await Task.WhenAll(
-                    LanguageSelector.FadeToAsync(1, 250, Easing.CubicOut),
-                    LanguageSelector.TranslateToAsync(0, 0, 250, Easing.CubicOut)
+                    LanguageSelectionPanel.FadeToAsync(1, 250, Easing.CubicOut),
+                    LanguageSelectionPanel.TranslateToAsync(0, 0, 250, Easing.CubicOut)
                 );
             }
             else
@@ -108,6 +116,50 @@ namespace MauiApp1.Pages
                 ContinueButton.FadeToAsync(1, 200, Easing.CubicOut),
                 ProgressLabel.FadeToAsync(1, 200, Easing.CubicOut)
             );
+        }
+
+        private async Task InitializeContinueStateAsync()
+        {
+            try
+            {
+                var status = await _locationService.CheckLocationPermissionAsync();
+
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    if (_isFirstRun)
+                    {
+                        ContinueButton.Text = status == PermissionStatus.Granted
+                            ? GetText("Continue")
+                            : GetText("ContinueAndAllowLocation");
+                        ContinueButton.IsEnabled = _languageChosen;
+                        return;
+                    }
+
+                    ContinueButton.Text = GetText("OpenMap");
+                    ContinueButton.IsEnabled = true;
+                });
+            }
+            catch
+            {
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    ContinueButton.Text = _isFirstRun ? GetText("Continue") : GetText("OpenMap");
+                    ContinueButton.IsEnabled = _isFirstRun ? _languageChosen : true;
+                });
+            }
+        }
+
+        private async Task AutoNavigateReturningUserAsync()
+        {
+            // Keep returning-user splash visible briefly while warmup starts.
+            await Task.Delay(900);
+
+            if (_isFirstRun || _isNavigating)
+            {
+                return;
+            }
+
+            await NavigateToMainMapAsync();
         }
 
         private async void OnContinueClicked(object? sender, EventArgs e)
@@ -162,7 +214,7 @@ namespace MauiApp1.Pages
             }
         }
 
-        private async Task ExecuteWarmupAsync()
+        private async Task ExecuteWarmupAsync(CancellationToken cancellationToken)
         {
             try
             {
@@ -173,13 +225,15 @@ namespace MauiApp1.Pages
                 }
 
                 SetProgress(GetText("PreparingLocalData"));
-                await _startupWarmupService.PrepareLocalPoiAsync();
+                await _startupWarmupService.PrepareLocalPoiAsync(cancellationToken);
+
+                cancellationToken.ThrowIfCancellationRequested();
 
                 var permission = await _locationService.CheckLocationPermissionAsync();
                 if (permission == PermissionStatus.Granted)
                 {
                     SetProgress(GetText("UpdatingNearbyData"));
-                    var result = await _startupWarmupService.SyncAndPrefetchNearbyAsync();
+                    var result = await _startupWarmupService.SyncAndPrefetchNearbyAsync(cancellationToken);
                     SetProgress(result.IsFreshDataAvailable
                         ? GetText("WarmupCompleted")
                         : GetText("WarmupOfflineFallback"));
@@ -188,6 +242,10 @@ namespace MauiApp1.Pages
                 {
                     SetProgress(GetText("WarmupAwaitPermission"));
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                // Splash was closed before warmup completed.
             }
             catch (Exception ex)
             {
@@ -199,7 +257,7 @@ namespace MauiApp1.Pages
         private void ConfigureFlowUi()
         {
             ReturningUserPanel.IsVisible = !_isFirstRun;
-            LanguageSelector.IsVisible = _isFirstRun;
+            LanguageSelectionPanel.IsVisible = _isFirstRun;
             SkeletonPanel.IsVisible = false;
             _languageChosen = Preferences.Default.Get(LanguageSelectedKey, false);
 
@@ -232,27 +290,14 @@ namespace MauiApp1.Pages
             });
         }
 
-        private async void OnLanguageSelectorTapped(object? sender, EventArgs e)
+        private void OnLanguageOptionClicked(object? sender, EventArgs e)
         {
-            var selected = await DisplayActionSheetAsync(
-                GetText("LanguagePickerTitle"),
-                GetText("Cancel"),
-                null,
-                "English (US)",
-                "Tiếng Việt");
-
-            if (selected == "English (US)")
-            {
-                _selectedLanguageCode = "en-US";
-            }
-            else if (selected == "Tiếng Việt")
-            {
-                _selectedLanguageCode = "vi-VN";
-            }
-            else
+            if (sender is not Button button || button.CommandParameter is not string languageCode)
             {
                 return;
             }
+
+            _selectedLanguageCode = languageCode == "vi-VN" ? "vi-VN" : "en-US";
 
             Preferences.Default.Set(LanguagePreferenceKey, _selectedLanguageCode);
             Preferences.Default.Set(LanguageSelectedKey, true);
@@ -291,8 +336,16 @@ namespace MauiApp1.Pages
         {
             var isVietnamese = _selectedLanguageCode == "vi-VN";
 
-            LanguageLabel.Text = isVietnamese ? "Tiếng Việt" : "English (US)";
             ContinueButton.Text = isVietnamese ? "Tiếp tục" : "Continue";
+            LanguageSelectorTitle.Text = isVietnamese ? "Chon ngon ngu" : "Choose language";
+            EnglishOptionButton.BackgroundColor = isVietnamese
+                ? Color.FromArgb("#E9E7ED")
+                : Color.FromArgb("#0058BC");
+            EnglishOptionButton.TextColor = isVietnamese ? Color.FromArgb("#414755") : Colors.White;
+            VietnameseOptionButton.BackgroundColor = isVietnamese
+                ? Color.FromArgb("#0058BC")
+                : Color.FromArgb("#E9E7ED");
+            VietnameseOptionButton.TextColor = isVietnamese ? Colors.White : Color.FromArgb("#414755");
             FooterLabel.Text = isVietnamese
                 ? "DANG KHOI DONG HE THONG KE CHUYEN"
                 : "INITIALIZING NARRATIVE ENGINE";
