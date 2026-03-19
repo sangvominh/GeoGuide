@@ -21,6 +21,7 @@ namespace MauiApp1
 
             // Register services
             builder.Services.AddSingleton<LocationService>();
+            builder.Services.AddSingleton<StartupWarmupService>();
 
             // Register pages
             builder.Services.AddTransient<Pages.SplashPermissionPage>();
@@ -29,6 +30,8 @@ namespace MauiApp1
 #if DEBUG
     		builder.Logging.AddDebug();
 #endif
+
+            builder.Logging.AddFilter("Mapsui", LogLevel.Warning);
 
             return builder.Build();
         }

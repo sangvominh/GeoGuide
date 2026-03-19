@@ -7,6 +7,7 @@ namespace MauiApp1.Models
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
+        public string CategoryKey { get; set; } = "all";
         public string Category { get; set; } = string.Empty;
         public string IconGlyph { get; set; } = string.Empty;
         public double Rating { get; set; }

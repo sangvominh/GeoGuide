@@ -12,7 +12,7 @@
         <!-- ===== TOP HEADER BAR ===== -->
         <Border
             Grid.Row="0"
-            BackgroundColor="#B3F8FAFC"
+            BackgroundColor="#F8FAFC"
             StrokeThickness="0"
             Padding="0"
             ZIndex="50">
@@ -24,12 +24,17 @@
                 <Grid ColumnDefinitions="Auto,*,Auto" Padding="24,16" ColumnSpacing="16">
                     <!-- Search icon -->
                     <Label
+                        x:Name="SearchIcon"
                         Grid.Column="0"
                         Text="&#xe8b6;"
                         FontFamily="MaterialIcons"
                         FontSize="24"
                         TextColor="{StaticResource Primary}"
-                        VerticalOptions="Center"/>
+                        VerticalOptions="Center">
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnSearchToggleTapped"/>
+                        </Label.GestureRecognizers>
+                    </Label>
 
                     <!-- Title -->
                     <Label
@@ -42,16 +47,62 @@
 
                     <!-- Settings icon -->
                     <Label
+                        x:Name="SettingsIcon"
                         Grid.Column="2"
                         Text="&#xe429;"
                         FontFamily="MaterialIcons"
                         FontSize="24"
                         TextColor="{StaticResource Outline}"
-                        VerticalOptions="Center"/>
+                        VerticalOptions="Center">
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnSettingsTapped"/>
+                        </Label.GestureRecognizers>
+                    </Label>
                 </Grid>
 
                 <!-- Divider -->
                 <BoxView HeightRequest="1" Color="{StaticResource SurfaceDim}" Opacity="0.5"/>
+
+                <Border
+                    x:Name="SearchOverlay"
+                    IsVisible="False"
+                    BackgroundColor="#E6FFFFFF"
+                    StrokeThickness="0"
+                    Margin="24,0,24,12"
+                    Padding="14,8">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16"/>
+                    </Border.StrokeShape>
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                        <Label
+                            Grid.Column="0"
+                            Text="&#xe8b6;"
+                            FontFamily="MaterialIcons"
+                            FontSize="20"
+                            TextColor="{StaticResource Outline}"
+                            VerticalOptions="Center"/>
+                        <Entry
+                            x:Name="SearchEntry"
+                            Grid.Column="1"
+                            Placeholder="Tìm kiếm địa điểm gần đây"
+                            ReturnType="Search"
+                            Completed="OnSearchCompleted"
+                            TextChanged="OnSearchTextChanged"
+                            FontSize="14"
+                            VerticalOptions="Center"/>
+                        <Label
+                            Grid.Column="2"
+                            Text="&#xe5cd;"
+                            FontFamily="MaterialIcons"
+                            FontSize="20"
+                            TextColor="{StaticResource Outline}"
+                            VerticalOptions="Center">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnSearchCloseTapped"/>
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </Grid>
+                </Border>
             </VerticalStackLayout>
         </Border>
 
@@ -61,291 +112,21 @@
             <!-- Mapsui OpenStreetMap Control -->
             <mapsui:MapControl x:Name="MapControl" />
 
-            <!-- User Location Marker (center) -->
-            <Grid HorizontalOptions="Center" VerticalOptions="Center" WidthRequest="48" HeightRequest="48">
-                <!-- Pulse ring -->
-                <Border
-                    x:Name="PulseRing"
-                    WidthRequest="48"
-                    HeightRequest="48"
-                    BackgroundColor="#330058BC"
-                    StrokeThickness="0"
-                    HorizontalOptions="Center"
-                    VerticalOptions="Center">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="24"/>
-                    </Border.StrokeShape>
-                </Border>
-                <!-- Center dot -->
-                <Border
-                    WidthRequest="24"
-                    HeightRequest="24"
-                    BackgroundColor="{StaticResource Primary}"
-                    Stroke="White"
-                    StrokeThickness="4"
-                    HorizontalOptions="Center"
-                    VerticalOptions="Center">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="12"/>
-                    </Border.StrokeShape>
-                    <Border.Shadow>
-                        <Shadow Brush="{StaticResource PrimaryBrush}" Offset="0,2" Radius="8" Opacity="0.4"/>
-                    </Border.Shadow>
-                </Border>
-            </Grid>
-
-            <!-- POI Marker 1 - Restaurant (top-right area) -->
-            <Border
-                BackgroundColor="{StaticResource SurfaceContainerLowest}"
-                StrokeThickness="0"
-                Padding="8"
-                HorizontalOptions="Start"
-                VerticalOptions="Start"
-                Margin="220,60,0,0">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="12"/>
-                </Border.StrokeShape>
-                <Border.Shadow>
-                    <Shadow Brush="Black" Offset="0,4" Radius="12" Opacity="0.12"/>
-                </Border.Shadow>
-                <HorizontalStackLayout Spacing="8">
-                    <Label
-                        Text="&#xe56c;"
-                        FontFamily="MaterialIcons"
-                        FontSize="24"
-                        TextColor="{StaticResource Tertiary}"
-                        VerticalOptions="Center"/>
-                    <Border
-                        BackgroundColor="#1A0058BC"
-                        StrokeThickness="0"
-                        Padding="8,4">
-                        <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="12"/>
-                        </Border.StrokeShape>
-                        <HorizontalStackLayout Spacing="4">
-                            <Label
-                                Text="&#xf01f;"
-                                FontFamily="MaterialIcons"
-                                FontSize="12"
-                                TextColor="{StaticResource Primary}"
-                                VerticalOptions="Center"/>
-                            <Label
-                                Text="AUDIO"
-                                FontSize="10"
-                                FontAttributes="Bold"
-                                TextColor="{StaticResource Primary}"
-                                VerticalOptions="Center"/>
-                        </HorizontalStackLayout>
-                    </Border>
-                </HorizontalStackLayout>
-            </Border>
-
-            <!-- POI Marker 2 - Storefront (top-left area) -->
-            <Border
-                BackgroundColor="{StaticResource SurfaceContainerLowest}"
-                StrokeThickness="0"
-                Padding="8"
-                HorizontalOptions="Start"
-                VerticalOptions="Start"
-                Margin="60,30,0,0">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="12"/>
-                </Border.StrokeShape>
-                <Border.Shadow>
-                    <Shadow Brush="Black" Offset="0,4" Radius="12" Opacity="0.12"/>
-                </Border.Shadow>
-                <Label
-                    Text="&#xea12;"
-                    FontFamily="MaterialIcons"
-                    FontSize="24"
-                    TextColor="{StaticResource Secondary}"
-                    VerticalOptions="Center"/>
-            </Border>
-
-            <!-- POI Marker 3 - Bakery (left area) -->
-            <Border
-                BackgroundColor="{StaticResource SurfaceContainerLowest}"
-                StrokeThickness="0"
-                Padding="8"
-                HorizontalOptions="Start"
-                VerticalOptions="Start"
-                Margin="30,160,0,0">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="12"/>
-                </Border.StrokeShape>
-                <Border.Shadow>
-                    <Shadow Brush="Black" Offset="0,4" Radius="12" Opacity="0.12"/>
-                </Border.Shadow>
-                <HorizontalStackLayout Spacing="8">
-                    <Label
-                        Text="&#xea53;"
-                        FontFamily="MaterialIcons"
-                        FontSize="24"
-                        TextColor="{StaticResource Tertiary}"
-                        VerticalOptions="Center"/>
-                    <Border
-                        BackgroundColor="#1A0058BC"
-                        StrokeThickness="0"
-                        Padding="8,4">
-                        <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="12"/>
-                        </Border.StrokeShape>
-                        <HorizontalStackLayout Spacing="4">
-                            <Label
-                                Text="&#xf01f;"
-                                FontFamily="MaterialIcons"
-                                FontSize="12"
-                                TextColor="{StaticResource Primary}"
-                                VerticalOptions="Center"/>
-                            <Label
-                                Text="READY"
-                                FontSize="10"
-                                FontAttributes="Bold"
-                                TextColor="{StaticResource Primary}"
-                                VerticalOptions="Center"/>
-                        </HorizontalStackLayout>
-                    </Border>
-                </HorizontalStackLayout>
-            </Border>
-
-            <!-- ===== SEARCH BAR OVERLAY ===== -->
-            <VerticalStackLayout
-                VerticalOptions="Start"
-                Padding="24,16"
-                Spacing="12">
-
-                <!-- Search Bar -->
-                <Border
-                    BackgroundColor="#E6FFFFFF"
-                    StrokeThickness="0"
-                    Padding="20,14">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="24"/>
-                    </Border.StrokeShape>
-                    <Border.Shadow>
-                        <Shadow Brush="Black" Offset="0,4" Radius="16" Opacity="0.08"/>
-                    </Border.Shadow>
-                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
-                        <Label
-                            Grid.Column="0"
-                            Text="&#xe8b6;"
-                            FontFamily="MaterialIcons"
-                            FontSize="24"
-                            TextColor="{StaticResource Outline}"
-                            VerticalOptions="Center"/>
-                        <Label
-                            Grid.Column="1"
-                            Text="Tìm kiếm địa điểm gần đây..."
-                            FontSize="15"
-                            TextColor="{StaticResource OnSurfaceVariant}"
-                            VerticalOptions="Center"/>
-                        <Label
-                            Grid.Column="2"
-                            Text="&#xe029;"
-                            FontFamily="MaterialIcons"
-                            FontSize="24"
-                            TextColor="{StaticResource Outline}"
-                            VerticalOptions="Center"/>
-                    </Grid>
-                </Border>
-
-                <!-- Quick Filter Chips -->
-                <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
-                    <HorizontalStackLayout Spacing="8">
-                        <!-- Audio Ready (Active) -->
-                        <Border
-                            BackgroundColor="{StaticResource Primary}"
-                            StrokeThickness="0"
-                            Padding="16,10">
-                            <Border.StrokeShape>
-                                <RoundRectangle CornerRadius="12"/>
-                            </Border.StrokeShape>
-                            <Border.Shadow>
-                                <Shadow Brush="{StaticResource PrimaryBrush}" Offset="0,2" Radius="4" Opacity="0.2"/>
-                            </Border.Shadow>
-                            <HorizontalStackLayout Spacing="8">
-                                <Label
-                                    Text="&#xf01f;"
-                                    FontFamily="MaterialIcons"
-                                    FontSize="18"
-                                    TextColor="{StaticResource OnPrimary}"
-                                    VerticalOptions="Center"/>
-                                <Label
-                                    Text="Audio Ready"
-                                    FontSize="14"
-                                    FontAttributes="Bold"
-                                    TextColor="{StaticResource OnPrimary}"
-                                    VerticalOptions="Center"/>
-                            </HorizontalStackLayout>
-                        </Border>
-
-                        <!-- Food -->
-                        <Border
-                            BackgroundColor="{StaticResource SurfaceContainerHigh}"
-                            StrokeThickness="0"
-                            Padding="16,10">
-                            <Border.StrokeShape>
-                                <RoundRectangle CornerRadius="12"/>
-                            </Border.StrokeShape>
-                            <HorizontalStackLayout Spacing="8">
-                                <Label
-                                    Text="&#xe56c;"
-                                    FontFamily="MaterialIcons"
-                                    FontSize="18"
-                                    TextColor="{StaticResource OnSurfaceVariant}"
-                                    VerticalOptions="Center"/>
-                                <Label
-                                    Text="Ẩm thực"
-                                    FontSize="14"
-                                    FontAttributes="Bold"
-                                    TextColor="{StaticResource OnSurfaceVariant}"
-                                    VerticalOptions="Center"/>
-                            </HorizontalStackLayout>
-                        </Border>
-
-                        <!-- History -->
-                        <Border
-                            BackgroundColor="{StaticResource SurfaceContainerHigh}"
-                            StrokeThickness="0"
-                            Padding="16,10">
-                            <Border.StrokeShape>
-                                <RoundRectangle CornerRadius="12"/>
-                            </Border.StrokeShape>
-                            <HorizontalStackLayout Spacing="8">
-                                <Label
-                                    Text="&#xea3e;"
-                                    FontFamily="MaterialIcons"
-                                    FontSize="18"
-                                    TextColor="{StaticResource OnSurfaceVariant}"
-                                    VerticalOptions="Center"/>
-                                <Label
-                                    Text="Lịch sử"
-                                    FontSize="14"
-                                    FontAttributes="Bold"
-                                    TextColor="{StaticResource OnSurfaceVariant}"
-                                    VerticalOptions="Center"/>
-                            </HorizontalStackLayout>
-                        </Border>
-                    </HorizontalStackLayout>
-                </ScrollView>
-            </VerticalStackLayout>
-
             <!-- ===== FLOATING ACTION BUTTON - Recenter ===== -->
             <Border
                 x:Name="FabRecenter"
                 WidthRequest="56"
                 HeightRequest="56"
-                BackgroundColor="#E6FFFFFF"
+                BackgroundColor="#FFFFFF"
                 StrokeThickness="0"
                 HorizontalOptions="End"
                 VerticalOptions="End"
-                Margin="0,0,24,24">
+                Margin="0,0,24,260"
+                ZIndex="300"
+                InputTransparent="False">
                 <Border.StrokeShape>
                     <RoundRectangle CornerRadius="28"/>
                 </Border.StrokeShape>
-                <Border.Shadow>
-                    <Shadow Brush="Black" Offset="0,4" Radius="16" Opacity="0.15"/>
-                </Border.Shadow>
                 <Border.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnRecenterTapped"/>
                 </Border.GestureRecognizers>
@@ -362,15 +143,12 @@
             <Border
                 x:Name="BottomSheet"
                 VerticalOptions="End"
-                BackgroundColor="#B3F8FAFC"
+                BackgroundColor="#F8FAFC"
                 StrokeThickness="0"
                 Padding="0">
                 <Border.StrokeShape>
                     <RoundRectangle CornerRadius="32,32,0,0"/>
                 </Border.StrokeShape>
-                <Border.Shadow>
-                    <Shadow Brush="Black" Offset="0,-8" Radius="32" Opacity="0.08"/>
-                </Border.Shadow>
 
                 <VerticalStackLayout Spacing="0">
                     <!-- Handle Bar -->
@@ -395,18 +173,25 @@
                             FontAttributes="Bold"
                             TextColor="{StaticResource OnSurface}"/>
                         <Label
+                            x:Name="RadiusLabel"
                             Grid.Column="1"
-                            Text="BÁN KÍNH 3.2KM"
+                            Text="BÁN KÍNH 1.5KM"
                             FontSize="13"
                             FontAttributes="Bold"
                             TextColor="{StaticResource Primary}"
                             VerticalOptions="End"/>
                     </Grid>
 
+                    <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never" Padding="24,0,24,12">
+                        <HorizontalStackLayout x:Name="CategoryChipContainer" Spacing="8" />
+                    </ScrollView>
+
                     <!-- Discovery Cards List -->
-                    <ScrollView HeightRequest="320" Padding="24,0,24,24">
-                        <VerticalStackLayout x:Name="DiscoveryList" Spacing="12">
-                            <!-- Cards will be populated in code-behind -->
+                    <ScrollView HeightRequest="220" MaximumHeightRequest="260" Padding="24,0,24,24">
+                        <VerticalStackLayout Spacing="12">
+                            <ActivityIndicator x:Name="NearbyLoadingIndicator" IsVisible="False" IsRunning="False" HorizontalOptions="Center"/>
+                            <Label x:Name="NearbyStatusLabel" IsVisible="False" FontSize="13" TextColor="{StaticResource OnSurfaceVariant}" HorizontalTextAlignment="Center"/>
+                            <VerticalStackLayout x:Name="DiscoveryList" Spacing="12" />
                         </VerticalStackLayout>
                     </ScrollView>
                 </VerticalStackLayout>
@@ -416,15 +201,12 @@
         <!-- ===== BOTTOM NAVIGATION BAR ===== -->
         <Border
             Grid.Row="2"
-            BackgroundColor="#B3F8FAFC"
+            BackgroundColor="#F8FAFC"
             StrokeThickness="0"
             Padding="0">
             <Border.StrokeShape>
                 <RoundRectangle CornerRadius="24,24,0,0"/>
             </Border.StrokeShape>
-            <Border.Shadow>
-                <Shadow Brush="Black" Offset="0,-4" Radius="16" Opacity="0.04"/>
-            </Border.Shadow>
 
             <Grid ColumnDefinitions="*,*,*,*" Padding="16,12,16,24">
                 <!-- Explore (Active) -->

@@ -67,6 +67,32 @@
                 HorizontalTextAlignment="Center"
                 Margin="0,0,0,48"/>
 
+            <Border
+                x:Name="ReturningUserPanel"
+                IsVisible="False"
+                BackgroundColor="{StaticResource SurfaceContainerLow}"
+                Padding="18,14"
+                StrokeThickness="0"
+                HorizontalOptions="Fill"
+                Margin="0,0,0,16">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12"/>
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="6">
+                    <Label
+                        x:Name="ReturningTitle"
+                        Text="What's new"
+                        FontSize="16"
+                        FontAttributes="Bold"
+                        TextColor="{StaticResource OnSurface}"/>
+                    <Label
+                        x:Name="ReturningMessage"
+                        Text="Fresh nearby POIs and audio updates are ready."
+                        FontSize="13"
+                        TextColor="{StaticResource OnSurfaceVariant}"/>
+                </VerticalStackLayout>
+            </Border>
+
             <!-- Language Selector Button -->
             <Border
                 x:Name="LanguageSelector"
@@ -107,9 +133,37 @@
                 </Grid>
             </Border>
 
+            <Border
+                x:Name="SkeletonPanel"
+                IsVisible="False"
+                Opacity="0"
+                BackgroundColor="{StaticResource SurfaceContainerHighest}"
+                Padding="20,16"
+                StrokeThickness="0"
+                HorizontalOptions="Fill"
+                Margin="0,0,0,16">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12"/>
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="8">
+                    <BoxView HeightRequest="12" WidthRequest="140" Color="{StaticResource SurfaceContainerHigh}"/>
+                    <BoxView HeightRequest="10" WidthRequest="220" Color="{StaticResource SurfaceContainerHigh}"/>
+                    <BoxView HeightRequest="10" WidthRequest="190" Color="{StaticResource SurfaceContainerHigh}"/>
+                </VerticalStackLayout>
+            </Border>
+
+            <Label
+                x:Name="ProgressLabel"
+                Text=""
+                FontSize="12"
+                TextColor="{StaticResource OnSurfaceVariant}"
+                HorizontalTextAlignment="Center"
+                Margin="0,0,0,12"/>
+
             <Button
                 x:Name="ContinueButton"
                 Text="Continue"
+                IsEnabled="False"
                 FontSize="16"
                 FontAttributes="Bold"
                 HorizontalOptions="Fill"
