@@ -23,7 +23,11 @@ namespace MauiApp1.Pages
         {
             InitializeComponent();
             _locationService = new LocationService();
-            _startupWarmupService = new StartupWarmupService(_locationService);
+            _startupWarmupService = new StartupWarmupService(
+                _locationService,
+                new OpenStreetMapService(),
+                new PoiSyncCacheService(),
+                new AudioCacheService());
             LoadLanguagePreference();
         }
 
@@ -234,9 +238,24 @@ namespace MauiApp1.Pages
                 {
                     SetProgress(GetText("UpdatingNearbyData"));
                     var result = await _startupWarmupService.SyncAndPrefetchNearbyAsync(cancellationToken);
-                    SetProgress(result.IsFreshDataAvailable
-                        ? GetText("WarmupCompleted")
-                        : GetText("WarmupOfflineFallback"));
+                    if (!result.IsLocationReliable)
+                    {
+                        SetProgress(GetText("WarmupWeakGps"));
+                    }
+                    else if (result.IsOfflineFallback)
+                    {
+                        SetProgress(GetText("WarmupOfflineFallback"));
+                    }
+                    else if (result.HasPendingPoiRefresh)
+                    {
+                        SetProgress(GetText("WarmupPendingRefresh"));
+                    }
+                    else
+                    {
+                        SetProgress(result.IsFreshDataAvailable
+                            ? GetText("WarmupCompleted")
+                            : GetText("WarmupOfflineFallback"));
+                    }
                 }
                 else
                 {
@@ -379,6 +398,12 @@ namespace MauiApp1.Pages
                 "WarmupOfflineFallback" => isVietnamese
                     ? "Mang yeu. Dang uu tien du lieu ngoai tuyen"
                     : "Weak connection. Running in offline-first mode",
+                "WarmupPendingRefresh" => isVietnamese
+                    ? "Da co cap nhat moi. Ban do se hien thong bao lam moi"
+                    : "New updates are ready. Map will show a tap-to-refresh notice",
+                "WarmupWeakGps" => isVietnamese
+                    ? "Tin hieu GPS yeu. Co the can quet QR de nghe"
+                    : "Weak GPS signal. You may need QR scan for playback",
                 "WarmupAwaitPermission" => isVietnamese
                     ? "Can cap quyen vi tri de kich hoat tai san am thanh gan ban"
                     : "Grant location to preload nearby audio",

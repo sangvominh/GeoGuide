@@ -46,3 +46,36 @@ Khi mở lại, giao diện ban đầu dùng dữ liệu ngoại tuyến cũ. Kh
 - **Mất sóng / sóng yếu:** Hủy API sau 5 giây, chuyển hẳn sang chế độ ưu tiên ngoại tuyến (IndexedDB/Workbox Cache) để không gián đoạn.
 - **Lỗi định vị trong nhà (sai số >50m):** Tắt âm thanh tự động, hiện thông báo: _"Tín hiệu định vị yếu. Vui lòng quét mã QR để nghe"_.
 - **Đầy bộ nhớ thiết bị:** Áp dụng thuật toán LRU tự động xóa bộ nhớ đệm âm thanh của các quán đã đi qua >30 phút trước, chỉ giữ ngôn ngữ đang dùng.
+
+## 3. TRẢI NGHIỆM TIÊU THỤ NỘI DUNG (CORE POI & AUDIO EXPERIENCE)
+
+**Mục tiêu:** Mang lại trải nghiệm "Zero-click" (không cần chạm) để khách tham quan có thể vừa đi dạo, vừa nghe kể chuyện mà không cần cắm mặt vào màn hình điện thoại. Đồng thời, hệ thống phải xử lý mượt mà sự cố rớt mạng và chống phát âm thanh rác (spam).
+
+### 3.1. Luồng tiếp cận gian hàng
+Khách tham quan có thể kích hoạt nội dung thuyết minh của một gian hàng (POI) thông qua 3 phương thức:
+- **Tiếp cận thụ động (Geofence Auto-play):** Khách chỉ cần đút điện thoại trong túi, đi bộ vào bán kính 30m của gian hàng, âm thanh sẽ tự động phát.
+- **Tiếp cận chủ động (Map/List Tap):** Khách bấm trực tiếp vào biểu tượng gian hàng trên bản đồ màn hình chính để xem trước nội dung.
+- **Tiếp cận dự phòng (QR Code):** Dành cho khu vực trong nhà (sóng GPS yếu), khách quét mã QR tại quầy để mở thẳng giao diện bài thuyết minh.
+
+### 3.2. Đặc tả Logic Bộ máy Định vị
+Để tránh việc âm thanh phát loạn xạ khi khách đi ngang qua nhiều gian hàng, thuật toán Geofence bắt buộc tuân thủ 3 quy tắc:
+- **Chống nhiễu ranh giới (Debounce 3 giây):** Khách đi vào vùng 30m sẽ được đưa vào trạng thái chờ. Khách phải **đứng lại hoặc di chuyển chậm trong vùng đó liên tục 3 giây**, hệ thống mới xác nhận và bắt đầu phát âm thanh. Tránh tình trạng khách đi xe lướt ngang qua mà app vẫn kêu.
+- **Chống làm phiền (Cooldown 5 phút):** Khi khách đi ra khỏi gian hàng, gian hàng đó sẽ bị khóa (Cooldown) trong 5 phút. Nếu khách đi vòng lại ngay lập tức, ứng dụng sẽ KHÔNG tự động phát lại bài cũ.
+- **Xử lý xung đột vị trí (Priority Logic):** Nếu khách đứng ở điểm giao thoa giữa 2 gian hàng, hệ thống sẽ tự động chọn gian hàng để phát dựa theo: (1) Mức độ ưu tiên của gian hàng (Audio Priority) => (2) Khoảng cách đến tâm gian hàng nào gần hơn.
+
+### 3.3. Chiến lược Âm thanh 4 Cấp độ (4-Tier Hybrid Audio)
+Đây là cốt lõi công nghệ để đảm bảo app luôn có tiếng dù mạng internet tại hội chợ tệ đến đâu. Khi có lệnh phát âm thanh
+- **Tier 1 (Hoàn hảo - Trễ 0ms):** Lấy file âm thanh đã được tải sẵn trong bộ nhớ máy (do luồng Hotset ở phần 2.1 đã chuẩn bị). Phát ngay lập tức.
+- **Tier 1.5 (Chờ dịch - Trễ 2-5s):** Khách dùng ngôn ngữ lạ (VD: tiếng Pháp) chưa có sẵn file. App gửi yêu cầu lên Backend dịch và dùng AI (Edge-TTS) tạo file MP3 tức thì. Trả file về, phát và lưu luôn vào máy cho người sau.
+- **Tier 2 (Cloud Stream - Trễ 3-8s):** Nếu điện thoại khách hết dung lượng bộ nhớ, không cho lưu file, app sẽ phát âm thanh dạng Stream trực tiếp từ máy chủ xuống (như nghe nhạc Spotify).
+- **Tier 3 (Mất mạng hoàn toàn - Trễ 0ms):** Rớt mạng 4G. App tự động gọi hàm `window.speechSynthesis` (bộ đọc văn bản AI mặc định có sẵn trong hệ điều hành iOS/Android) để đọc text thay thế.
+
+### 3.4. Giao diện Tiêu thụ nội dung (POI Detail UI/UX)
+Khi khách đang ở trong gian hàng, giao diện hiển thị:
+- **Mini-player (Trình phát nhạc thu nhỏ):** Nằm đè lên bản đồ, chứa nút Pause/Play, thanh tiến trình (progress bar), và nút "Đóng".
+- **Fall-back Ngôn ngữ hiển thị:** Trong trường hợp gian hàng chưa cập nhật ngôn ngữ của khách, hệ thống áp dụng luật sa thải: Cố gắng hiện **Tiếng Anh** (Ngôn ngữ quốc tế) => Nếu không có tiếng Anh, hiện **Tiếng Việt** nhưng không có thuyết minh Tiếng Việt (KHÔNG phát âm thanh tiếng Việt cho khách ngoại quốc để tránh gây khó chịu, chỉ hiện chữ và hình ảnh).
+
+### 3.5. Xử lý rủi ro và các trường hợp biên (Edge Cases)
+- **Xung đột luồng âm thanh:** Khách đang nghe dở gian hàng A lại đi nhanh sang vùng gian hàng B. Hệ thống **không phát đè**. Âm thanh gian hàng A giảm nhỏ lại (Audio Ducking), ứng dụng rung nhẹ và hiện thông báo: _"Bạn đã đến gian hàng B, chạm để nghe nội dung"_.
+- **Đang nghe thì có điện thoại:** Ứng dụng tự động Tạm dừng (Pause). Khi tắt cuộc gọi, hiện Popup hỏi khách có muốn nghe tiếp từ đoạn bị ngắt hay không.
+- **Chạy nền (Background Playback):** Khi khách tắt màn hình điện thoại đút vào túi quần, âm thanh vẫn phải tiếp tục phát và GPS vẫn phải tiếp tục quét (sử dụng Foreground Service / Wake Lock).

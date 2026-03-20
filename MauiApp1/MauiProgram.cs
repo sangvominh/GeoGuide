@@ -21,6 +21,9 @@ namespace MauiApp1
 
             // Register services
             builder.Services.AddSingleton<LocationService>();
+            builder.Services.AddSingleton<OpenStreetMapService>();
+            builder.Services.AddSingleton<PoiSyncCacheService>();
+            builder.Services.AddSingleton<AudioCacheService>();
             builder.Services.AddSingleton<StartupWarmupService>();
 
             // Register pages

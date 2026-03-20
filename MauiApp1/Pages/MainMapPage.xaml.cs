@@ -20,6 +20,7 @@ namespace MauiApp1.Pages
         private const string LanguageSelectedKey = "app_language_selected";
         private readonly LocationService _locationService;
         private readonly OpenStreetMapService _openStreetMapService;
+        private readonly PoiSyncCacheService _poiSyncCacheService;
         private readonly List<PointOfInterest> _nearbyPois = new();
         private readonly List<(string Key, string Label)> _categoryFilters =
         [
@@ -35,6 +36,7 @@ namespace MauiApp1.Pages
         private Location? _currentLocation;
         private bool _isInitialized;
         private bool _isLoadingNearby;
+        private bool _isAutoAudioEnabled;
         private DateTime _lastNearbyLoadUtc = DateTime.MinValue;
         private string _selectedCategoryKey = "all";
         private string _searchKeyword = string.Empty;
@@ -47,6 +49,7 @@ namespace MauiApp1.Pages
             InitializeComponent();
             _locationService = new LocationService();
             _openStreetMapService = new OpenStreetMapService();
+            _poiSyncCacheService = new PoiSyncCacheService();
             InitializeMap();
             BuildCategoryChips();
         }
@@ -62,7 +65,8 @@ namespace MauiApp1.Pages
 
             _isInitialized = true;
             await TryGetLocationAndCenterMapAsync(requestIfMissing: false);
-            await LoadNearbyPoiAsync(force: true);
+            await LoadCachedPoiAsync();
+            await LoadNearbyPoiAsync(force: true, applyImmediately: _nearbyPois.Count == 0);
         }
 
         private void InitializeMap()
@@ -118,7 +122,7 @@ namespace MauiApp1.Pages
             _userLocationLayer.DataHasChanged();
         }
 
-        private async Task TryGetLocationAndCenterMapAsync(bool requestIfMissing)
+        private async Task<PermissionStatus> TryGetLocationAndCenterMapAsync(bool requestIfMissing)
         {
             try
             {
@@ -130,23 +134,48 @@ namespace MauiApp1.Pages
 
                 if (permission != PermissionStatus.Granted)
                 {
-                    return;
+                    UpdateAutoAudioReliability(permission, null);
+                    return permission;
                 }
 
-                _currentLocation = await _locationService.GetCurrentLocationAsync();
+                _currentLocation = await _locationService.GetCurrentLocationAsync()
+                    ?? await _locationService.GetLastKnownLocationAsync();
+
                 if (_currentLocation != null)
                 {
                     CenterMapOnLocation(_currentLocation.Latitude, _currentLocation.Longitude);
                     UpdateUserLocationMarker(_currentLocation.Latitude, _currentLocation.Longitude);
                 }
+
+                UpdateAutoAudioReliability(permission, _currentLocation);
+                return permission;
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Location error: {ex.Message}");
+                ShowSystemStatus("Khong the xac dinh vi tri hien tai. Vui long thu lai hoac quet QR de nghe.");
+                _isAutoAudioEnabled = false;
+                return PermissionStatus.Unknown;
             }
         }
 
-        private async Task LoadNearbyPoiAsync(bool force = false)
+        private async Task LoadCachedPoiAsync()
+        {
+            var cached = await _poiSyncCacheService.GetCachedPoiAsync();
+            if (cached.Count > 0)
+            {
+                _nearbyPois.Clear();
+                _nearbyPois.AddRange(cached);
+                ApplyFilters();
+            }
+
+            if (_poiSyncCacheService.HasPendingRefresh())
+            {
+                ShowPoiUpdateBanner();
+            }
+        }
+
+        private async Task LoadNearbyPoiAsync(bool force = false, bool applyImmediately = false)
         {
             if (_isLoadingNearby)
             {
@@ -169,17 +198,44 @@ namespace MauiApp1.Pages
                 var centerLon = _currentLocation?.Longitude ?? DefaultLongitude;
                 var nearby = await _openStreetMapService.GetNearbyPlacesAsync(centerLat, centerLon, maxItems: 8);
 
-                _nearbyPois.Clear();
-                _nearbyPois.AddRange(nearby);
-                ApplyFilters();
+                if (nearby.Count == 0)
+                {
+                    if (_nearbyPois.Count == 0)
+                    {
+                        NearbyStatusLabel.IsVisible = true;
+                        NearbyStatusLabel.Text = "Khong co du lieu truc tuyen. Ung dung dang dung che do ngoai tuyen.";
+                    }
+                }
+                else if (applyImmediately)
+                {
+                    _nearbyPois.Clear();
+                    _nearbyPois.AddRange(nearby);
+                    ApplyFilters();
+                    await _poiSyncCacheService.UpsertCachedPoiAsync(nearby);
+                    _poiSyncCacheService.ClearPendingRefresh();
+                    HidePoiUpdateBanner();
+                }
+                else
+                {
+                    var hasPending = await _poiSyncCacheService.StageIncomingRefreshAsync(nearby);
+                    if (hasPending)
+                    {
+                        ShowPoiUpdateBanner();
+                    }
+                }
+
                 _lastNearbyLoadUtc = DateTime.UtcNow;
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"OSM load error: {ex.Message}");
-                NearbyStatusLabel.IsVisible = true;
-                NearbyStatusLabel.Text = "Khong tai duoc du lieu dia diem. Vui long thu lai.";
-                DiscoveryList.Children.Clear();
+
+                if (_nearbyPois.Count == 0)
+                {
+                    NearbyStatusLabel.IsVisible = true;
+                    NearbyStatusLabel.Text = "Khong tai duoc du lieu dia diem. Dang uu tien du lieu ngoai tuyen.";
+                    DiscoveryList.Children.Clear();
+                }
             }
             finally
             {
@@ -488,7 +544,7 @@ namespace MauiApp1.Pages
             if (status == PermissionStatus.Granted)
             {
                 await TryGetLocationAndCenterMapAsync(requestIfMissing: false);
-                await LoadNearbyPoiAsync(force: true);
+                await LoadNearbyPoiAsync(force: true, applyImmediately: true);
                 return;
             }
 
@@ -512,8 +568,84 @@ namespace MauiApp1.Pages
                 await FabRecenter.ScaleToAsync(1.0, 100, Easing.SpringOut);
             }
 
-            await TryGetLocationAndCenterMapAsync(requestIfMissing: true);
-            await LoadNearbyPoiAsync(force: true);
+            var status = await TryGetLocationAndCenterMapAsync(requestIfMissing: true);
+            if (status != PermissionStatus.Granted)
+            {
+                return;
+            }
+
+            await LoadNearbyPoiAsync(force: true, applyImmediately: true);
+        }
+
+        private async void OnApplyRefreshTapped(object? sender, EventArgs e)
+        {
+            var refreshed = await _poiSyncCacheService.ApplyPendingRefreshAsync();
+            _nearbyPois.Clear();
+            _nearbyPois.AddRange(refreshed);
+            ApplyFilters();
+            HidePoiUpdateBanner();
+
+            NearbyStatusLabel.IsVisible = true;
+            NearbyStatusLabel.Text = "Da lam moi danh sach dia diem moi nhat.";
+        }
+
+        private void ShowPoiUpdateBanner()
+        {
+            PoiUpdateBannerLabel.Text = "Da co ban cap nhat moi. Cham de lam moi";
+            PoiUpdateBanner.IsVisible = true;
+            RepositionPoiBanner();
+        }
+
+        private void HidePoiUpdateBanner()
+        {
+            PoiUpdateBanner.IsVisible = false;
+        }
+
+        private void UpdateAutoAudioReliability(PermissionStatus permission, Location? location)
+        {
+            if (permission != PermissionStatus.Granted)
+            {
+                _isAutoAudioEnabled = false;
+                ShowSystemStatus("Da tat GPS. Phat audio tu dong se tam dung, ban van co the chon tren ban do hoac quet QR.");
+                return;
+            }
+
+            if (location == null)
+            {
+                _isAutoAudioEnabled = false;
+                ShowSystemStatus("Khong lay duoc toa do hien tai. Vui long thu lai hoac quet QR de nghe.");
+                return;
+            }
+
+            if (location.Accuracy is > 50)
+            {
+                _isAutoAudioEnabled = false;
+                ShowSystemStatus("Tin hieu dinh vi yeu (sai so > 50m). Vui long quet QR de nghe chinh xac.");
+                return;
+            }
+
+            _isAutoAudioEnabled = true;
+            HideSystemStatus();
+        }
+
+        private void ShowSystemStatus(string message)
+        {
+            SystemStatusLabel.Text = message;
+            SystemStatusBanner.IsVisible = true;
+            RepositionPoiBanner();
+        }
+
+        private void HideSystemStatus()
+        {
+            SystemStatusBanner.IsVisible = false;
+            RepositionPoiBanner();
+        }
+
+        private void RepositionPoiBanner()
+        {
+            PoiUpdateBanner.Margin = SystemStatusBanner.IsVisible
+                ? new Thickness(20, 72, 20, 0)
+                : new Thickness(20, 14, 20, 0);
         }
     }
 }
