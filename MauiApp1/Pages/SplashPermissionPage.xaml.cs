@@ -16,7 +16,7 @@ namespace MauiApp1.Pages
         private bool _hasAppeared;
         private bool _isNavigating;
         private bool _languageChosen;
-        private string _selectedLanguageCode = "en-US";
+        private string _selectedLanguageCode = "vi-VN";
         private CancellationTokenSource? _warmupCts;
 
         public SplashPermissionPage()
@@ -48,11 +48,6 @@ namespace MauiApp1.Pages
             _ = ExecuteWarmupAsync(_warmupCts.Token);
 
             _ = InitializeContinueStateAsync();
-
-            if (!_isFirstRun)
-            {
-                _ = AutoNavigateReturningUserAsync();
-            }
         }
 
         protected override void OnDisappearing()
@@ -69,12 +64,8 @@ namespace MauiApp1.Pages
 
         private async Task RunSplashAnimationsAsync()
         {
-            LogoIcon.Opacity = 0;
-            LogoIcon.Scale = 0.5;
             AppTitle.Opacity = 0;
             AppTitle.TranslationY = 20;
-            AppSubtitle.Opacity = 0;
-            AppSubtitle.TranslationY = 20;
             ReturningUserPanel.Opacity = 0;
             ReturningUserPanel.TranslationY = 20;
             LanguageSelectionPanel.Opacity = 0;
@@ -83,18 +74,8 @@ namespace MauiApp1.Pages
             ProgressLabel.Opacity = 0;
 
             await Task.WhenAll(
-                LogoIcon.FadeToAsync(1, 400, Easing.CubicOut),
-                LogoIcon.ScaleToAsync(1, 500, Easing.SpringOut)
-            );
-
-            await Task.WhenAll(
                 AppTitle.FadeToAsync(1, 300, Easing.CubicOut),
                 AppTitle.TranslateToAsync(0, 0, 300, Easing.CubicOut)
-            );
-
-            await Task.WhenAll(
-                AppSubtitle.FadeToAsync(1, 300, Easing.CubicOut),
-                AppSubtitle.TranslateToAsync(0, 0, 300, Easing.CubicOut)
             );
 
             if (_isFirstRun)
@@ -149,21 +130,15 @@ namespace MauiApp1.Pages
             }
         }
 
-        private async Task AutoNavigateReturningUserAsync()
+        private async void OnContinueClicked(object? sender, EventArgs e)
         {
-            // Keep returning-user splash visible briefly while warmup starts.
-            await Task.Delay(900);
-
-            if (_isFirstRun || _isNavigating)
+            if (_isNavigating)
             {
                 return;
             }
 
-            await NavigateToMainMapAsync();
-        }
+            await PlayContinueButtonPressAnimationAsync();
 
-        private async void OnContinueClicked(object? sender, EventArgs e)
-        {
             if (!_isFirstRun)
             {
                 await NavigateToMainMapAsync();
@@ -177,7 +152,7 @@ namespace MauiApp1.Pages
                 return;
             }
 
-            ContinueButton.IsEnabled = false;
+            SetNavigationLoading(true);
 
             try
             {
@@ -210,7 +185,10 @@ namespace MauiApp1.Pages
             }
             finally
             {
-                ContinueButton.IsEnabled = true;
+                if (!_isNavigating)
+                {
+                    SetNavigationLoading(false);
+                }
             }
         }
 
@@ -263,9 +241,6 @@ namespace MauiApp1.Pages
 
             ContinueButton.Text = _isFirstRun ? GetText("Continue") : GetText("OpenMap");
             ContinueButton.IsEnabled = _isFirstRun ? _languageChosen : true;
-            AppSubtitle.Text = _isFirstRun
-                ? GetText("SubtitleFirstRun")
-                : GetText("SubtitleReturning");
 
             if (!_isFirstRun)
             {
@@ -297,7 +272,7 @@ namespace MauiApp1.Pages
                 return;
             }
 
-            _selectedLanguageCode = languageCode == "vi-VN" ? "vi-VN" : "en-US";
+            _selectedLanguageCode = languageCode == "en-US" ? "en-US" : "vi-VN";
 
             Preferences.Default.Set(LanguagePreferenceKey, _selectedLanguageCode);
             Preferences.Default.Set(LanguageSelectedKey, true);
@@ -314,21 +289,59 @@ namespace MauiApp1.Pages
             }
 
             _isNavigating = true;
+            SetNavigationLoading(true);
 
             if (Shell.Current == null)
+            {
+                _isNavigating = false;
+                SetNavigationLoading(false);
+                return;
+            }
+
+            try
+            {
+                await Shell.Current.GoToAsync(AppShell.MainMapNavigationRoute);
+            }
+            catch
+            {
+                _isNavigating = false;
+                SetNavigationLoading(false);
+                throw;
+            }
+        }
+
+        private void SetNavigationLoading(bool isLoading)
+        {
+            NavigationLoadingPanel.IsVisible = isLoading;
+            NavigationLoadingIndicator.IsRunning = isLoading;
+            ContinueButton.IsEnabled = !isLoading && (_isFirstRun ? _languageChosen : true);
+
+            if (isLoading)
+            {
+                ContinueButton.Text = GetText("OpeningMapLoading");
+                return;
+            }
+
+            ContinueButton.Text = _isFirstRun ? GetText("Continue") : GetText("OpenMap");
+        }
+
+        private async Task PlayContinueButtonPressAnimationAsync()
+        {
+            if (ContinueButton == null || !ContinueButton.IsEnabled)
             {
                 return;
             }
 
-            await Shell.Current.GoToAsync(AppShell.MainMapNavigationRoute);
+            await ContinueButton.ScaleToAsync(0.98, 70, Easing.CubicOut);
+            await ContinueButton.ScaleToAsync(1, 90, Easing.CubicIn);
         }
 
         private void LoadLanguagePreference()
         {
-            _selectedLanguageCode = Preferences.Default.Get(LanguagePreferenceKey, "en-US");
-            if (_selectedLanguageCode != "vi-VN")
+            _selectedLanguageCode = Preferences.Default.Get(LanguagePreferenceKey, "vi-VN");
+            if (_selectedLanguageCode != "vi-VN" && _selectedLanguageCode != "en-US")
             {
-                _selectedLanguageCode = "en-US";
+                _selectedLanguageCode = "vi-VN";
             }
         }
 
@@ -336,8 +349,8 @@ namespace MauiApp1.Pages
         {
             var isVietnamese = _selectedLanguageCode == "vi-VN";
 
-            ContinueButton.Text = isVietnamese ? "Tiếp tục" : "Continue";
-            LanguageSelectorTitle.Text = isVietnamese ? "Chon ngon ngu" : "Choose language";
+            ContinueButton.Text = "Tiếp tục";
+            LanguageSelectorTitle.Text = "Chọn ngôn ngữ";
             EnglishOptionButton.BackgroundColor = isVietnamese
                 ? Color.FromArgb("#E9E7ED")
                 : Color.FromArgb("#0058BC");
@@ -346,61 +359,33 @@ namespace MauiApp1.Pages
                 ? Color.FromArgb("#0058BC")
                 : Color.FromArgb("#E9E7ED");
             VietnameseOptionButton.TextColor = isVietnamese ? Colors.White : Color.FromArgb("#414755");
-            FooterLabel.Text = isVietnamese
-                ? "DANG KHOI DONG HE THONG KE CHUYEN"
-                : "INITIALIZING NARRATIVE ENGINE";
+            FooterLabel.Text = "ĐANG KHỞI ĐỘNG HỆ THỐNG KỂ CHUYỆN";
         }
 
         private string GetText(string key)
         {
-            var isVietnamese = _selectedLanguageCode == "vi-VN";
-
             return key switch
             {
-                "LanguagePickerTitle" => isVietnamese ? "Chon ngon ngu" : "Choose language",
-                "LanguageTitle" => isVietnamese ? "Ngon ngu" : "Language",
-                "LanguageRequiredMessage" => isVietnamese
-                    ? "Vui long chon ngon ngu truoc khi tiep tuc."
-                    : "Please choose a language before continuing.",
-                "Cancel" => isVietnamese ? "Huy" : "Cancel",
-                "LocationTitle" => isVietnamese ? "Vi tri" : "Location",
-                "LocationDeniedMessage" => isVietnamese
-                    ? "Quyen truy cap vi tri bi tu choi. Ban co the bat lai trong Cai dat."
-                    : "Location access was denied. You can enable it again in Settings.",
-                "PreparingLocalData" => isVietnamese
-                    ? "Dang chuan bi du lieu dia danh cuc bo..."
-                    : "Preparing local POI data...",
-                "UpdatingNearbyData" => isVietnamese
-                    ? "Dang dong bo va tai san am thanh gan ban..."
-                    : "Syncing updates and preloading nearby audio...",
-                "WarmupCompleted" => isVietnamese
-                    ? "San sang trai nghiem tren ban do"
-                    : "Ready to explore the map",
-                "WarmupOfflineFallback" => isVietnamese
-                    ? "Mang yeu. Dang uu tien du lieu ngoai tuyen"
-                    : "Weak connection. Running in offline-first mode",
-                "WarmupAwaitPermission" => isVietnamese
-                    ? "Can cap quyen vi tri de kich hoat tai san am thanh gan ban"
-                    : "Grant location to preload nearby audio",
-                "WarmupFailed" => isVietnamese
-                    ? "Khoi dong co ban hoan tat"
-                    : "Basic startup completed",
-                "ContinueAndAllowLocation" => isVietnamese ? "Tiep tuc va cap quyen vi tri" : "Continue and allow location",
-                "OpenMap" => isVietnamese ? "Mo ban do" : "Open map",
-                "SubtitleFirstRun" => isVietnamese
-                    ? "Chon ngon ngu va cap quyen de bat dau"
-                    : "Pick language and location to get started",
-                "SubtitleReturning" => isVietnamese
-                    ? "Cap nhat moi se duoc tai nen trong giay lat"
-                    : "Latest updates are loading in the background",
-                "ReturningTitle" => isVietnamese ? "Co gi moi" : "What's new",
-                "ReturningMessage" => isVietnamese
-                    ? "Da cap nhat dia diem va am thanh moi gan ban"
-                    : "Nearby places and audio stories have been refreshed",
-                "ErrorTitle" => isVietnamese ? "Loi" : "Error",
-                "GenericErrorMessage" => isVietnamese
-                    ? "Da xay ra loi khi khoi dong. Ung dung se tiep tuc voi che do co ban."
-                    : "An error occurred during startup. The app will continue in basic mode.",
+                "LanguagePickerTitle" => "Chọn ngôn ngữ",
+                "LanguageTitle" => "Ngôn ngữ",
+                "LanguageRequiredMessage" => "Vui lòng chọn ngôn ngữ trước khi tiếp tục.",
+                "Cancel" => "Hủy",
+                "LocationTitle" => "Vị trí",
+                "LocationDeniedMessage" => "Quyền truy cập vị trí bị từ chối. Bạn có thể bật lại trong Cài đặt.",
+                "PreparingLocalData" => "Đang chuẩn bị dữ liệu địa danh cục bộ...",
+                "UpdatingNearbyData" => "Đang đồng bộ và tải sẵn âm thanh gần bạn...",
+                "WarmupCompleted" => "Sẵn sàng trải nghiệm trên bản đồ",
+                "WarmupOfflineFallback" => "Mạng yếu. Đang ưu tiên dữ liệu ngoại tuyến",
+                "WarmupAwaitPermission" => "Cần cấp quyền vị trí để kích hoạt âm thanh gần bạn",
+                "WarmupFailed" => "Khởi động cơ bản hoàn tất",
+                "Continue" => "Tiếp tục",
+                "ContinueAndAllowLocation" => "Tiếp tục và cấp quyền vị trí",
+                "OpeningMapLoading" => "Đang mở...",
+                "OpenMap" => "Mở bản đồ",
+                "ReturningTitle" => "Có gì mới",
+                "ReturningMessage" => "Nội dung cập nhật cho phiên bản mới sẽ hiển thị tại đây.",
+                "ErrorTitle" => "Lỗi",
+                "GenericErrorMessage" => "Đã xảy ra lỗi khi khởi động. Ứng dụng sẽ tiếp tục với chế độ cơ bản.",
                 "Ok" => "OK",
                 _ => string.Empty
             };

@@ -19,7 +19,7 @@ namespace MauiApp1.Pages
         private const string LanguagePreferenceKey = "app_language";
         private const string LanguageSelectedKey = "app_language_selected";
         private readonly LocationService _locationService;
-        private readonly OpenStreetMapService _openStreetMapService;
+        private readonly PostgresPoiService _postgresPoiService;
         private readonly List<PointOfInterest> _nearbyPois = new();
         private readonly List<(string Key, string Label)> _categoryFilters =
         [
@@ -35,6 +35,7 @@ namespace MauiApp1.Pages
         private Location? _currentLocation;
         private bool _isInitialized;
         private bool _isLoadingNearby;
+        private bool _isMapFullScreen;
         private DateTime _lastNearbyLoadUtc = DateTime.MinValue;
         private string _selectedCategoryKey = "all";
         private string _searchKeyword = string.Empty;
@@ -42,11 +43,11 @@ namespace MauiApp1.Pages
         private const double DefaultLatitude = 10.8231;
         private const double DefaultLongitude = 106.6297;
 
-        public MainMapPage()
+        public MainMapPage(LocationService locationService, PostgresPoiService postgresPoiService)
         {
             InitializeComponent();
-            _locationService = new LocationService();
-            _openStreetMapService = new OpenStreetMapService();
+            _locationService = locationService;
+            _postgresPoiService = postgresPoiService;
             InitializeMap();
             BuildCategoryChips();
         }
@@ -167,7 +168,7 @@ namespace MauiApp1.Pages
             {
                 var centerLat = _currentLocation?.Latitude ?? DefaultLatitude;
                 var centerLon = _currentLocation?.Longitude ?? DefaultLongitude;
-                var nearby = await _openStreetMapService.GetNearbyPlacesAsync(centerLat, centerLon, maxItems: 8);
+                var nearby = await _postgresPoiService.GetNearbyRegisteredPoisAsync(centerLat, centerLon, maxItems: 8);
 
                 _nearbyPois.Clear();
                 _nearbyPois.AddRange(nearby);
@@ -176,7 +177,7 @@ namespace MauiApp1.Pages
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"OSM load error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"PostgreSQL load error: {ex.Message}");
                 NearbyStatusLabel.IsVisible = true;
                 NearbyStatusLabel.Text = "Khong tai duoc du lieu dia diem. Vui long thu lai.";
                 DiscoveryList.Children.Clear();
@@ -453,17 +454,17 @@ namespace MauiApp1.Pages
 
         private async Task ChangeLanguageAsync()
         {
-            var choice = await DisplayActionSheetAsync("Chon ngon ngu", "Huy", null, "Tieng Viet", "English (US)");
-            if (choice == "Huy" || string.IsNullOrWhiteSpace(choice))
+            var choice = await DisplayActionSheetAsync("Chọn ngôn ngữ", "Hủy", null, "Tiếng Việt", "Tiếng Anh (Mỹ)");
+            if (choice == "Hủy" || string.IsNullOrWhiteSpace(choice))
             {
                 return;
             }
 
-            var selectedCode = choice == "Tieng Viet" ? "vi-VN" : "en-US";
+            var selectedCode = choice == "Tiếng Việt" ? "vi-VN" : "en-US";
             Preferences.Default.Set(LanguagePreferenceKey, selectedCode);
             Preferences.Default.Set(LanguageSelectedKey, true);
 
-            await DisplayAlertAsync("Ngon ngu", "Da cap nhat ngon ngu. Mo lai Splash de thay doi toan bo giao dien.", "OK");
+            await DisplayAlertAsync("Ngôn ngữ", "Đã cập nhật ngôn ngữ. Mở lại màn hình khởi động để áp dụng toàn bộ giao diện.", "OK");
         }
 
         private async Task HandleLocationSettingsAsync()
@@ -514,6 +515,52 @@ namespace MauiApp1.Pages
 
             await TryGetLocationAndCenterMapAsync(requestIfMissing: true);
             await LoadNearbyPoiAsync(force: true);
+        }
+
+        private void OnExpandMapTapped(object? sender, EventArgs e)
+        {
+            EnterMapFullScreen();
+        }
+
+        private void OnExitFullscreenTapped(object? sender, EventArgs e)
+        {
+            ExitMapFullScreen();
+        }
+
+        private void EnterMapFullScreen()
+        {
+            if (_isMapFullScreen)
+            {
+                return;
+            }
+
+            CompactMapHost.Content = null;
+            FullScreenMapHost.Content = MapControl;
+
+            HeaderBar.IsVisible = false;
+            MainContentGrid.IsVisible = false;
+            BottomNavBar.IsVisible = false;
+            FullScreenOverlay.IsVisible = true;
+
+            _isMapFullScreen = true;
+        }
+
+        private void ExitMapFullScreen()
+        {
+            if (!_isMapFullScreen)
+            {
+                return;
+            }
+
+            FullScreenMapHost.Content = null;
+            CompactMapHost.Content = MapControl;
+
+            HeaderBar.IsVisible = true;
+            MainContentGrid.IsVisible = true;
+            BottomNavBar.IsVisible = true;
+            FullScreenOverlay.IsVisible = false;
+
+            _isMapFullScreen = false;
         }
     }
 }
