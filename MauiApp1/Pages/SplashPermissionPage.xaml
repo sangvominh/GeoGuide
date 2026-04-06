@@ -24,48 +24,15 @@
             Spacing="0"
             Padding="24,0">
 
-            <!-- Logo Icon -->
-            <Border
-                x:Name="LogoIcon"
-                WidthRequest="96"
-                HeightRequest="96"
-                BackgroundColor="{StaticResource PrimaryContainer}"
-                HorizontalOptions="Center"
-                Margin="0,0,0,24"
-                StrokeThickness="0">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="28"/>
-                </Border.StrokeShape>
-                <Border.Shadow>
-                    <Shadow Brush="Black" Offset="0,4" Radius="16" Opacity="0.15"/>
-                </Border.Shadow>
-                <Label
-                    Text="&#xf71d;"
-                    FontFamily="MaterialIcons"
-                    FontSize="48"
-                    TextColor="{StaticResource OnPrimaryContainer}"
-                    HorizontalOptions="Center"
-                    VerticalOptions="Center"/>
-            </Border>
-
             <!-- App Title -->
             <Label
                 x:Name="AppTitle"
-                Text="The Sonic Lens"
+                Text="Ống Kính Âm Thanh"
                 FontSize="32"
                 FontAttributes="Bold"
                 TextColor="{StaticResource OnSurface}"
                 HorizontalTextAlignment="Center"
-                Margin="0,0,0,8"/>
-
-            <!-- Subtitle -->
-            <Label
-                x:Name="AppSubtitle"
-                Text="Audio-first urban exploration"
-                FontSize="16"
-                TextColor="{StaticResource OnSurfaceVariant}"
-                HorizontalTextAlignment="Center"
-                Margin="0,0,0,48"/>
+                Margin="0,0,0,28"/>
 
             <Border
                 x:Name="ReturningUserPanel"
@@ -81,13 +48,13 @@
                 <VerticalStackLayout Spacing="6">
                     <Label
                         x:Name="ReturningTitle"
-                        Text="What's new"
+                        Text="Có gì mới"
                         FontSize="16"
                         FontAttributes="Bold"
                         TextColor="{StaticResource OnSurface}"/>
                     <Label
                         x:Name="ReturningMessage"
-                        Text="Fresh nearby POIs and audio updates are ready."
+                        Text="Nội dung cập nhật cho phiên bản mới sẽ hiển thị tại đây."
                         FontSize="13"
                         TextColor="{StaticResource OnSurfaceVariant}"/>
                 </VerticalStackLayout>
@@ -107,7 +74,7 @@
                 <VerticalStackLayout Spacing="12">
                     <Label
                         x:Name="LanguageSelectorTitle"
-                        Text="Choose language"
+                        Text="Chọn ngôn ngữ"
                         FontSize="14"
                         FontAttributes="Bold"
                         TextColor="{StaticResource OnSurface}" />
@@ -115,7 +82,7 @@
                         <Button
                             x:Name="EnglishOptionButton"
                             Grid.Column="0"
-                            Text="English (US)"
+                            Text="Tiếng Anh (Mỹ)"
                             Clicked="OnLanguageOptionClicked"
                             CommandParameter="en-US" />
                         <Button
@@ -157,19 +124,36 @@
 
             <Button
                 x:Name="ContinueButton"
-                Text="Continue"
+                Text="Tiếp tục"
                 IsEnabled="False"
                 FontSize="16"
                 FontAttributes="Bold"
                 HorizontalOptions="Fill"
-                Margin="0,0,0,96"
+                Margin="0,0,0,12"
                 Clicked="OnContinueClicked" />
+
+            <HorizontalStackLayout
+                x:Name="NavigationLoadingPanel"
+                IsVisible="False"
+                HorizontalOptions="Center"
+                Spacing="8"
+                Margin="0,0,0,84">
+                <ActivityIndicator
+                    x:Name="NavigationLoadingIndicator"
+                    IsRunning="False"
+                    Color="{StaticResource Primary}" />
+                <Label
+                    x:Name="NavigationLoadingLabel"
+                    Text="Đang mở bản đồ..."
+                    FontSize="13"
+                    TextColor="{StaticResource OnSurfaceVariant}" />
+            </HorizontalStackLayout>
         </VerticalStackLayout>
 
         <!-- Footer -->
         <Label
             x:Name="FooterLabel"
-            Text="INITIALIZING NARRATIVE ENGINE"
+            Text="ĐANG KHỞI ĐỘNG HỆ THỐNG KỂ CHUYỆN"
             FontSize="11"
             FontAttributes="Bold"
             TextColor="{StaticResource OutlineVariant}"

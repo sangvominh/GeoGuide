@@ -7,10 +7,11 @@
              Shell.TabBarIsVisible="False"
              BackgroundColor="{StaticResource Surface}">
 
-    <Grid RowDefinitions="Auto,*,Auto">
+    <Grid x:Name="RootGrid" RowDefinitions="Auto,*,Auto">
 
         <!-- ===== TOP HEADER BAR ===== -->
         <Border
+            x:Name="HeaderBar"
             Grid.Row="0"
             BackgroundColor="#F8FAFC"
             StrokeThickness="0"
@@ -39,7 +40,7 @@
                     <!-- Title -->
                     <Label
                         Grid.Column="1"
-                        Text="The Sonic Lens"
+                        Text="Ống Kính Âm Thanh"
                         FontSize="20"
                         FontAttributes="Bold"
                         TextColor="{StaticResource OnSurface}"
@@ -106,88 +107,96 @@
             </VerticalStackLayout>
         </Border>
 
-        <!-- ===== MAIN MAP AREA ===== -->
-        <Grid Grid.Row="1" BackgroundColor="{StaticResource SurfaceContainerLow}">
+        <!-- ===== MAIN CONTENT ===== -->
+        <Grid x:Name="MainContentGrid" Grid.Row="1" RowDefinitions="*,3*" BackgroundColor="{StaticResource SurfaceContainerLow}">
+            <Grid Grid.Row="0" Padding="16,12,16,8">
+                <Border
+                    x:Name="CompactMapHost"
+                    BackgroundColor="#FFFFFF"
+                    StrokeThickness="0">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="24"/>
+                    </Border.StrokeShape>
+                    <mapsui:MapControl x:Name="MapControl"/>
+                </Border>
 
-            <!-- Mapsui OpenStreetMap Control -->
-            <mapsui:MapControl x:Name="MapControl" />
+                <Border
+                    x:Name="FabRecenter"
+                    WidthRequest="52"
+                    HeightRequest="52"
+                    BackgroundColor="#FFFFFF"
+                    StrokeThickness="0"
+                    HorizontalOptions="End"
+                    VerticalOptions="End"
+                    Margin="0,0,24,22"
+                    ZIndex="200">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="26"/>
+                    </Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnRecenterTapped"/>
+                    </Border.GestureRecognizers>
+                    <Label
+                        Text="&#xe55c;"
+                        FontFamily="MaterialIcons"
+                        FontSize="22"
+                        TextColor="{StaticResource Primary}"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center"/>
+                </Border>
 
-            <!-- ===== FLOATING ACTION BUTTON - Recenter ===== -->
-            <Border
-                x:Name="FabRecenter"
-                WidthRequest="56"
-                HeightRequest="56"
-                BackgroundColor="#FFFFFF"
-                StrokeThickness="0"
-                HorizontalOptions="End"
-                VerticalOptions="End"
-                Margin="0,0,24,260"
-                ZIndex="300"
-                InputTransparent="False">
+                <Border
+                    WidthRequest="52"
+                    HeightRequest="52"
+                    BackgroundColor="#FFFFFF"
+                    StrokeThickness="0"
+                    HorizontalOptions="End"
+                    VerticalOptions="Start"
+                    Margin="0,20,24,0"
+                    ZIndex="200">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="26"/>
+                    </Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnExpandMapTapped"/>
+                    </Border.GestureRecognizers>
+                    <Label
+                        Text="&#xe5d0;"
+                        FontFamily="MaterialIcons"
+                        FontSize="22"
+                        TextColor="{StaticResource Primary}"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center"/>
+                </Border>
+            </Grid>
+
+            <Border Grid.Row="1" Margin="16,8,16,16" BackgroundColor="#F8FAFC" StrokeThickness="0">
                 <Border.StrokeShape>
                     <RoundRectangle CornerRadius="28"/>
                 </Border.StrokeShape>
-                <Border.GestureRecognizers>
-                    <TapGestureRecognizer Tapped="OnRecenterTapped"/>
-                </Border.GestureRecognizers>
-                <Label
-                    Text="&#xe55c;"
-                    FontFamily="MaterialIcons"
-                    FontSize="24"
-                    TextColor="{StaticResource Primary}"
-                    HorizontalOptions="Center"
-                    VerticalOptions="Center"/>
-            </Border>
-
-            <!-- ===== BOTTOM SHEET - Nearby Discoveries ===== -->
-            <Border
-                x:Name="BottomSheet"
-                VerticalOptions="End"
-                BackgroundColor="#F8FAFC"
-                StrokeThickness="0"
-                Padding="0">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="32,32,0,0"/>
-                </Border.StrokeShape>
-
-                <VerticalStackLayout Spacing="0">
-                    <!-- Handle Bar -->
-                    <Border
-                        WidthRequest="48"
-                        HeightRequest="6"
-                        BackgroundColor="{StaticResource Gray300}"
-                        StrokeThickness="0"
-                        HorizontalOptions="Center"
-                        Margin="0,12,0,20">
-                        <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="3"/>
-                        </Border.StrokeShape>
-                    </Border>
-
-                    <!-- Title Row -->
-                    <Grid ColumnDefinitions="*,Auto" Padding="24,0,24,16">
+                <VerticalStackLayout Spacing="0" Padding="20,18,20,20">
+                    <Grid ColumnDefinitions="*,Auto" Padding="0,0,0,12">
                         <Label
                             Grid.Column="0"
-                            Text="Khám phá gần đây"
-                            FontSize="22"
+                            Text="Điểm thuyết minh lân cận"
+                            FontSize="20"
                             FontAttributes="Bold"
                             TextColor="{StaticResource OnSurface}"/>
                         <Label
                             x:Name="RadiusLabel"
                             Grid.Column="1"
                             Text="BÁN KÍNH 1.5KM"
-                            FontSize="13"
+                            FontSize="12"
                             FontAttributes="Bold"
                             TextColor="{StaticResource Primary}"
                             VerticalOptions="End"/>
                     </Grid>
 
-                    <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never" Padding="24,0,24,12">
+                    <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never" Padding="0,0,0,10">
                         <HorizontalStackLayout x:Name="CategoryChipContainer" Spacing="8" />
                     </ScrollView>
 
-                    <!-- Discovery Cards List -->
-                    <ScrollView HeightRequest="220" MaximumHeightRequest="260" Padding="24,0,24,24">
+                    <ScrollView Padding="0,0,0,0">
                         <VerticalStackLayout Spacing="12">
                             <ActivityIndicator x:Name="NearbyLoadingIndicator" IsVisible="False" IsRunning="False" HorizontalOptions="Center"/>
                             <Label x:Name="NearbyStatusLabel" IsVisible="False" FontSize="13" TextColor="{StaticResource OnSurfaceVariant}" HorizontalTextAlignment="Center"/>
@@ -200,6 +209,7 @@
 
         <!-- ===== BOTTOM NAVIGATION BAR ===== -->
         <Border
+            x:Name="BottomNavBar"
             Grid.Row="2"
             BackgroundColor="#F8FAFC"
             StrokeThickness="0"
@@ -278,6 +288,62 @@
                 </VerticalStackLayout>
             </Grid>
         </Border>
+        <!-- ===== FULLSCREEN MAP OVERLAY ===== -->
+        <Grid x:Name="FullScreenOverlay" Grid.RowSpan="3" IsVisible="False" ZIndex="999" BackgroundColor="#F8FAFC">
+            <Border
+                x:Name="FullScreenMapHost"
+                Margin="0"
+                BackgroundColor="#FFFFFF"
+                StrokeThickness="0"/>
+
+            <Grid Padding="18,24" RowDefinitions="Auto,*,Auto" ColumnDefinitions="Auto,*">
+                <Border
+                    WidthRequest="52"
+                    HeightRequest="52"
+                    BackgroundColor="#FFFFFF"
+                    StrokeThickness="0"
+                    HorizontalOptions="Start"
+                    VerticalOptions="Start">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="26"/>
+                    </Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnExitFullscreenTapped"/>
+                    </Border.GestureRecognizers>
+                    <Label
+                        Text="&#xe5c4;"
+                        FontFamily="MaterialIcons"
+                        FontSize="24"
+                        TextColor="{StaticResource Primary}"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center"/>
+                </Border>
+
+                <Border
+                    Grid.Row="2"
+                    Grid.Column="1"
+                    WidthRequest="52"
+                    HeightRequest="52"
+                    BackgroundColor="#FFFFFF"
+                    StrokeThickness="0"
+                    HorizontalOptions="End"
+                    VerticalOptions="End">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="26"/>
+                    </Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnRecenterTapped"/>
+                    </Border.GestureRecognizers>
+                    <Label
+                        Text="&#xe55c;"
+                        FontFamily="MaterialIcons"
+                        FontSize="22"
+                        TextColor="{StaticResource Primary}"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center"/>
+                </Border>
+            </Grid>
+        </Grid>
     </Grid>
 
 </ContentPage>
