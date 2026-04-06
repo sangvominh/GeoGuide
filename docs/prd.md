@@ -8,10 +8,14 @@
 ---
 
 ## 1. TỔNG QUAN
+## 1. TỔNG QUAN
 
+### 1.1. Vấn đề cần giải quyết
 ### 1.1. Vấn đề cần giải quyết
 
 Khách du lịch khi đến các điểm tham quan, gian hàng hoặc điểm dừng thường thiếu thông tin hướng dẫn súc tích, dễ hiểu và đúng thời điểm. Họ phải tự đọc bảng thông tin khô khan, tra cứu trên mạng hoặc phụ thuộc hoàn toàn vào hướng dẫn viên (thường không phải lúc nào cũng có). Ở chiều ngược lại, chủ gian hàng/đơn vị vận hành khó kiểm soát được thông điệp truyền thông tại điểm bán và không có công cụ chủ động để “kể câu chuyện” về sản phẩm/dịch vụ cho khách một cách nhất quán.
+   
+### 1.2. Mục tiêu dự án
    
 ### 1.2. Mục tiêu dự án
 
@@ -19,6 +23,7 @@ Khách du lịch khi đến các điểm tham quan, gian hàng hoặc điểm d�
 - Tăng mức độ tương tác và khả năng chuyển đổi (mua hàng/sử dụng dịch vụ) tại các gian hàng, điểm tham quan nhờ nội dung thuyết minh hấp dẫn, nhất quán.
 - Xây dựng một nền tảng để chủ POI có thể tự tạo, quản lý và cập nhật nội dung thuyết minh (text, TTS, audio thu sẵn) mà không phụ thuộc hoàn toàn vào đội kỹ thuật.
 
+## 2. ĐẶC TẢ TRẢI NGHIỆM KHỞI ĐỘNG
 ## 2. ĐẶC TẢ TRẢI NGHIỆM KHỞI ĐỘNG
 
 **Mục tiêu:** Đảm bảo thời gian từ lúc khách mở app đến lúc có thể tương tác trên bản đồ là dưới 2 giây. Giao diện phải mượt mà, không chớp giật và hệ thống phải âm thầm chuẩn bị sẵn dữ liệu (âm thanh, bản đồ) cho các bước di chuyển tiếp theo của khách.
