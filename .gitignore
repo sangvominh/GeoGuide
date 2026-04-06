@@ -1,0 +1,27 @@
+# --- Build outputs ---
+bin/
+obj/
+/TestResults/
+
+# --- Visual Studio ---
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+.vsCode/
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Mobile specific (Android/iOS) ---
+*.apk
+*.aab
+*.ipa
+/Platforms/Android/obj/
+/Platforms/iOS/obj/
+
+# --- NuGet Packages ---
+*.nuget.props
+*.nuget.targets
+packages/

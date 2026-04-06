@@ -7,50 +7,42 @@
 
 ---
 
-## 1. TỔNG QUAN (OVERVIEW)
+## 1. TỔNG QUAN
 
-### 1.1. Vấn đề cần giải quyết (Problem Statement)
+### 1.1. Vấn đề cần giải quyết
 
 Khách du lịch khi đến các điểm tham quan, gian hàng hoặc điểm dừng thường thiếu thông tin hướng dẫn súc tích, dễ hiểu và đúng thời điểm. Họ phải tự đọc bảng thông tin khô khan, tra cứu trên mạng hoặc phụ thuộc hoàn toàn vào hướng dẫn viên (thường không phải lúc nào cũng có). Ở chiều ngược lại, chủ gian hàng/đơn vị vận hành khó kiểm soát được thông điệp truyền thông tại điểm bán và không có công cụ chủ động để “kể câu chuyện” về sản phẩm/dịch vụ cho khách một cách nhất quán.
-
-### 1.2. Mục tiêu dự án (Objectives)
+   
+### 1.2. Mục tiêu dự án
 
 - Cung cấp trải nghiệm nghe thuyết minh tự động, theo ngữ cảnh vị trí địa lý (GPS/Geofence hoặc QR), giúp khách hiểu nhanh về địa điểm, sản phẩm và câu chuyện phía sau.
 - Tăng mức độ tương tác và khả năng chuyển đổi (mua hàng/sử dụng dịch vụ) tại các gian hàng, điểm tham quan nhờ nội dung thuyết minh hấp dẫn, nhất quán.
 - Xây dựng một nền tảng để chủ POI có thể tự tạo, quản lý và cập nhật nội dung thuyết minh (text, TTS, audio thu sẵn) mà không phụ thuộc hoàn toàn vào đội kỹ thuật.
 
-## 2. ĐẶC TẢ TRẢI NGHIỆM KHỞI ĐỘNG (FRONTEND STARTUP FLOW)
+## 2. ĐẶC TẢ TRẢI NGHIỆM KHỞI ĐỘNG
 
 **Mục tiêu:** Đảm bảo thời gian từ lúc khách mở app đến lúc có thể tương tác trên bản đồ là dưới 2 giây. Giao diện phải mượt mà, không chớp giật và hệ thống phải âm thầm chuẩn bị sẵn dữ liệu (âm thanh, bản đồ) cho các bước di chuyển tiếp theo của khách.
 
-### 2.1. Luồng xử lý "Không thời gian chờ" (Zero-Wait Startup & Parallel Processing)
+### 2.1. Trải nghiệm màn hình Splash & Xử lý ngầm
 
-Để tối ưu tốc độ, hệ thống không đợi tải xong toàn bộ dữ liệu mới hiển thị, mà chia làm các nhánh xử lý song song ngay tại màn hình Splash:
+Tại màn hình Splash, ứng dụng rẽ nhánh theo người dùng:
 
-1. **Khởi tạo & Xin quyền (0.5s đầu):** - Hiển thị màn hình chọn ngôn ngữ.
-   - Kích hoạt yêu cầu cấp quyền Vị trí (Location Permission) từ Hệ điều hành. Tiến trình đếm ngược Timeout của GPS (5s) chỉ chính thức bắt đầu **sau khi** người dùng phản hồi Popup xin quyền.
+- **Lần đầu mở ứng dụng:** Hiển thị các bước thiết lập ngôn ngữ và cấp quyền vị trí.
+- **Đã từng mở ứng dụng:** Hiển thị quảng cáo, các sự thay đổi hoặc cập nhật mới của ứng dụng.
 
-2. **Rẽ nhánh hiển thị (Cold Start vs. Warm Start):**
-   - **Kịch bản Warm Start (Khách đã từng mở app):** Truy xuất ngay dữ liệu danh sách quán ăn từ bộ nhớ máy (IndexedDB) để dựng giao diện bản đồ và danh sách (Độ trễ 0ms).
-   - **Kịch bản Cold Start (Khách mới tải app lần đầu):** IndexedDB trống. Hệ thống bắt buộc hiển thị trạng thái Skeleton Loading (khung xám tải trang) trong lúc chờ API trả về dữ liệu.
+Đồng thời, hệ thống chạy ngầm các tác vụ bên dưới:
+- **Chuẩn bị giao diện:** Tải sẵn danh sách địa danh cục bộ (không tốn thời gian). Nếu mở lần đầu, hiển thị khung tải xám (skeleton).
+- **Cập nhật dữ liệu & Vị trí (chỉ chạy khi đã có quyền định vị):** Thực hiện ngay việc xác định tọa độ hiện tại, kết nối API để cập nhật thông tin gian hàng mới nhất và gửi yêu cầu máy chủ dịch, tải trước âm thanh của **10 quán ăn gần nhất (bán kính 1.5 km)**. Khi khách đi bộ tới nơi, âm thanh đã nằm sẵn để phát.
 
-3. **Tiến trình chạy ngầm song song (Background Tasks):**
-   - **Luồng Định vị:** Gọi `waitForPosition()` để chốt tọa độ hiện tại.
-   - **Luồng Online:** Kết nối API để cập nhật thông tin mới nhất của các gian hàng.
-   - **Luồng Hotset (Đón đầu):** Đây là lõi tối ưu trải nghiệm. Ngay khi có tọa độ GPS, hệ thống tự động gửi API yêu cầu Server dịch và tải trước Audio của **10 quán ăn gần nhất (bán kính 1.5km)**. Khi khách đi bộ tới nơi, âm thanh đã nằm sẵn trong máy chờ phát.
+### 2.2. Cơ chế Đồng bộ & Chống giật giao diện
 
-### 2.2. Cơ chế Đồng bộ & Chống giật giao diện (Anti-Jitter Sync)
+Khi mở lại, giao diện ban đầu dùng dữ liệu ngoại tuyến cũ. Khi dữ liệu trực tuyến mới tải xong:
+- **Gộp dữ liệu:** Lưu ngầm (upsert) vào IndexedDB.
+- **Làm mới giao diện:** KHÔNG tự động ghi đè để tránh giật hình. Hiện thông báo ngắn (toast/snackbar): _"Đã có bản cập nhật mới. Chạm để làm mới"_, chỉ vẽ lại khi khách bấm vào.
 
-Trong kịch bản Warm Start, giao diện đã được vẽ bằng dữ liệu cũ (Offline), nhưng sau 2-3 giây, dữ liệu mới (Online) mới tải về xong. Để tránh việc màn hình bị chớp giật (UI Jitter) hoặc văng thao tác của khách:
+### 2.3. Xử lý ngoại lệ và rủi ro
 
-- **Nguyên tắc Merge:** Dữ liệu mới tải về sẽ được lưu ngầm (Upsert) vào IndexedDB.
-- **Cập nhật UI:** Giao diện KHÔNG tự động ghi đè (overwrite) ngay lập tức. Hệ thống sẽ hiển thị một Toast/Snackbar nhỏ ở góc màn hình: _"Đã có bản cập nhật thông tin mới. Chạm để làm mới"_. Chỉ khi khách bấm vào, giao diện mới re-render.
-
-### 2.3. Xử lý ngoại lệ và Rủi ro (Edge Cases & Error Handling)
-
-Hệ thống tự động xử lý mượt mà các rủi ro kỹ thuật đặc thù của môi trường ngoài trời/hội chợ:
-
-- **Khách từ chối quyền GPS (Permission Denied):** App vô hiệu hóa tính năng Geofence (phát âm thanh tự động theo vị trí). Chuyển sang hướng dẫn khách tương tác thủ công bằng cách **chọn trực tiếp trên bản đồ** hoặc **quét mã QR** dán tại quán ăn.
-- **Trường hợp mất sóng / Sóng yếu:** App tự động hủy bỏ luồng gọi API (Luồng Online) sau 5 giây Timeout và chuyển hẳn sang chế độ "Offline-First", sử dụng 100% dữ liệu đang có trong IndexedDB và Workbox Cache để không làm gián đoạn luồng đi.
-- **Lỗi định vị trong nhà (Indoor GPS Jitter/Drift):** Nếu tín hiệu GPS quá yếu hoặc sai số quá lớn (>50m), app sẽ vô hiệu hóa kích hoạt âm thanh tự động và bật Popup: _"Tín hiệu định vị yếu. Vui lòng quét mã QR tại gian hàng để nghe thuyết minh"_.
-- **Đầy bộ nhớ điện thoại (QuotaExceededError):** Việc tải gói Âm thanh/Bản đồ Offline (Hotset/Warmup) có thể làm đầy dung lượng thiết bị. Hệ thống áp dụng thuật toán LRU (Least Recently Used) để **tự động xóa cache** của các ngôn ngữ và file âm thanh của những quán ăn khách đã đi qua từ 30 phút trước, chỉ ưu tiên giữ (Pin) ngôn ngữ đang sử dụng.
+- **Từ chối quyền GPS:** Tắt phát âm thanh tự động (geofence), chuyển sang hướng dẫn chọn thủ công trên bản đồ hoặc quét mã QR.
+- **Mất sóng / sóng yếu:** Hủy API sau 5 giây, chuyển hẳn sang chế độ ưu tiên ngoại tuyến (IndexedDB/Workbox Cache) để không gián đoạn.
+- **Lỗi định vị trong nhà (sai số >50m):** Tắt âm thanh tự động, hiện thông báo: _"Tín hiệu định vị yếu. Vui lòng quét mã QR để nghe"_.
+- **Đầy bộ nhớ thiết bị:** Áp dụng thuật toán LRU tự động xóa bộ nhớ đệm âm thanh của các quán đã đi qua >30 phút trước, chỉ giữ ngôn ngữ đang dùng.
