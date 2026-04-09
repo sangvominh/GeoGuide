@@ -13,15 +13,17 @@ namespace MauiApp1.Services
     public class StartupWarmupService
     {
         private readonly LocationService _locationService;
+        private readonly PoiRepository _poiRepository;
 
-        public StartupWarmupService(LocationService locationService)
+        public StartupWarmupService(LocationService locationService, PoiRepository poiRepository)
         {
             _locationService = locationService;
+            _poiRepository = poiRepository;
         }
 
         public async Task PrepareLocalPoiAsync(CancellationToken cancellationToken = default)
         {
-            await Task.Delay(220, cancellationToken);
+            await _poiRepository.GetPoisAsync(cancellationToken);
         }
 
         public async Task<WarmupResult> SyncAndPrefetchNearbyAsync(CancellationToken cancellationToken = default)
@@ -34,17 +36,14 @@ namespace MauiApp1.Services
 
             try
             {
-                // Placeholder pipeline for future API: fetch latest POI data + translated audio metadata.
-                await SimulateServerSyncAsync(timeoutCts.Token);
-
-                // Placeholder prefetch for 10 nearest POI audio files in a 1.5km radius.
-                await PrefetchNearbyAudioAsync(maxItems: 10, timeoutCts.Token);
+                var pois = await _poiRepository.GetPoisAsync(timeoutCts.Token);
+                await PrefetchNearbyAudioAsync(pois.Pois, maxItems: 10, timeoutCts.Token);
 
                 return new WarmupResult
                 {
-                    IsFreshDataAvailable = true,
+                    IsFreshDataAvailable = pois.DataSource == PoiDataSource.Api,
                     IsLocationReliable = isReliable,
-                    IsOfflineFallback = false
+                    IsOfflineFallback = pois.DataSource != PoiDataSource.Api
                 };
             }
             catch (OperationCanceledException)
@@ -58,16 +57,11 @@ namespace MauiApp1.Services
             }
         }
 
-        private static async Task SimulateServerSyncAsync(CancellationToken cancellationToken)
+        private static async Task PrefetchNearbyAudioAsync(IReadOnlyList<Models.PointOfInterest> pois, int maxItems, CancellationToken cancellationToken)
         {
-            await Task.Delay(700, cancellationToken);
-        }
-
-        private static async Task PrefetchNearbyAudioAsync(int maxItems, CancellationToken cancellationToken)
-        {
-            for (var i = 0; i < maxItems; i++)
+            foreach (var _ in pois.Take(maxItems))
             {
-                await Task.Delay(90, cancellationToken);
+                await Task.Delay(60, cancellationToken);
             }
         }
     }

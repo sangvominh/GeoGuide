@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging;
 using MauiApp1.Services;
-using Npgsql;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 
 namespace MauiApp1
@@ -20,30 +19,43 @@ namespace MauiApp1
                     fonts.AddFont("MaterialIcons-Regular.ttf", "MaterialIcons");
                 });
 
-            var dbConnectionString = Environment.GetEnvironmentVariable("POI_DB_CONNECTION");
-            if (string.IsNullOrWhiteSpace(dbConnectionString))
+            var apiBaseUrl = Environment.GetEnvironmentVariable("POI_API_BASE_URL");
+            if (string.IsNullOrWhiteSpace(apiBaseUrl))
             {
-                var csb = new NpgsqlConnectionStringBuilder
-                {
-                    Host = Environment.GetEnvironmentVariable("POI_DB_HOST") ?? "localhost",
-                    Port = int.TryParse(Environment.GetEnvironmentVariable("POI_DB_PORT"), out var port) ? port : 5432,
-                    Database = Environment.GetEnvironmentVariable("POI_DB_NAME") ?? "POIcsharpApp",
-                    Username = Environment.GetEnvironmentVariable("POI_DB_USER") ?? "postgres",
-                    Password = Environment.GetEnvironmentVariable("POI_DB_PASSWORD") ?? "1234",
-                    SslMode = SslMode.Disable,
-                    TrustServerCertificate = true
-                };
-
-                dbConnectionString = csb.ConnectionString;
+                apiBaseUrl = DeviceInfo.Platform == DevicePlatform.Android
+                    ? "http://10.0.2.2:8080/"
+                    : "http://localhost:8080/";
             }
 
-            // Register services
-            builder.Services.AddSingleton<LocationService>();
-            builder.Services.AddSingleton<StartupWarmupService>();
-            builder.Services.AddSingleton(new PostgresDbOptions { ConnectionString = dbConnectionString });
-            builder.Services.AddSingleton<PostgresPoiService>();
+            var apiOptions = new PoiApiOptions
+            {
+                BaseUrl = apiBaseUrl.EndsWith("/") ? apiBaseUrl : $"{apiBaseUrl}/",
+                TimeoutSeconds = int.TryParse(Environment.GetEnvironmentVariable("POI_API_TIMEOUT_SECONDS"), out var timeoutSeconds)
+                    ? timeoutSeconds
+                    : 10,
+                EnablePlaybackLogs = !string.Equals(
+                    Environment.GetEnvironmentVariable("POI_PLAYBACK_LOGS_ENABLED"),
+                    "false",
+                    StringComparison.OrdinalIgnoreCase)
+            };
 
-            // Register pages
+            builder.Services.AddSingleton<LocationService>();
+            builder.Services.AddSingleton(apiOptions);
+            builder.Services.AddSingleton<PoiCacheService>();
+            builder.Services.AddSingleton(serviceProvider =>
+            {
+                var options = serviceProvider.GetRequiredService<PoiApiOptions>();
+                return new HttpClient
+                {
+                    BaseAddress = new Uri(options.BaseUrl, UriKind.Absolute),
+                    Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds)
+                };
+            });
+            builder.Services.AddSingleton<PoiApiService>();
+            builder.Services.AddSingleton<PoiRepository>();
+            builder.Services.AddSingleton<NarrationService>();
+            builder.Services.AddSingleton<StartupWarmupService>();
+
             builder.Services.AddTransient<Pages.SplashPermissionPage>();
             builder.Services.AddTransient<Pages.MainMapPage>();
 

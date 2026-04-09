@@ -176,20 +176,34 @@
                 </Border.StrokeShape>
                 <VerticalStackLayout Spacing="0" Padding="20,18,20,20">
                     <Grid ColumnDefinitions="*,Auto" Padding="0,0,0,12">
-                        <Label
-                            Grid.Column="0"
-                            Text="Điểm thuyết minh lân cận"
-                            FontSize="20"
-                            FontAttributes="Bold"
-                            TextColor="{StaticResource OnSurface}"/>
-                        <Label
-                            x:Name="RadiusLabel"
-                            Grid.Column="1"
-                            Text="BÁN KÍNH 1.5KM"
-                            FontSize="12"
-                            FontAttributes="Bold"
-                            TextColor="{StaticResource Primary}"
-                            VerticalOptions="End"/>
+                        <VerticalStackLayout Grid.Column="0" Spacing="2">
+                            <Label
+                                Text="Điểm thuyết minh lân cận"
+                                FontSize="20"
+                                FontAttributes="Bold"
+                                TextColor="{StaticResource OnSurface}"/>
+                            <Label
+                                x:Name="NearestPoiLabel"
+                                Text="Đang tìm POI gần nhất..."
+                                FontSize="12"
+                                TextColor="{StaticResource OnSurfaceVariant}"/>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="2" HorizontalOptions="End">
+                            <Label
+                                x:Name="RadiusLabel"
+                                Text="BÁN KÍNH 1.5KM"
+                                FontSize="12"
+                                FontAttributes="Bold"
+                                TextColor="{StaticResource Primary}"
+                                HorizontalTextAlignment="End"
+                                VerticalOptions="End"/>
+                            <Label
+                                x:Name="DataSourceLabel"
+                                Text="Nguồn: chờ tải"
+                                FontSize="11"
+                                TextColor="{StaticResource OnSurfaceVariant}"
+                                HorizontalTextAlignment="End"/>
+                        </VerticalStackLayout>
                     </Grid>
 
                     <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never" Padding="0,0,0,10">

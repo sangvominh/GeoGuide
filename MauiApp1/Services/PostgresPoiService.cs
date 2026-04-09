@@ -71,15 +71,18 @@ public class PostgresPoiService
                 Id = reader.GetGuid(reader.GetOrdinal("id")).ToString("N"),
                 Name = reader.GetString(reader.GetOrdinal("name")),
                 CategoryKey = categoryKey,
-                Category = categoryLabel,
+                CategoryLabel = categoryLabel,
                 Description = reader.GetString(reader.GetOrdinal("description")),
                 Latitude = reader.GetDouble(reader.GetOrdinal("latitude")),
                 Longitude = reader.GetDouble(reader.GetOrdinal("longitude")),
-                Distance = FormatDistance(distanceMeters),
-                HasAudio = reader.GetBoolean(reader.GetOrdinal("has_audio")),
-                AudioStatus = reader.GetBoolean(reader.GetOrdinal("has_audio")) ? "AUDIO" : "NONE",
-                IconGlyph = ToIconGlyph(categoryKey),
-                Rating = 0
+                DistanceMeters = distanceMeters,
+                TriggerRadiusMeters = 80,
+                Priority = 1,
+                AudioUrl = reader.GetBoolean(reader.GetOrdinal("has_audio")) ? "postgres://audio" : string.Empty,
+                TtsScript = reader.GetString(reader.GetOrdinal("description")),
+                LanguageCode = "vi-VN",
+                IsActive = true,
+                UpdatedAt = DateTimeOffset.UtcNow
             });
         }
 
@@ -95,19 +98,5 @@ public class PostgresPoiService
 
         var kilometers = distanceMeters / 1000;
         return $"{kilometers.ToString("0.0", CultureInfo.InvariantCulture)}km";
-    }
-
-    private static string ToIconGlyph(string categoryKey)
-    {
-        return categoryKey switch
-        {
-            "food" => "restaurant",
-            "cafe" => "local_cafe",
-            "park" => "park",
-            "play" => "attractions",
-            "theatre" => "theaters",
-            "attraction" => "tour",
-            _ => "place"
-        };
     }
 }
