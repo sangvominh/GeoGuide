@@ -1,4 +1,5 @@
 using MauiApp1.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MauiApp1.Pages
 {
@@ -22,8 +23,10 @@ namespace MauiApp1.Pages
         public SplashPermissionPage()
         {
             InitializeComponent();
-            _locationService = new LocationService();
-            _startupWarmupService = new StartupWarmupService(_locationService);
+            var services = Application.Current?.Handler?.MauiContext?.Services
+                ?? throw new InvalidOperationException("Service provider is not available.");
+            _locationService = services.GetRequiredService<LocationService>();
+            _startupWarmupService = services.GetRequiredService<StartupWarmupService>();
             LoadLanguagePreference();
         }
 

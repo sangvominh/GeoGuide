@@ -83,15 +83,18 @@ namespace MauiApp1.Services
                             Id = item.TryGetProperty("id", out var idProperty) ? idProperty.ToString() : Guid.NewGuid().ToString("N"),
                             Name = name,
                             CategoryKey = categoryKey,
-                            Category = ToCategoryLabel(categoryKey),
+                            CategoryLabel = ToCategoryLabel(categoryKey),
                             Description = BuildDescription(categoryKey, amenity, leisure, tourism, cuisine),
-                            Distance = FormatDistance(distanceMeters),
+                            DistanceMeters = distanceMeters,
                             Latitude = lat,
                             Longitude = lon,
-                            IconGlyph = ToIconGlyph(categoryKey),
-                            HasAudio = true,
-                            AudioStatus = "AUDIO",
-                            Rating = 0
+                            TriggerRadiusMeters = 80,
+                            Priority = 1,
+                            AudioUrl = "osm://tts",
+                            TtsScript = BuildDescription(categoryKey, amenity, leisure, tourism, cuisine),
+                            LanguageCode = "vi-VN",
+                            IsActive = true,
+                            UpdatedAt = DateTimeOffset.UtcNow
                         });
                     }
 
@@ -254,31 +257,6 @@ namespace MauiApp1.Services
                 _ => $"OSM tags: {amenity ?? leisure ?? tourism ?? "unknown"}"
             };
         }
-
-        private static string ToIconGlyph(string categoryKey)
-        {
-            return categoryKey switch
-            {
-                "food" => "\ue56c",
-                "cafe" => "\ue541",
-                "park" => "\ueb2f",
-                "play" => "\uea44",
-                "theatre" => "\ue03d",
-                "attraction" => "\ue56b",
-                _ => "\ue55f"
-            };
-        }
-
-        private static string FormatDistance(double meters)
-        {
-            if (meters < 1000)
-            {
-                return $"{Math.Round(meters)}m";
-            }
-
-            return $"{meters / 1000:0.0}km";
-        }
-
         private static double ParseDistanceToMeters(string value)
         {
             if (value.EndsWith("km", StringComparison.OrdinalIgnoreCase)
