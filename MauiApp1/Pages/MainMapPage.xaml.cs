@@ -1,101 +1,120 @@
-using MauiApp1.Models;
-using MauiApp1.Services;
 using Mapsui;
 using Mapsui.Extensions;
 using Mapsui.Features;
 using Mapsui.Layers;
 using Mapsui.Projections;
-using Mapsui.Tiling;
+using Mapsui.Styles;
+using MauiApp1.Models;
+using MauiApp1.Services;
+using Microsoft.Extensions.DependencyInjection;
 using MapsuiStyleBrush = Mapsui.Styles.Brush;
 using MapsuiStyleColor = Mapsui.Styles.Color;
 using MapsuiStylePen = Mapsui.Styles.Pen;
-using MapsuiSymbolStyle = Mapsui.Styles.SymbolStyle;
-using MapsuiSymbolType = Mapsui.Styles.SymbolType;
+using MauiColor = Microsoft.Maui.Graphics.Color;
 
-namespace MauiApp1.Pages
+namespace MauiApp1.Pages;
+
+public partial class MainMapPage : ContentPage
 {
-    public partial class MainMapPage : ContentPage
+    private const string LanguagePreferenceKey = "app_language";
+    private const string LanguageSelectedKey = "app_language_selected";
+    private const double DefaultLatitude = 10.8231;
+    private const double DefaultLongitude = 106.6297;
+    private static readonly TimeSpan PoiRefreshInterval = TimeSpan.FromMinutes(2);
+    private static readonly TimeSpan AutoTriggerCooldown = TimeSpan.FromMinutes(5);
+
+    private readonly LocationService _locationService;
+    private readonly PoiRepository _poiRepository;
+    private readonly NarrationService _narrationService;
+    private readonly List<PointOfInterest> _allPois = [];
+    private readonly Dictionary<string, DateTimeOffset> _lastPlaybackByPoiId = [];
+    private readonly List<(string Key, string Label)> _categoryFilters =
+    [
+        ("all", "Tat ca"),
+        ("food", "Quan an"),
+        ("cafe", "Cafe"),
+        ("park", "Cong vien"),
+        ("play", "Khu vui choi"),
+        ("theatre", "Nha hat"),
+        ("attraction", "Tham quan")
+    ];
+
+    private readonly IDispatcherTimer _locationTimer;
+    private MemoryLayer? _userLocationLayer;
+    private MemoryLayer? _poiLayer;
+    private Location? _currentLocation;
+    private PointOfInterest? _nearestPoi;
+    private bool _isInitialized;
+    private bool _isLoadingPois;
+    private bool _isMapFullScreen;
+    private bool _isNarrationRunning;
+    private DateTimeOffset _lastPoiRefreshUtc = DateTimeOffset.MinValue;
+    private string _selectedCategoryKey = "all";
+    private string _searchKeyword = string.Empty;
+
+    public MainMapPage()
     {
-        private const string LanguagePreferenceKey = "app_language";
-        private const string LanguageSelectedKey = "app_language_selected";
-        private readonly LocationService _locationService;
-        private readonly PostgresPoiService _postgresPoiService;
-        private readonly List<PointOfInterest> _nearbyPois = new();
-        private readonly List<(string Key, string Label)> _categoryFilters =
-        [
-            ("all", "Tat ca"),
-            ("food", "Quan an"),
-            ("cafe", "Cafe"),
-            ("park", "Cong vien"),
-            ("play", "Khu vui choi"),
-            ("theatre", "Nha hat"),
-            ("attraction", "Tham quan")
-        ];
-        private MemoryLayer? _userLocationLayer;
-        private Location? _currentLocation;
-        private bool _isInitialized;
-        private bool _isLoadingNearby;
-        private bool _isMapFullScreen;
-        private DateTime _lastNearbyLoadUtc = DateTime.MinValue;
-        private string _selectedCategoryKey = "all";
-        private string _searchKeyword = string.Empty;
+        InitializeComponent();
 
-        private const double DefaultLatitude = 10.8231;
-        private const double DefaultLongitude = 106.6297;
+        var services = Application.Current?.Handler?.MauiContext?.Services
+            ?? throw new InvalidOperationException("Service provider is not available.");
 
-        public MainMapPage(LocationService locationService, PostgresPoiService postgresPoiService)
+        _locationService = services.GetRequiredService<LocationService>();
+        _poiRepository = services.GetRequiredService<PoiRepository>();
+        _narrationService = services.GetRequiredService<NarrationService>();
+
+        _locationTimer = Dispatcher.CreateTimer();
+        _locationTimer.Interval = TimeSpan.FromSeconds(20);
+        _locationTimer.Tick += async (_, _) => await PollLocationAsync();
+
+        InitializeMap();
+        BuildCategoryChips();
+    }
+
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+
+        if (!_isInitialized)
         {
-            InitializeComponent();
-            _locationService = locationService;
-            _postgresPoiService = postgresPoiService;
-            InitializeMap();
-            BuildCategoryChips();
-        }
-
-        protected override async void OnAppearing()
-        {
-            base.OnAppearing();
-
-            if (_isInitialized)
-            {
-                return;
-            }
-
             _isInitialized = true;
-            await TryGetLocationAndCenterMapAsync(requestIfMissing: false);
-            await LoadNearbyPoiAsync(force: true);
+            await InitializeAsync();
         }
 
-        private void InitializeMap()
+        if (!_locationTimer.IsRunning)
         {
-            var map = MapControl.Map;
-            map.Layers.Add(Mapsui.Tiling.OpenStreetMap.CreateTileLayer());
-            _userLocationLayer = new MemoryLayer
+            _locationTimer.Start();
+        }
+    }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+
+        if (_locationTimer.IsRunning)
+        {
+            _locationTimer.Stop();
+        }
+    }
+
+    private async Task InitializeAsync()
+    {
+        await RefreshCurrentLocationAsync(requestIfMissing: false, recenterMap: true);
+        await LoadPoisAsync(force: true);
+        await EvaluateAutoTriggerAsync();
+    }
+
+    private void InitializeMap()
+    {
+        var map = MapControl.Map;
+        map.Layers.Add(Mapsui.Tiling.OpenStreetMap.CreateTileLayer());
+
+        _userLocationLayer = new MemoryLayer
+        {
+            Name = "UserLocationLayer",
+            Style = new SymbolStyle
             {
-                Name = "UserLocationLayer",
-                Style = BuildUserLocationStyle()
-            };
-            map.Layers.Add(_userLocationLayer);
-
-            var sphericalMercatorCoordinate = SphericalMercator.FromLonLat(
-                DefaultLongitude, DefaultLatitude);
-            map.Navigator.CenterOnAndZoomTo(
-                sphericalMercatorCoordinate.ToMPoint(), map.Navigator.Resolutions[15]);
-        }
-
-        private void CenterMapOnLocation(double latitude, double longitude)
-        {
-            var sphericalMercatorCoordinate = SphericalMercator.FromLonLat(longitude, latitude);
-            MapControl.Map.Navigator.CenterOnAndZoomTo(
-                sphericalMercatorCoordinate.ToMPoint(),
-                MapControl.Map.Navigator.Resolutions[16]);
-        }
-
-        private static MapsuiSymbolStyle BuildUserLocationStyle()
-        {
-            return new MapsuiSymbolStyle
-            {
-                SymbolType = MapsuiSymbolType.Ellipse,
+                SymbolType = SymbolType.Ellipse,
                 Fill = new MapsuiStyleBrush(MapsuiStyleColor.Blue),
                 Outline = new MapsuiStylePen
                 {
@@ -103,464 +122,647 @@ namespace MauiApp1.Pages
                     Width = 3
                 },
                 SymbolScale = 0.8
+            }
+        };
+
+        _poiLayer = new MemoryLayer
+        {
+            Name = "PoiLayer"
+        };
+
+        map.Layers.Add(_poiLayer);
+        map.Layers.Add(_userLocationLayer);
+
+        var defaultCoordinate = SphericalMercator.FromLonLat(DefaultLongitude, DefaultLatitude);
+        map.Navigator.CenterOnAndZoomTo(defaultCoordinate.ToMPoint(), map.Navigator.Resolutions[15]);
+    }
+
+    private async Task RefreshCurrentLocationAsync(bool requestIfMissing, bool recenterMap)
+    {
+        try
+        {
+            var permission = await _locationService.CheckLocationPermissionAsync();
+            if (permission != PermissionStatus.Granted && requestIfMissing)
+            {
+                permission = await _locationService.RequestLocationPermissionAsync();
+            }
+
+            if (permission != PermissionStatus.Granted)
+            {
+                UpdateNearestPoiStatus();
+                return;
+            }
+
+            _currentLocation = await _locationService.GetCurrentLocationAsync()
+                ?? await _locationService.GetLastKnownLocationAsync();
+
+            if (_currentLocation == null)
+            {
+                UpdateNearestPoiStatus();
+                return;
+            }
+
+            UpdateUserLocationMarker(_currentLocation.Latitude, _currentLocation.Longitude);
+            if (recenterMap)
+            {
+                CenterMapOnLocation(_currentLocation.Latitude, _currentLocation.Longitude);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Location error: {ex.Message}");
+        }
+    }
+
+    private void CenterMapOnLocation(double latitude, double longitude)
+    {
+        var coordinate = SphericalMercator.FromLonLat(longitude, latitude);
+        MapControl.Map.Navigator.CenterOnAndZoomTo(
+            coordinate.ToMPoint(),
+            MapControl.Map.Navigator.Resolutions[16]);
+    }
+
+    private void UpdateUserLocationMarker(double latitude, double longitude)
+    {
+        if (_userLocationLayer == null)
+        {
+            return;
+        }
+
+        var projected = SphericalMercator.FromLonLat(longitude, latitude).ToMPoint();
+        _userLocationLayer.Features = [new PointFeature(projected)];
+        _userLocationLayer.DataHasChanged();
+    }
+
+    private async Task LoadPoisAsync(bool force = false)
+    {
+        if (_isLoadingPois)
+        {
+            return;
+        }
+
+        if (!force && _allPois.Count > 0 && DateTimeOffset.UtcNow - _lastPoiRefreshUtc < PoiRefreshInterval)
+        {
+            RecalculatePoiDistances();
+            ApplyFilters();
+            return;
+        }
+
+        _isLoadingPois = true;
+        NearbyLoadingIndicator.IsVisible = true;
+        NearbyLoadingIndicator.IsRunning = true;
+        NearbyStatusLabel.IsVisible = false;
+
+        try
+        {
+            var result = await _poiRepository.GetPoisAsync();
+            _allPois.Clear();
+            _allPois.AddRange(result.Pois.Where(static poi => poi.IsActive));
+            _lastPoiRefreshUtc = DateTimeOffset.UtcNow;
+            DataSourceLabel.Text = result.DataSource switch
+            {
+                PoiDataSource.Api => "Nguồn: API",
+                PoiDataSource.Cache => "Nguồn: cache",
+                _ => "Nguồn: fallback"
             };
+
+            RecalculatePoiDistances();
+            ApplyFilters();
         }
-
-        private void UpdateUserLocationMarker(double latitude, double longitude)
+        catch (Exception ex)
         {
-            if (_userLocationLayer == null)
-            {
-                return;
-            }
-
-            var projected = SphericalMercator.FromLonLat(longitude, latitude).ToMPoint();
-            var feature = new PointFeature(projected);
-            _userLocationLayer.Features = new[] { feature };
-            _userLocationLayer.DataHasChanged();
-        }
-
-        private async Task TryGetLocationAndCenterMapAsync(bool requestIfMissing)
-        {
-            try
-            {
-                var permission = await _locationService.CheckLocationPermissionAsync();
-                if (permission != PermissionStatus.Granted && requestIfMissing)
-                {
-                    permission = await _locationService.RequestLocationPermissionAsync();
-                }
-
-                if (permission != PermissionStatus.Granted)
-                {
-                    return;
-                }
-
-                _currentLocation = await _locationService.GetCurrentLocationAsync();
-                if (_currentLocation != null)
-                {
-                    CenterMapOnLocation(_currentLocation.Latitude, _currentLocation.Longitude);
-                    UpdateUserLocationMarker(_currentLocation.Latitude, _currentLocation.Longitude);
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Location error: {ex.Message}");
-            }
-        }
-
-        private async Task LoadNearbyPoiAsync(bool force = false)
-        {
-            if (_isLoadingNearby)
-            {
-                return;
-            }
-
-            if (!force && _nearbyPois.Count > 0 && DateTime.UtcNow - _lastNearbyLoadUtc < TimeSpan.FromSeconds(8))
-            {
-                return;
-            }
-
-            _isLoadingNearby = true;
-            NearbyLoadingIndicator.IsVisible = true;
-            NearbyLoadingIndicator.IsRunning = true;
-            NearbyStatusLabel.IsVisible = false;
-
-            try
-            {
-                var centerLat = _currentLocation?.Latitude ?? DefaultLatitude;
-                var centerLon = _currentLocation?.Longitude ?? DefaultLongitude;
-                var nearby = await _postgresPoiService.GetNearbyRegisteredPoisAsync(centerLat, centerLon, maxItems: 8);
-
-                _nearbyPois.Clear();
-                _nearbyPois.AddRange(nearby);
-                ApplyFilters();
-                _lastNearbyLoadUtc = DateTime.UtcNow;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"PostgreSQL load error: {ex.Message}");
-                NearbyStatusLabel.IsVisible = true;
-                NearbyStatusLabel.Text = "Khong tai duoc du lieu dia diem. Vui long thu lai.";
-                DiscoveryList.Children.Clear();
-            }
-            finally
-            {
-                _isLoadingNearby = false;
-                NearbyLoadingIndicator.IsRunning = false;
-                NearbyLoadingIndicator.IsVisible = false;
-            }
-        }
-
-        private void BindNearbyCards(IEnumerable<PointOfInterest> pois)
-        {
+            System.Diagnostics.Debug.WriteLine($"POI load error: {ex.Message}");
+            NearbyStatusLabel.IsVisible = true;
+            NearbyStatusLabel.Text = "Khong tai duoc danh sach POI.";
             DiscoveryList.Children.Clear();
-            foreach (var poi in pois)
+            UpdatePoiMarkers([]);
+        }
+        finally
+        {
+            NearbyLoadingIndicator.IsRunning = false;
+            NearbyLoadingIndicator.IsVisible = false;
+            _isLoadingPois = false;
+        }
+    }
+
+    private void RecalculatePoiDistances()
+    {
+        if (_currentLocation == null)
+        {
+            foreach (var poi in _allPois)
             {
-                DiscoveryList.Children.Add(CreateDiscoveryCard(poi));
+                poi.DistanceMeters = double.MaxValue;
+            }
+        }
+        else
+        {
+            foreach (var poi in _allPois)
+            {
+                poi.UpdateDistanceFrom(_currentLocation);
             }
         }
 
-        private View CreateDiscoveryCard(PointOfInterest poi)
+        _allPois.Sort(static (left, right) =>
         {
-            var card = new Border
-            {
-                BackgroundColor = Color.FromArgb("#FFFFFF"),
-                Padding = new Thickness(16),
-                StrokeThickness = 0,
-                StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = new CornerRadius(24) }
-            };
+            var distanceComparison = left.DistanceMeters.CompareTo(right.DistanceMeters);
+            return distanceComparison != 0
+                ? distanceComparison
+                : right.Priority.CompareTo(left.Priority);
+        });
 
-            var cardGrid = new Grid
-            {
-                ColumnDefinitions =
-                {
-                    new ColumnDefinition(new GridLength(64)),
-                    new ColumnDefinition(GridLength.Star)
-                },
-                ColumnSpacing = 12
-            };
+        _nearestPoi = _allPois.FirstOrDefault();
+        UpdateNearestPoiStatus();
+    }
 
-            var icon = new Border
-            {
-                WidthRequest = 64,
-                HeightRequest = 64,
-                BackgroundColor = Color.FromArgb("#EAF1FF"),
-                StrokeThickness = 0,
-                StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = new CornerRadius(14) },
-                Content = new Label
-                {
-                    Text = poi.IconGlyph,
-                    FontFamily = "MaterialIcons",
-                    FontSize = 28,
-                    TextColor = Color.FromArgb("#0058BC"),
-                    HorizontalOptions = LayoutOptions.Center,
-                    VerticalOptions = LayoutOptions.Center
-                }
-            };
-            cardGrid.SetColumn(icon, 0);
-            cardGrid.Children.Add(icon);
-
-            var infoStack = new VerticalStackLayout { Spacing = 5, VerticalOptions = LayoutOptions.Center };
-
-            infoStack.Children.Add(new Label
-            {
-                Text = poi.Name,
-                FontSize = 16,
-                FontAttributes = FontAttributes.Bold,
-                TextColor = Color.FromArgb("#1A1B1F"),
-                LineBreakMode = LineBreakMode.TailTruncation
-            });
-
-            infoStack.Children.Add(new Label
-            {
-                Text = poi.Category,
-                FontSize = 12,
-                TextColor = Color.FromArgb("#414755")
-            });
-
-            var detail = new HorizontalStackLayout { Spacing = 8 };
-            detail.Children.Add(new Label
-            {
-                Text = $"cach {poi.Distance}",
-                FontSize = 12,
-                FontAttributes = FontAttributes.Bold,
-                TextColor = Color.FromArgb("#414755")
-            });
-
-            if (!string.IsNullOrWhiteSpace(poi.Description))
-            {
-                detail.Children.Add(new Label
-                {
-                    Text = poi.Description,
-                    FontSize = 11,
-                    TextColor = Color.FromArgb("#6A6F7D"),
-                    LineBreakMode = LineBreakMode.TailTruncation,
-                    MaxLines = 1,
-                    VerticalOptions = LayoutOptions.Center
-                });
-            }
-
-            infoStack.Children.Add(detail);
-
-            cardGrid.SetColumn(infoStack, 1);
-            cardGrid.Children.Add(infoStack);
-
-            card.Content = cardGrid;
-            return card;
+    private void UpdateNearestPoiStatus()
+    {
+        if (_currentLocation == null)
+        {
+            NearestPoiLabel.Text = "Chua co vi tri hien tai. Cap quyen de tim POI gan nhat.";
+            return;
         }
 
-        private async Task FilterNearbyPoiAsync(string keyword)
+        if (_nearestPoi == null || _nearestPoi.DistanceMeters == double.MaxValue)
         {
-            _searchKeyword = keyword.Trim();
-            ApplyFilters();
-            await Task.CompletedTask;
+            NearestPoiLabel.Text = "Chua co POI gan ban.";
+            return;
         }
 
-        private void BuildCategoryChips()
+        NearestPoiLabel.Text = $"Gan nhat: {_nearestPoi.Name} ({_nearestPoi.DistanceDisplay})";
+    }
+
+    private void BindNearbyCards(IEnumerable<PointOfInterest> pois)
+    {
+        DiscoveryList.Children.Clear();
+        foreach (var poi in pois)
         {
-            CategoryChipContainer.Children.Clear();
-
-            foreach (var filter in _categoryFilters)
-            {
-                var chip = CreateCategoryChip(filter.Key, filter.Label);
-                CategoryChipContainer.Children.Add(chip);
-            }
-
-            RefreshCategoryChipStyles();
+            DiscoveryList.Children.Add(CreateDiscoveryCard(poi));
         }
+    }
 
-        private Border CreateCategoryChip(string categoryKey, string label)
+    private View CreateDiscoveryCard(PointOfInterest poi)
+    {
+        var card = new Border
         {
-            var chipLabel = new Label
+            BackgroundColor = MauiColor.FromArgb("#FFFFFF"),
+            Padding = new Thickness(16),
+            StrokeThickness = 0,
+            StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = new CornerRadius(24) }
+        };
+
+        var cardGrid = new Grid
+        {
+            ColumnDefinitions =
             {
-                Text = label,
-                FontSize = 12,
-                FontAttributes = FontAttributes.Bold,
+                new ColumnDefinition(new GridLength(64)),
+                new ColumnDefinition(GridLength.Star),
+                new ColumnDefinition(GridLength.Auto)
+            },
+            ColumnSpacing = 12
+        };
+
+        var icon = new Border
+        {
+            WidthRequest = 64,
+            HeightRequest = 64,
+                BackgroundColor = MauiColor.FromArgb("#EAF1FF"),
+            StrokeThickness = 0,
+            StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = new CornerRadius(14) },
+            Content = new Label
+            {
+                Text = poi.IconGlyph,
+                FontFamily = "MaterialIcons",
+                FontSize = 28,
+                    TextColor = MauiColor.FromArgb("#0058BC"),
+                HorizontalOptions = LayoutOptions.Center,
                 VerticalOptions = LayoutOptions.Center
-            };
+            }
+        };
+        cardGrid.SetColumn(icon, 0);
+        cardGrid.Children.Add(icon);
 
-            var chip = new Border
-            {
-                StrokeThickness = 0,
-                Padding = new Thickness(14, 8),
-                BindingContext = categoryKey,
-                StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = new CornerRadius(10) },
-                Content = chipLabel
-            };
+        var infoStack = new VerticalStackLayout { Spacing = 5, VerticalOptions = LayoutOptions.Center };
+        var titleText = _nearestPoi?.Id == poi.Id ? $"{poi.Name} • Gan nhat" : poi.Name;
 
-            chip.GestureRecognizers.Add(new TapGestureRecognizer
+        infoStack.Children.Add(new Label
+        {
+            Text = titleText,
+            FontSize = 16,
+            FontAttributes = FontAttributes.Bold,
+                TextColor = MauiColor.FromArgb("#1A1B1F"),
+            LineBreakMode = LineBreakMode.TailTruncation
+        });
+
+        infoStack.Children.Add(new Label
+        {
+            Text = poi.CategoryLabel,
+            FontSize = 12,
+            TextColor = MauiColor.FromArgb("#414755")
+        });
+
+        infoStack.Children.Add(new Label
+        {
+            Text = $"Cach {poi.DistanceDisplay} • Ban kinh {Math.Round(poi.TriggerRadiusMeters)}m",
+            FontSize = 12,
+            FontAttributes = FontAttributes.Bold,
+            TextColor = MauiColor.FromArgb("#414755")
+        });
+
+        if (!string.IsNullOrWhiteSpace(poi.Description))
+        {
+            infoStack.Children.Add(new Label
             {
-                Command = new Command(async () => await OnCategoryChipTappedAsync(categoryKey))
+                Text = poi.Description,
+                FontSize = 11,
+                TextColor = MauiColor.FromArgb("#6A6F7D"),
+                LineBreakMode = LineBreakMode.TailTruncation,
+                MaxLines = 2
             });
-
-            return chip;
         }
 
-        private async Task OnCategoryChipTappedAsync(string categoryKey)
+        cardGrid.SetColumn(infoStack, 1);
+        cardGrid.Children.Add(infoStack);
+
+        var playButton = new Button
         {
-            _selectedCategoryKey = categoryKey;
-            RefreshCategoryChipStyles();
-            ApplyFilters();
-            await Task.CompletedTask;
+            Text = "Phat",
+            FontSize = 13,
+            Padding = new Thickness(14, 8),
+            CornerRadius = 18,
+            BackgroundColor = MauiColor.FromArgb("#0058BC"),
+            TextColor = Colors.White,
+            VerticalOptions = LayoutOptions.Center
+        };
+        playButton.Clicked += async (_, _) => await PlayNarrationAsync(poi, "manual", userInitiated: true);
+
+        cardGrid.SetColumn(playButton, 2);
+        cardGrid.Children.Add(playButton);
+
+        card.Content = cardGrid;
+        return card;
+    }
+
+    private void BuildCategoryChips()
+    {
+        CategoryChipContainer.Children.Clear();
+
+        foreach (var filter in _categoryFilters)
+        {
+            var chip = CreateCategoryChip(filter.Key, filter.Label);
+            CategoryChipContainer.Children.Add(chip);
         }
 
-        private void RefreshCategoryChipStyles()
+        RefreshCategoryChipStyles();
+    }
+
+    private Border CreateCategoryChip(string categoryKey, string label)
+    {
+        var chipLabel = new Label
         {
-            foreach (var child in CategoryChipContainer.Children)
+            Text = label,
+            FontSize = 12,
+            FontAttributes = FontAttributes.Bold,
+            VerticalOptions = LayoutOptions.Center
+        };
+
+        var chip = new Border
+        {
+            StrokeThickness = 0,
+            Padding = new Thickness(14, 8),
+            BindingContext = categoryKey,
+            StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = new CornerRadius(10) },
+            Content = chipLabel
+        };
+
+        chip.GestureRecognizers.Add(new TapGestureRecognizer
+        {
+            Command = new Command(() => OnCategoryChipTapped(categoryKey))
+        });
+
+        return chip;
+    }
+
+    private void OnCategoryChipTapped(string categoryKey)
+    {
+        _selectedCategoryKey = categoryKey;
+        RefreshCategoryChipStyles();
+        ApplyFilters();
+    }
+
+    private void RefreshCategoryChipStyles()
+    {
+        foreach (var child in CategoryChipContainer.Children)
+        {
+            if (child is not Border chip || chip.Content is not Label label || chip.BindingContext is not string key)
             {
-                if (child is not Border chip || chip.Content is not Label label || chip.BindingContext is not string key)
+                continue;
+            }
+
+            var isActive = key == _selectedCategoryKey;
+            chip.BackgroundColor = isActive ? MauiColor.FromArgb("#0058BC") : MauiColor.FromArgb("#E9E7ED");
+            label.TextColor = isActive ? Colors.White : MauiColor.FromArgb("#414755");
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        IEnumerable<PointOfInterest> query = _allPois;
+
+        if (_selectedCategoryKey != "all")
+        {
+            query = query.Where(p => p.CategoryKey == _selectedCategoryKey);
+        }
+
+        if (!string.IsNullOrWhiteSpace(_searchKeyword))
+        {
+            query = query.Where(p =>
+                p.Name.Contains(_searchKeyword, StringComparison.OrdinalIgnoreCase)
+                || p.CategoryLabel.Contains(_searchKeyword, StringComparison.OrdinalIgnoreCase)
+                || p.Description.Contains(_searchKeyword, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var filtered = query
+            .OrderBy(p => p.DistanceMeters)
+            .ThenByDescending(p => p.Priority)
+            .ToList();
+
+        BindNearbyCards(filtered);
+        UpdatePoiMarkers(filtered);
+
+        NearbyStatusLabel.IsVisible = filtered.Count == 0;
+        NearbyStatusLabel.Text = filtered.Count == 0
+            ? "Khong tim thay POI phu hop."
+            : string.Empty;
+    }
+
+    private void UpdatePoiMarkers(IEnumerable<PointOfInterest> pois)
+    {
+        if (_poiLayer == null)
+        {
+            return;
+        }
+
+        var features = new List<IFeature>();
+        foreach (var poi in pois)
+        {
+            var point = SphericalMercator.FromLonLat(poi.Longitude, poi.Latitude).ToMPoint();
+            var feature = new PointFeature(point);
+            feature.Styles.Add(new SymbolStyle
+            {
+                SymbolType = SymbolType.Ellipse,
+                Fill = new MapsuiStyleBrush(_nearestPoi?.Id == poi.Id ? MapsuiStyleColor.Orange : MapsuiStyleColor.Red),
+                Outline = new MapsuiStylePen
                 {
-                    continue;
-                }
-
-                var isActive = key == _selectedCategoryKey;
-                chip.BackgroundColor = isActive ? Color.FromArgb("#0058BC") : Color.FromArgb("#E9E7ED");
-                label.TextColor = isActive ? Colors.White : Color.FromArgb("#414755");
-            }
+                    Color = MapsuiStyleColor.White,
+                    Width = 2
+                },
+                SymbolScale = _nearestPoi?.Id == poi.Id ? 0.9 : 0.7
+            });
+            features.Add(feature);
         }
 
-        private void ApplyFilters()
+        _poiLayer.Features = features;
+        _poiLayer.DataHasChanged();
+    }
+
+    private async Task PlayNarrationAsync(PointOfInterest poi, string triggerType, bool userInitiated)
+    {
+        if (_isNarrationRunning)
         {
-            if (_nearbyPois.Count == 0)
-            {
-                DiscoveryList.Children.Clear();
-                NearbyStatusLabel.IsVisible = true;
-                NearbyStatusLabel.Text = "Khong tim thay dia diem phu hop trong ban kinh 1.5km.";
-                return;
-            }
-
-            IEnumerable<PointOfInterest> query = _nearbyPois;
-
-            if (_selectedCategoryKey != "all")
-            {
-                query = query.Where(p => p.CategoryKey == _selectedCategoryKey);
-            }
-
-            if (!string.IsNullOrWhiteSpace(_searchKeyword))
-            {
-                query = query.Where(p =>
-                    p.Name.Contains(_searchKeyword, StringComparison.OrdinalIgnoreCase)
-                    || p.Category.Contains(_searchKeyword, StringComparison.OrdinalIgnoreCase)
-                    || p.Description.Contains(_searchKeyword, StringComparison.OrdinalIgnoreCase));
-            }
-
-            var filtered = query.ToList();
-
-            if (filtered.Count == 0 && _selectedCategoryKey != "all")
-            {
-                _selectedCategoryKey = "all";
-                RefreshCategoryChipStyles();
-                ApplyFilters();
-                NearbyStatusLabel.IsVisible = true;
-                NearbyStatusLabel.Text = "Khong co ket qua theo tag da chon. Dang hien Tat ca.";
-                return;
-            }
-
-            BindNearbyCards(filtered);
-            NearbyStatusLabel.IsVisible = filtered.Count == 0;
-            NearbyStatusLabel.Text = filtered.Count == 0
-                ? "Khong tim thay ket qua phu hop."
-                : string.Empty;
+            return;
         }
 
-        private async void OnSearchToggleTapped(object? sender, EventArgs e)
+        _isNarrationRunning = true;
+        NearbyStatusLabel.IsVisible = true;
+        NearbyStatusLabel.Text = userInitiated
+            ? $"Dang phat thuyet minh: {poi.Name}"
+            : $"Tu dong phat theo vi tri: {poi.Name}";
+
+        try
         {
-            SearchOverlay.IsVisible = !SearchOverlay.IsVisible;
-            if (SearchOverlay.IsVisible)
-            {
-                await SearchOverlay.FadeToAsync(1, 120);
-                SearchEntry.Focus();
-            }
-            else
-            {
-                SearchEntry.Text = string.Empty;
-                NearbyStatusLabel.IsVisible = false;
-                BindNearbyCards(_nearbyPois);
-            }
+            await _narrationService.PlayAsync(poi, triggerType);
+            _lastPlaybackByPoiId[poi.Id] = DateTimeOffset.UtcNow;
+            NearbyStatusLabel.Text = $"Da phat xong: {poi.Name}";
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Narration error: {ex.Message}");
+            NearbyStatusLabel.Text = "Khong the phat thuyet minh luc nay.";
+        }
+        finally
+        {
+            _isNarrationRunning = false;
+        }
+    }
+
+    private async Task EvaluateAutoTriggerAsync()
+    {
+        if (_currentLocation == null || _isNarrationRunning)
+        {
+            return;
         }
 
-        private void OnSearchCloseTapped(object? sender, EventArgs e)
+        var candidate = _allPois
+            .Where(poi => poi.DistanceMeters <= poi.TriggerRadiusMeters)
+            .OrderBy(poi => poi.DistanceMeters)
+            .ThenByDescending(poi => poi.Priority)
+            .FirstOrDefault();
+
+        if (candidate == null)
         {
-            SearchOverlay.IsVisible = false;
+            return;
+        }
+
+        if (_lastPlaybackByPoiId.TryGetValue(candidate.Id, out var lastPlayedAt)
+            && DateTimeOffset.UtcNow - lastPlayedAt < AutoTriggerCooldown)
+        {
+            return;
+        }
+
+        await PlayNarrationAsync(candidate, "gps", userInitiated: false);
+    }
+
+    private async Task PollLocationAsync()
+    {
+        await RefreshCurrentLocationAsync(requestIfMissing: false, recenterMap: false);
+        RecalculatePoiDistances();
+        ApplyFilters();
+
+        if (DateTimeOffset.UtcNow - _lastPoiRefreshUtc >= PoiRefreshInterval)
+        {
+            await LoadPoisAsync(force: true);
+        }
+
+        await EvaluateAutoTriggerAsync();
+    }
+
+    private async Task FilterNearbyPoiAsync(string keyword)
+    {
+        _searchKeyword = keyword.Trim();
+        ApplyFilters();
+        await Task.CompletedTask;
+    }
+
+    private async void OnSearchToggleTapped(object? sender, EventArgs e)
+    {
+        SearchOverlay.IsVisible = !SearchOverlay.IsVisible;
+        if (SearchOverlay.IsVisible)
+        {
+            await SearchOverlay.FadeToAsync(1, 120);
+            SearchEntry.Focus();
+        }
+        else
+        {
             SearchEntry.Text = string.Empty;
             NearbyStatusLabel.IsVisible = false;
-            BindNearbyCards(_nearbyPois);
+            ApplyFilters();
+        }
+    }
+
+    private void OnSearchCloseTapped(object? sender, EventArgs e)
+    {
+        SearchOverlay.IsVisible = false;
+        SearchEntry.Text = string.Empty;
+        NearbyStatusLabel.IsVisible = false;
+        ApplyFilters();
+    }
+
+    private async void OnSearchTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        await FilterNearbyPoiAsync(e.NewTextValue ?? string.Empty);
+    }
+
+    private async void OnSearchCompleted(object? sender, EventArgs e)
+    {
+        await FilterNearbyPoiAsync(SearchEntry.Text ?? string.Empty);
+    }
+
+    private async void OnSettingsTapped(object? sender, EventArgs e)
+    {
+        var action = await DisplayActionSheetAsync("Cai dat", "Dong", null, "Ngon ngu", "Vi tri");
+
+        if (action == "Ngon ngu")
+        {
+            await ChangeLanguageAsync();
+            return;
         }
 
-        private async void OnSearchTextChanged(object? sender, TextChangedEventArgs e)
+        if (action == "Vi tri")
         {
-            await FilterNearbyPoiAsync(e.NewTextValue ?? string.Empty);
+            await HandleLocationSettingsAsync();
+        }
+    }
+
+    private async Task ChangeLanguageAsync()
+    {
+        var choice = await DisplayActionSheetAsync("Chọn ngôn ngữ", "Hủy", null, "Tiếng Việt", "Tiếng Anh (Mỹ)");
+        if (choice == "Hủy" || string.IsNullOrWhiteSpace(choice))
+        {
+            return;
         }
 
-        private async void OnSearchCompleted(object? sender, EventArgs e)
+        var selectedCode = choice == "Tiếng Việt" ? "vi-VN" : "en-US";
+        Preferences.Default.Set(LanguagePreferenceKey, selectedCode);
+        Preferences.Default.Set(LanguageSelectedKey, true);
+
+        await DisplayAlertAsync("Ngôn ngữ", "Đã cập nhật ngôn ngữ. Mở lại màn hình khởi động để áp dụng toàn bộ giao diện.", "OK");
+    }
+
+    private async Task HandleLocationSettingsAsync()
+    {
+        var status = await _locationService.CheckLocationPermissionAsync();
+        if (status != PermissionStatus.Granted)
         {
-            await FilterNearbyPoiAsync(SearchEntry.Text ?? string.Empty);
-        }
-
-        private async void OnSettingsTapped(object? sender, EventArgs e)
-        {
-            var action = await DisplayActionSheetAsync("Cai dat", "Dong", null, "Ngon ngu", "Vi tri");
-
-            if (action == "Ngon ngu")
-            {
-                await ChangeLanguageAsync();
-                return;
-            }
-
-            if (action == "Vi tri")
-            {
-                await HandleLocationSettingsAsync();
-            }
-        }
-
-        private async Task ChangeLanguageAsync()
-        {
-            var choice = await DisplayActionSheetAsync("Chọn ngôn ngữ", "Hủy", null, "Tiếng Việt", "Tiếng Anh (Mỹ)");
-            if (choice == "Hủy" || string.IsNullOrWhiteSpace(choice))
-            {
-                return;
-            }
-
-            var selectedCode = choice == "Tiếng Việt" ? "vi-VN" : "en-US";
-            Preferences.Default.Set(LanguagePreferenceKey, selectedCode);
-            Preferences.Default.Set(LanguageSelectedKey, true);
-
-            await DisplayAlertAsync("Ngôn ngữ", "Đã cập nhật ngôn ngữ. Mở lại màn hình khởi động để áp dụng toàn bộ giao diện.", "OK");
-        }
-
-        private async Task HandleLocationSettingsAsync()
-        {
-            var status = await _locationService.CheckLocationPermissionAsync();
-            if (status != PermissionStatus.Granted)
-            {
-                var grant = await DisplayAlertAsync(
-                    "Quyen vi tri",
-                    "Ung dung can quyen vi tri de tim POI gan ban va phat audio theo ngu canh.",
-                    "Cap quyen",
-                    "Huy");
-
-                if (!grant)
-                {
-                    return;
-                }
-
-                status = await _locationService.RequestLocationPermissionAsync();
-            }
-
-            if (status == PermissionStatus.Granted)
-            {
-                await TryGetLocationAndCenterMapAsync(requestIfMissing: false);
-                await LoadNearbyPoiAsync(force: true);
-                return;
-            }
-
-            var openSettings = await DisplayAlertAsync(
+            var grant = await DisplayAlertAsync(
                 "Quyen vi tri",
-                "Ban da tu choi quyen vi tri. Hay mo cai dat he thong de cap quyen.",
-                "Mo cai dat",
-                "De sau");
+                "Ung dung can quyen vi tri de tim POI gan ban va phat audio theo ngu canh.",
+                "Cap quyen",
+                "Huy");
 
-            if (openSettings)
-            {
-                AppInfo.ShowSettingsUI();
-            }
-        }
-
-        private async void OnRecenterTapped(object? sender, EventArgs e)
-        {
-            if (FabRecenter != null)
-            {
-                await FabRecenter.ScaleToAsync(0.9, 100);
-                await FabRecenter.ScaleToAsync(1.0, 100, Easing.SpringOut);
-            }
-
-            await TryGetLocationAndCenterMapAsync(requestIfMissing: true);
-            await LoadNearbyPoiAsync(force: true);
-        }
-
-        private void OnExpandMapTapped(object? sender, EventArgs e)
-        {
-            EnterMapFullScreen();
-        }
-
-        private void OnExitFullscreenTapped(object? sender, EventArgs e)
-        {
-            ExitMapFullScreen();
-        }
-
-        private void EnterMapFullScreen()
-        {
-            if (_isMapFullScreen)
+            if (!grant)
             {
                 return;
             }
 
-            CompactMapHost.Content = null;
-            FullScreenMapHost.Content = MapControl;
-
-            HeaderBar.IsVisible = false;
-            MainContentGrid.IsVisible = false;
-            BottomNavBar.IsVisible = false;
-            FullScreenOverlay.IsVisible = true;
-
-            _isMapFullScreen = true;
+            status = await _locationService.RequestLocationPermissionAsync();
         }
 
-        private void ExitMapFullScreen()
+        if (status == PermissionStatus.Granted)
         {
-            if (!_isMapFullScreen)
-            {
-                return;
-            }
-
-            FullScreenMapHost.Content = null;
-            CompactMapHost.Content = MapControl;
-
-            HeaderBar.IsVisible = true;
-            MainContentGrid.IsVisible = true;
-            BottomNavBar.IsVisible = true;
-            FullScreenOverlay.IsVisible = false;
-
-            _isMapFullScreen = false;
+            await RefreshCurrentLocationAsync(requestIfMissing: false, recenterMap: true);
+            await LoadPoisAsync(force: true);
+            await EvaluateAutoTriggerAsync();
+            return;
         }
+
+        var openSettings = await DisplayAlertAsync(
+            "Quyen vi tri",
+            "Ban da tu choi quyen vi tri. Hay mo cai dat he thong de cap quyen.",
+            "Mo cai dat",
+            "De sau");
+
+        if (openSettings)
+        {
+            AppInfo.ShowSettingsUI();
+        }
+    }
+
+    private async void OnRecenterTapped(object? sender, EventArgs e)
+    {
+        if (FabRecenter != null)
+        {
+            await FabRecenter.ScaleToAsync(0.9, 100);
+            await FabRecenter.ScaleToAsync(1.0, 100, Easing.SpringOut);
+        }
+
+        await RefreshCurrentLocationAsync(requestIfMissing: true, recenterMap: true);
+        await LoadPoisAsync(force: true);
+        await EvaluateAutoTriggerAsync();
+    }
+
+    private void OnExpandMapTapped(object? sender, EventArgs e)
+    {
+        EnterMapFullScreen();
+    }
+
+    private void OnExitFullscreenTapped(object? sender, EventArgs e)
+    {
+        ExitMapFullScreen();
+    }
+
+    private void EnterMapFullScreen()
+    {
+        if (_isMapFullScreen)
+        {
+            return;
+        }
+
+        CompactMapHost.Content = null;
+        FullScreenMapHost.Content = MapControl;
+
+        HeaderBar.IsVisible = false;
+        MainContentGrid.IsVisible = false;
+        BottomNavBar.IsVisible = false;
+        FullScreenOverlay.IsVisible = true;
+
+        _isMapFullScreen = true;
+    }
+
+    private void ExitMapFullScreen()
+    {
+        if (!_isMapFullScreen)
+        {
+            return;
+        }
+
+        FullScreenMapHost.Content = null;
+        CompactMapHost.Content = MapControl;
+
+        HeaderBar.IsVisible = true;
+        MainContentGrid.IsVisible = true;
+        BottomNavBar.IsVisible = true;
+        FullScreenOverlay.IsVisible = false;
+
+        _isMapFullScreen = false;
     }
 }
