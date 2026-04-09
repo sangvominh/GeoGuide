@@ -1,0 +1,77 @@
+@model GeoGuide.Cms.Models.Poi
+
+<div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="CategoryKey" class="form-label"></label>
+        <input asp-for="CategoryKey" class="form-control" />
+        <span asp-validation-for="CategoryKey" class="text-danger"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="CategoryLabel" class="form-label"></label>
+        <input asp-for="CategoryLabel" class="form-control" />
+        <span asp-validation-for="CategoryLabel" class="text-danger"></span>
+    </div>
+    <div class="col-12">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Latitude" class="form-label"></label>
+        <input asp-for="Latitude" class="form-control" />
+        <span asp-validation-for="Latitude" class="text-danger"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Longitude" class="form-label"></label>
+        <input asp-for="Longitude" class="form-control" />
+        <span asp-validation-for="Longitude" class="text-danger"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="TriggerRadiusMeters" class="form-label"></label>
+        <input asp-for="TriggerRadiusMeters" class="form-control" />
+        <span asp-validation-for="TriggerRadiusMeters" class="text-danger"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Priority" class="form-label"></label>
+        <input asp-for="Priority" class="form-control" />
+        <span asp-validation-for="Priority" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="ImageUrl" class="form-label"></label>
+        <input asp-for="ImageUrl" class="form-control" />
+        <span asp-validation-for="ImageUrl" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="MapUrl" class="form-label"></label>
+        <input asp-for="MapUrl" class="form-control" />
+        <span asp-validation-for="MapUrl" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="AudioUrl" class="form-label"></label>
+        <input asp-for="AudioUrl" class="form-control" />
+        <span asp-validation-for="AudioUrl" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="LanguageCode" class="form-label"></label>
+        <input asp-for="LanguageCode" class="form-control" />
+        <span asp-validation-for="LanguageCode" class="text-danger"></span>
+    </div>
+    <div class="col-md-6 d-flex align-items-end">
+        <div class="form-check mb-2">
+            <input asp-for="IsActive" class="form-check-input" />
+            <label asp-for="IsActive" class="form-check-label"></label>
+        </div>
+    </div>
+    <div class="col-12">
+        <label asp-for="TtsScript" class="form-label"></label>
+        <textarea asp-for="TtsScript" class="form-control" rows="4"></textarea>
+        <span asp-validation-for="TtsScript" class="text-danger"></span>
+    </div>
+</div>

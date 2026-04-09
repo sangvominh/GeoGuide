@@ -1,0 +1,27 @@
+@model GeoGuide.Cms.Models.Poi
+
+@{
+    ViewData["Title"] = "Delete POI";
+}
+
+<div class="card shadow-sm">
+    <div class="card-body p-4">
+        <h1 class="h3">Delete POI</h1>
+        <p class="mb-4">Xoa <strong>@Model.Name</strong> khoi danh sach demo?</p>
+
+        <dl class="row">
+            <dt class="col-sm-3">Category</dt>
+            <dd class="col-sm-9">@Model.CategoryLabel</dd>
+            <dt class="col-sm-3">Coordinates</dt>
+            <dd class="col-sm-9">@Model.Latitude, @Model.Longitude</dd>
+            <dt class="col-sm-3">Active</dt>
+            <dd class="col-sm-9">@Model.IsActive</dd>
+        </dl>
+
+        <form asp-action="Delete" method="post" class="d-flex gap-2">
+            <input asp-for="Id" type="hidden" />
+            <button type="submit" class="btn btn-danger">Delete</button>
+            <a class="btn btn-outline-secondary" asp-action="Index">Cancel</a>
+        </form>
+    </div>
+</div>
