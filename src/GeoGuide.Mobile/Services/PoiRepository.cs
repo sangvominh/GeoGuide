@@ -28,6 +28,8 @@ public class PoiRepository
 
     public async Task<PoiLoadResult> GetPoisAsync(CancellationToken cancellationToken = default)
     {
+        await _poiCacheService.InitializeAsync(cancellationToken);
+
         try
         {
             var apiPois = await _poiApiService.GetPoisAsync(cancellationToken);

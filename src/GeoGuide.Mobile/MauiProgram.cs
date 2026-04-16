@@ -43,6 +43,7 @@ namespace MauiApp1
 
             builder.Services.AddSingleton<LocationService>();
             builder.Services.AddSingleton(apiOptions);
+            builder.Services.AddSingleton<LocalDatabaseService>();
             builder.Services.AddSingleton<PoiCacheService>();
             builder.Services.AddSingleton(serviceProvider =>
             {
