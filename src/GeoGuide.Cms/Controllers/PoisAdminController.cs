@@ -223,14 +223,18 @@ public class PoisAdminController(ApplicationDbContext dbContext, CmsAccessServic
     private async Task PopulateTenantOptionsAsync(Guid? selectedTenantId = null)
     {
         var scope = await accessService.GetScopeAsync();
-        var tenants = await dbContext.PoiTenants
-            .Where(t => t.IsActive)
+        var tenantsQuery = dbContext.PoiTenants.AsQueryable();
+        if (!scope.IsSystemAdmin)
+        {
+            tenantsQuery = tenantsQuery.Where(t => t.Id == scope.TenantId);
+        }
+
+        var tenants = await tenantsQuery
             .OrderBy(t => t.Name)
             .ToListAsync();
 
         if (!scope.IsSystemAdmin)
         {
-            tenants = tenants.Where(t => t.Id == scope.TenantId).ToList();
             selectedTenantId = scope.TenantId;
         }
 
@@ -240,8 +244,13 @@ public class PoisAdminController(ApplicationDbContext dbContext, CmsAccessServic
 
     private async Task<IReadOnlyList<SelectListItem>> BuildTenantFilterOptionsAsync(CmsAccessScope scope, Guid? selectedTenantId)
     {
-        var tenants = await dbContext.PoiTenants
-            .Where(t => t.IsActive)
+        var tenantsQuery = dbContext.PoiTenants.AsQueryable();
+        if (!scope.IsSystemAdmin)
+        {
+            tenantsQuery = tenantsQuery.Where(t => t.Id == scope.TenantId);
+        }
+
+        var tenants = await tenantsQuery
             .OrderBy(t => t.Name)
             .Select(t => new SelectListItem
             {
