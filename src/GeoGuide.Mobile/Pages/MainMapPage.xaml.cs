@@ -22,14 +22,13 @@ public partial class MainMapPage : ContentPage
     private const double DefaultLatitude = 10.8231;
     private const double DefaultLongitude = 106.6297;
     private static readonly TimeSpan PoiRefreshInterval = TimeSpan.FromMinutes(2);
-    private static readonly TimeSpan AutoTriggerCooldown = TimeSpan.FromMinutes(5);
 
     private readonly LocationService _locationService;
     private readonly PoiRepository _poiRepository;
     private readonly GeofenceEngineService _geofenceEngineService;
+    private readonly TriggerGuardService _triggerGuardService;
     private readonly NarrationService _narrationService;
     private readonly List<PointOfInterest> _allPois = [];
-    private readonly Dictionary<string, DateTimeOffset> _lastPlaybackByPoiId = [];
     private readonly List<(string Key, string Label)> _categoryFilters =
     [
         ("all", "Tất cả"),
@@ -68,6 +67,7 @@ public partial class MainMapPage : ContentPage
         _locationService = services.GetRequiredService<LocationService>();
         _poiRepository = services.GetRequiredService<PoiRepository>();
         _geofenceEngineService = services.GetRequiredService<GeofenceEngineService>();
+        _triggerGuardService = services.GetRequiredService<TriggerGuardService>();
         _narrationService = services.GetRequiredService<NarrationService>();
         _locationService.LocationUpdated += OnLocationUpdated;
 
@@ -575,7 +575,6 @@ public partial class MainMapPage : ContentPage
         try
         {
             await _narrationService.PlayAsync(poi, triggerType, PlayAudioAsync);
-            _lastPlaybackByPoiId[poi.Id] = DateTimeOffset.UtcNow;
             NearbyStatusLabel.Text = $"Đã phát xong: {poi.Name}";
             UpdateMiniPlayerLabels(poi.Name, $"Đã phát xong. Sẵn sàng cho lần kích hoạt tiếp theo quanh {poi.Name}");
         }
@@ -607,8 +606,7 @@ public partial class MainMapPage : ContentPage
             return;
         }
 
-        if (_lastPlaybackByPoiId.TryGetValue(candidate.Id, out var lastPlayedAt)
-            && DateTimeOffset.UtcNow - lastPlayedAt < AutoTriggerCooldown)
+        if (!_triggerGuardService.CanTrigger(candidate, DateTimeOffset.UtcNow))
         {
             return;
         }

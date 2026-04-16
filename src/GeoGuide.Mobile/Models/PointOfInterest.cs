@@ -14,6 +14,7 @@ public class PointOfInterest
     public double Latitude { get; set; }
     public double Longitude { get; set; }
     public double TriggerRadiusMeters { get; set; } = 80;
+    public int CooldownMinutes { get; set; } = 5;
     public int Priority { get; set; } = 1;
     public string CategoryKey { get; set; } = "attraction";
     public string CategoryLabel { get; set; } = string.Empty;

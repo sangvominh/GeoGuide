@@ -72,6 +72,7 @@ public class PoiApiService
             Latitude = source.Latitude,
             Longitude = source.Longitude,
             TriggerRadiusMeters = source.TriggerRadiusMeters,
+            CooldownMinutes = source.CooldownMinutes,
             Priority = source.Priority,
             CategoryKey = source.CategoryKey,
             CategoryLabel = source.CategoryLabel,

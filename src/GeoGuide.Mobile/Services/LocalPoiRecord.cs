@@ -24,6 +24,9 @@ public sealed class LocalPoiRecord
     [Column("trigger_radius_meters")]
     public double TriggerRadiusMeters { get; set; }
 
+    [Column("cooldown_minutes")]
+    public int CooldownMinutes { get; set; }
+
     [Column("priority")]
     public int Priority { get; set; }
 

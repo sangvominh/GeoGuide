@@ -14,6 +14,7 @@ public sealed class SyncPoiDto
     public double Latitude { get; init; }
     public double Longitude { get; init; }
     public double TriggerRadiusMeters { get; init; }
+    public int CooldownMinutes { get; init; }
     public int Priority { get; init; }
     public string CategoryKey { get; init; } = string.Empty;
     public string CategoryLabel { get; init; } = string.Empty;
