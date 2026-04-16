@@ -12,7 +12,7 @@ public class PoisController(ApplicationDbContext dbContext) : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var pois = await dbContext.Pois
-            .Where(p => p.IsActive)
+            .Where(p => p.IsActive && p.ApprovalStatus == Models.PoiApprovalStatus.Approved)
             .OrderBy(p => p.Priority)
             .ThenBy(p => p.Name)
             .ToListAsync();
@@ -23,7 +23,10 @@ public class PoisController(ApplicationDbContext dbContext) : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var poi = await dbContext.Pois.FirstOrDefaultAsync(p => p.Id == id && p.IsActive);
+        var poi = await dbContext.Pois.FirstOrDefaultAsync(p =>
+            p.Id == id &&
+            p.IsActive &&
+            p.ApprovalStatus == Models.PoiApprovalStatus.Approved);
         return poi is null ? NotFound() : Ok(poi);
     }
 }

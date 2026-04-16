@@ -72,6 +72,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
             entity.Property(p => p.Id).HasColumnName("id");
             entity.Property(p => p.TenantId).HasColumnName("tenant_id");
+            entity.Property(p => p.ApprovalStatus).HasColumnName("approval_status");
             entity.Property(p => p.Name).HasColumnName("name").HasMaxLength(200);
             entity.Property(p => p.Description).HasColumnName("description");
             entity.Property(p => p.Latitude).HasColumnName("latitude");

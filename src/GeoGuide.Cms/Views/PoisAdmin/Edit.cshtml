@@ -2,10 +2,17 @@
 
 @{
     ViewData["Title"] = "Edit POI";
+    var isSystemAdmin = ViewBag.IsSystemAdmin is bool value && value;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3 mb-0">Edit POI</h1>
+    <div>
+        <h1 class="h3 mb-0">Edit POI</h1>
+        @if (!isSystemAdmin)
+        {
+            <p class="text-muted mb-0">Tenant chi duoc sua POI dang o trang thai cho duyet.</p>
+        }
+    </div>
     <a class="btn btn-outline-secondary" asp-action="Index">Back</a>
 </div>
 
