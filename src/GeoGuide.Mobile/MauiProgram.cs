@@ -61,6 +61,7 @@ namespace MauiApp1
             builder.Services.AddSingleton<TriggerGuardService>();
             builder.Services.AddSingleton<TtsSettingsService>();
             builder.Services.AddSingleton<AccessModeService>();
+            builder.Services.AddSingleton<OfflineAnalyticsLogService>();
             builder.Services.AddSingleton<NarrationService>();
             builder.Services.AddSingleton<StartupWarmupService>();
 

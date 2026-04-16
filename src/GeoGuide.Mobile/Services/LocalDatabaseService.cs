@@ -28,6 +28,7 @@ public sealed class LocalDatabaseService
             _connection = new SQLiteAsyncConnection(dbPath, flags);
             await _connection.CreateTableAsync<LocalPoiRecord>();
             await _connection.CreateTableAsync<LocalSyncStateRecord>();
+            await _connection.CreateTableAsync<LocalOfflineLogRecord>();
         }
         finally
         {
@@ -75,5 +76,11 @@ public sealed class LocalDatabaseService
         };
 
         await _connection!.InsertOrReplaceAsync(record);
+    }
+
+    public async Task InsertOfflineLogAsync(LocalOfflineLogRecord record, CancellationToken cancellationToken = default)
+    {
+        await InitializeAsync(cancellationToken);
+        await _connection!.InsertAsync(record);
     }
 }

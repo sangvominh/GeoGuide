@@ -29,6 +29,7 @@ public partial class MainMapPage : ContentPage
     private readonly TriggerGuardService _triggerGuardService;
     private readonly AccessModeService _accessModeService;
     private readonly TtsSettingsService _ttsSettingsService;
+    private readonly OfflineAnalyticsLogService _offlineAnalyticsLogService;
     private readonly NarrationService _narrationService;
     private readonly List<PointOfInterest> _allPois = [];
     private readonly List<(string Key, string Label)> _categoryFilters =
@@ -72,6 +73,7 @@ public partial class MainMapPage : ContentPage
         _triggerGuardService = services.GetRequiredService<TriggerGuardService>();
         _accessModeService = services.GetRequiredService<AccessModeService>();
         _ttsSettingsService = services.GetRequiredService<TtsSettingsService>();
+        _offlineAnalyticsLogService = services.GetRequiredService<OfflineAnalyticsLogService>();
         _narrationService = services.GetRequiredService<NarrationService>();
         _narrationService.PlaybackChanged += OnNarrationPlaybackChanged;
         _locationService.LocationUpdated += OnLocationUpdated;
@@ -648,6 +650,7 @@ public partial class MainMapPage : ContentPage
         {
             _currentLocation = location;
             UpdateUserLocationMarker(location.Latitude, location.Longitude);
+            _ = _offlineAnalyticsLogService.LogPositionUpdateAsync(location.Latitude, location.Longitude);
             if (_isFollowUserEnabled)
             {
                 CenterMapOnLocation(location.Latitude, location.Longitude);
@@ -1065,6 +1068,7 @@ public partial class MainMapPage : ContentPage
         }
 
         var success = _accessModeService.TryActivateFromQrPayload(payload, out var message);
+        _ = _offlineAnalyticsLogService.LogQrScannedAsync(payload);
         await DisplayAlertAsync(success ? "Kích hoạt thành công" : "Kích hoạt thất bại", message, "OK");
         UpdateAccessModeUiState();
     }

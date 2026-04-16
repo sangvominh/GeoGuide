@@ -33,6 +33,7 @@ public class NarrationService
     private readonly PoiApiService _poiApiService;
     private readonly MediaPrefetchService _mediaPrefetchService;
     private readonly TtsSettingsService _ttsSettingsService;
+    private readonly OfflineAnalyticsLogService _offlineAnalyticsLogService;
     private readonly PriorityQueue<NarrationQueueItem, int> _queue = new();
     private readonly HashSet<string> _queuedPoiIds = [];
     private readonly SemaphoreSlim _queueLock = new(1, 1);
@@ -46,11 +47,13 @@ public class NarrationService
     public NarrationService(
         PoiApiService poiApiService,
         MediaPrefetchService mediaPrefetchService,
-        TtsSettingsService ttsSettingsService)
+        TtsSettingsService ttsSettingsService,
+        OfflineAnalyticsLogService offlineAnalyticsLogService)
     {
         _poiApiService = poiApiService;
         _mediaPrefetchService = mediaPrefetchService;
         _ttsSettingsService = ttsSettingsService;
+        _offlineAnalyticsLogService = offlineAnalyticsLogService;
     }
 
     public async Task EnqueueAsync(
@@ -133,8 +136,14 @@ public class NarrationService
             try
             {
                 PublishPlaybackState(item.Poi, NarrationPlaybackState.Started, $"Đang phát: {item.Poi.Name}");
+                _ = _offlineAnalyticsLogService.LogAudioStartedAsync(item.Poi.Id, item.Poi.Latitude, item.Poi.Longitude);
                 await ExecutePlaybackAsync(item, _currentPlaybackCts.Token);
                 PublishPlaybackState(item.Poi, NarrationPlaybackState.Completed, $"Đã phát xong: {item.Poi.Name}");
+                _ = _offlineAnalyticsLogService.LogAudioCompletedAsync(
+                    item.Poi.Id,
+                    item.Poi.Latitude,
+                    item.Poi.Longitude,
+                    Math.Max(1, (int)Math.Round((DateTimeOffset.UtcNow - startedAt).TotalSeconds)));
                 _ = TryLogPlaybackAsync(CreateLogEntry(item.Poi, item.TriggerType, startedAt));
             }
             catch (OperationCanceledException)
