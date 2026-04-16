@@ -15,12 +15,18 @@ namespace MauiApp1.Services
         private readonly LocationService _locationService;
         private readonly PoiRepository _poiRepository;
         private readonly MediaPrefetchService _mediaPrefetchService;
+        private readonly OfflineAnalyticsLogService _offlineAnalyticsLogService;
 
-        public StartupWarmupService(LocationService locationService, PoiRepository poiRepository, MediaPrefetchService mediaPrefetchService)
+        public StartupWarmupService(
+            LocationService locationService,
+            PoiRepository poiRepository,
+            MediaPrefetchService mediaPrefetchService,
+            OfflineAnalyticsLogService offlineAnalyticsLogService)
         {
             _locationService = locationService;
             _poiRepository = poiRepository;
             _mediaPrefetchService = mediaPrefetchService;
+            _offlineAnalyticsLogService = offlineAnalyticsLogService;
         }
 
         public async Task PrepareLocalPoiAsync(CancellationToken cancellationToken = default)
@@ -40,6 +46,7 @@ namespace MauiApp1.Services
             {
                 var pois = await _poiRepository.GetPoisAsync(timeoutCts.Token);
                 await PrefetchNearbyAudioAsync(pois.Pois, maxItems: 10, timeoutCts.Token);
+                _ = _offlineAnalyticsLogService.SyncPendingLogsAsync(batchSize: 50, timeoutCts.Token);
 
                 return new WarmupResult
                 {

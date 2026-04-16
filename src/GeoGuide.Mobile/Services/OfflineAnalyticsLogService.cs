@@ -3,11 +3,16 @@ namespace MauiApp1.Services;
 public sealed class OfflineAnalyticsLogService
 {
     private const string DeviceIdPreferenceKey = "mobile_device_id";
+    private const int SyncStatusPending = 0;
+    private const int SyncStatusSynced = 1;
+    private const int SyncStatusSkipped = 2;
     private readonly LocalDatabaseService _localDatabaseService;
+    private readonly PoiApiService _poiApiService;
 
-    public OfflineAnalyticsLogService(LocalDatabaseService localDatabaseService)
+    public OfflineAnalyticsLogService(LocalDatabaseService localDatabaseService, PoiApiService poiApiService)
     {
         _localDatabaseService = localDatabaseService;
+        _poiApiService = poiApiService;
     }
 
     public Task LogPositionUpdateAsync(double latitude, double longitude, CancellationToken cancellationToken = default)
@@ -54,6 +59,60 @@ public sealed class OfflineAnalyticsLogService
             cancellationToken: cancellationToken);
     }
 
+    public async Task<int> SyncPendingLogsAsync(int batchSize = 50, CancellationToken cancellationToken = default)
+    {
+        var pendingLogs = await _localDatabaseService.GetPendingOfflineLogsAsync(batchSize, cancellationToken);
+        if (pendingLogs.Count == 0)
+        {
+            return 0;
+        }
+
+        var syncedCount = 0;
+        foreach (var log in pendingLogs)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (log.SyncStatus != SyncStatusPending)
+            {
+                continue;
+            }
+
+            if (log.EventType != (int)OfflineAnalyticsEventType.AudioCompleted)
+            {
+                await _localDatabaseService.UpdateOfflineLogSyncStatusAsync(log.Id, SyncStatusSkipped, cancellationToken);
+                continue;
+            }
+
+            if (!Guid.TryParse(log.PoiId, out _))
+            {
+                await _localDatabaseService.UpdateOfflineLogSyncStatusAsync(log.Id, SyncStatusSkipped, cancellationToken);
+                continue;
+            }
+
+            var entry = new Models.PlaybackLogEntry
+            {
+                PoiId = log.PoiId!,
+                PlayedAt = DateTimeOffset.TryParse(log.TimestampUtcIso, out var playedAt) ? playedAt : DateTimeOffset.UtcNow,
+                TriggerType = "manual",
+                DurationSeconds = Math.Max(1, log.DurationSeconds),
+                DeviceId = string.IsNullOrWhiteSpace(log.DeviceId) ? GetOrCreateDeviceId() : log.DeviceId
+            };
+
+            try
+            {
+                await _poiApiService.PostPlaybackLogAsync(entry, cancellationToken);
+                await _localDatabaseService.UpdateOfflineLogSyncStatusAsync(log.Id, SyncStatusSynced, cancellationToken);
+                syncedCount++;
+            }
+            catch
+            {
+                break;
+            }
+        }
+
+        return syncedCount;
+    }
+
     private async Task LogAsync(
         string? poiId,
         OfflineAnalyticsEventType eventType,
@@ -72,7 +131,7 @@ public sealed class OfflineAnalyticsLogService
             Longitude = longitude,
             DurationSeconds = Math.Max(0, durationSeconds),
             TimestampUtcIso = DateTimeOffset.UtcNow.ToString("O"),
-            SyncStatus = 0
+            SyncStatus = SyncStatusPending
         };
 
         await _localDatabaseService.InsertOfflineLogAsync(record, cancellationToken);

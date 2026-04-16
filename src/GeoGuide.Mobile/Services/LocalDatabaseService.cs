@@ -83,4 +83,33 @@ public sealed class LocalDatabaseService
         await InitializeAsync(cancellationToken);
         await _connection!.InsertAsync(record);
     }
+
+    public async Task<IReadOnlyList<LocalOfflineLogRecord>> GetPendingOfflineLogsAsync(int limit = 50, CancellationToken cancellationToken = default)
+    {
+        await InitializeAsync(cancellationToken);
+
+        return await _connection!
+            .Table<LocalOfflineLogRecord>()
+            .Where(row => row.SyncStatus == 0)
+            .OrderBy(row => row.TimestampUtcIso)
+            .Take(limit)
+            .ToListAsync();
+    }
+
+    public async Task UpdateOfflineLogSyncStatusAsync(string id, int status, CancellationToken cancellationToken = default)
+    {
+        await InitializeAsync(cancellationToken);
+
+        var record = await _connection!
+            .Table<LocalOfflineLogRecord>()
+            .FirstOrDefaultAsync(row => row.Id == id);
+
+        if (record == null)
+        {
+            return;
+        }
+
+        record.SyncStatus = status;
+        await _connection.UpdateAsync(record);
+    }
 }
