@@ -91,9 +91,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.Property(p => p.CategoryLabel).HasColumnName("category_label").HasMaxLength(200);
             entity.Property(p => p.ImageUrl).HasColumnName("image_url");
             entity.Property(p => p.MapUrl).HasColumnName("map_url");
-            entity.Property(p => p.AudioUrl).HasColumnName("audio_url");
-            entity.Property(p => p.TtsScript).HasColumnName("tts_script");
-            entity.Property(p => p.LanguageCode).HasColumnName("language_code").HasMaxLength(20);
             entity.Property(p => p.IsActive).HasColumnName("is_active");
 
             entity.HasIndex(p => new { p.Latitude, p.Longitude });

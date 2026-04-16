@@ -43,9 +43,6 @@ public static class PoiSeedData
             CategoryLabel = "Tham quan",
             ImageUrl = "https://images.unsplash.com/photo-1555921015-5532091f6026",
             MapUrl = "https://maps.google.com/?q=10.7720,106.6983",
-            AudioUrl = "https://example.com/audio/ben-thanh-market.mp3",
-            TtsScript = "Day la cho Ben Thanh, mot bieu tuong van hoa va du lich cua thanh pho.",
-            LanguageCode = "vi-VN",
             IsActive = true,
             UpdatedAt = DateTimeOffset.Parse("2026-04-09T10:00:00Z")
         },
@@ -64,9 +61,6 @@ public static class PoiSeedData
             CategoryLabel = "Tham quan",
             ImageUrl = "https://images.unsplash.com/photo-1583417267826-aebc4d1542e1",
             MapUrl = "https://maps.google.com/?q=10.7798,106.6990",
-            AudioUrl = "https://example.com/audio/notre-dame-cathedral.mp3",
-            TtsScript = "Nha tho Duc Ba la mot diem nhan kien truc va lich su ngay giua trung tam thanh pho.",
-            LanguageCode = "vi-VN",
             IsActive = true,
             UpdatedAt = DateTimeOffset.Parse("2026-04-09T10:00:00Z")
         },
@@ -85,9 +79,6 @@ public static class PoiSeedData
             CategoryLabel = "Cong vien",
             ImageUrl = "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
             MapUrl = "https://maps.google.com/?q=10.7778,106.6927",
-            AudioUrl = "https://example.com/audio/tao-dan-park.mp3",
-            TtsScript = "Cong vien Tao Dan la khoang xanh hien hoi, noi nguoi dan dia phuong thuong tap the duc vao sang som.",
-            LanguageCode = "vi-VN",
             IsActive = true,
             UpdatedAt = DateTimeOffset.Parse("2026-04-09T10:00:00Z")
         },
@@ -106,9 +97,6 @@ public static class PoiSeedData
             CategoryLabel = "Bao tang",
             ImageUrl = "https://images.unsplash.com/photo-1518998053901-5348d3961a04",
             MapUrl = "https://maps.google.com/?q=10.7765,106.7010",
-            AudioUrl = "https://example.com/audio/hcm-city-museum.mp3",
-            TtsScript = "Bao tang Thanh pho Ho Chi Minh luu giu nhieu tu lieu va hien vat quan trong.",
-            LanguageCode = "vi-VN",
             IsActive = true,
             UpdatedAt = DateTimeOffset.Parse("2026-04-09T10:00:00Z")
         },
@@ -127,9 +115,6 @@ public static class PoiSeedData
             CategoryLabel = "Am thuc",
             ImageUrl = "https://example.com/images/oc-vinh-khanh-198.jpg",
             MapUrl = "https://maps.google.com/?q=10.7599,106.6813",
-            AudioUrl = "https://example.com/audio/oc-vinh-khanh-198.mp3",
-            TtsScript = "Diem dung chan dau tien cua tuyen am thuc, noi bat voi hai san binh dan va khong khi nhon nhip ve dem.",
-            LanguageCode = "vi-VN",
             IsActive = true,
             UpdatedAt = DateTimeOffset.Parse("2026-04-16T03:30:00Z")
         },
@@ -148,9 +133,6 @@ public static class PoiSeedData
             CategoryLabel = "Am thuc",
             ImageUrl = "https://example.com/images/bo-la-lot-co-lan.jpg",
             MapUrl = "https://maps.google.com/?q=10.7604,106.6818",
-            AudioUrl = "https://example.com/audio/bo-la-lot-co-lan.mp3",
-            TtsScript = "Mui bo nuong thoang ra tu bep than giup diem nay tro thanh mot diem nhan tren pho am thuc mo phong.",
-            LanguageCode = "vi-VN",
             IsActive = true,
             UpdatedAt = DateTimeOffset.Parse("2026-04-16T03:30:00Z")
         },
@@ -169,9 +151,6 @@ public static class PoiSeedData
             CategoryLabel = "An vat",
             ImageUrl = "https://example.com/images/tra-chanh-sinh-vien-99.jpg",
             MapUrl = "https://maps.google.com/?q=10.7608,106.6808",
-            AudioUrl = "https://example.com/audio/tra-chanh-sinh-vien-99.mp3",
-            TtsScript = "Khu tra chanh va an vat la diem hen pho bien cho sinh vien sau gio hoc chieu.",
-            LanguageCode = "vi-VN",
             IsActive = true,
             UpdatedAt = DateTimeOffset.Parse("2026-04-16T03:30:00Z")
         },
@@ -190,9 +169,6 @@ public static class PoiSeedData
             CategoryLabel = "Do nuong",
             ImageUrl = "https://example.com/images/nuong-da-toi-24h.jpg",
             MapUrl = "https://maps.google.com/?q=10.7595,106.6804",
-            AudioUrl = "https://example.com/audio/nuong-da-toi-24h.mp3",
-            TtsScript = "Quan nuong da toi giai lap khong khi cho dem, phu hop cho ban do tham quan am thuc ve toi.",
-            LanguageCode = "vi-VN",
             IsActive = true,
             UpdatedAt = DateTimeOffset.Parse("2026-04-16T03:30:00Z")
         },
@@ -211,9 +187,6 @@ public static class PoiSeedData
             CategoryLabel = "Mon nuoc",
             ImageUrl = "https://example.com/images/chao-suon-dem-phu-dinh.jpg",
             MapUrl = "https://maps.google.com/?q=10.7613,106.6812",
-            AudioUrl = "https://example.com/audio/chao-suon-dem-phu-dinh.mp3",
-            TtsScript = "Bat chao nong la lua chon thu vi cho nguoi di bo khuya quanh cum am thuc mo phong.",
-            LanguageCode = "vi-VN",
             IsActive = true,
             UpdatedAt = DateTimeOffset.Parse("2026-04-16T03:30:00Z")
         },
@@ -232,9 +205,6 @@ public static class PoiSeedData
             CategoryLabel = "An vat",
             ImageUrl = "https://example.com/images/banh-trang-nuong-ktx.jpg",
             MapUrl = "https://maps.google.com/?q=10.7601,106.6799",
-            AudioUrl = "https://example.com/audio/banh-trang-nuong-ktx.mp3",
-            TtsScript = "Banh trang nuong giai lap diem an vat rong rai duoc gioi tre ua chuong quanh ky tuc xa.",
-            LanguageCode = "vi-VN",
             IsActive = true,
             UpdatedAt = DateTimeOffset.Parse("2026-04-16T03:30:00Z")
         },
@@ -253,9 +223,6 @@ public static class PoiSeedData
             CategoryLabel = "Mon nuoc",
             ImageUrl = "https://example.com/images/bun-thai-hai-san-co-may.jpg",
             MapUrl = "https://maps.google.com/?q=10.7610,106.6822",
-            AudioUrl = "https://example.com/audio/bun-thai-hai-san-co-may.mp3",
-            TtsScript = "Mon bun thai lam phong phu them trai nghiem noi dung audio cho tuyen am thuc theo chu de.",
-            LanguageCode = "vi-VN",
             IsActive = true,
             UpdatedAt = DateTimeOffset.Parse("2026-04-16T03:30:00Z")
         },
@@ -274,9 +241,6 @@ public static class PoiSeedData
             CategoryLabel = "Trang mieng",
             ImageUrl = "https://example.com/images/kem-cuon-dem-sai-gon.jpg",
             MapUrl = "https://maps.google.com/?q=10.7592,106.6819",
-            AudioUrl = "https://example.com/audio/kem-cuon-dem-sai-gon.mp3",
-            TtsScript = "Diem kem cuon giup hanh trinh am thuc co them phan ket nhe va hop voi khach tre.",
-            LanguageCode = "vi-VN",
             IsActive = true,
             UpdatedAt = DateTimeOffset.Parse("2026-04-16T03:30:00Z")
         },
@@ -295,9 +259,6 @@ public static class PoiSeedData
             CategoryLabel = "Mon an dac san",
             ImageUrl = "https://example.com/images/pha-lau-hem-99.jpg",
             MapUrl = "https://maps.google.com/?q=10.7615,106.6803",
-            AudioUrl = "https://example.com/audio/pha-lau-hem-99.mp3",
-            TtsScript = "Pha lau la mot trong nhung mon an de xay dung cau chuyen audio ve pho am thuc thanh pho.",
-            LanguageCode = "vi-VN",
             IsActive = true,
             UpdatedAt = DateTimeOffset.Parse("2026-04-16T03:30:00Z")
         },
@@ -316,9 +277,6 @@ public static class PoiSeedData
             CategoryLabel = "Mon an dac san",
             ImageUrl = "https://example.com/images/mi-tron-pho-dem.jpg",
             MapUrl = "https://maps.google.com/?q=10.7606,106.6828",
-            AudioUrl = "https://example.com/audio/mi-tron-pho-dem.mp3",
-            TtsScript = "Diem mi tron dem bo sung them mot diem dung chan trong cum poi am thuc gan ky tuc xa.",
-            LanguageCode = "vi-VN",
             IsActive = true,
             UpdatedAt = DateTimeOffset.Parse("2026-04-16T03:30:00Z")
         }
