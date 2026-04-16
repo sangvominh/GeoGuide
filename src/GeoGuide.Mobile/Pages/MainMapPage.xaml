@@ -339,7 +339,7 @@
                                    HorizontalOptions="Center"
                                    VerticalOptions="Center"/>
                         </Border>
-                    </Grid>
+                    </HorizontalStackLayout>
                 </Grid>
             </Border>
 
