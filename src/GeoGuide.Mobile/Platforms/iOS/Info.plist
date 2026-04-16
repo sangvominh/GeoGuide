@@ -32,6 +32,8 @@
 	<string>GeoGuide cần vị trí để gợi ý điểm tham quan gần bạn.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>GeoGuide cần vị trí nền để kích hoạt thuyết minh theo khu vực.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>GeoGuide cần camera để quét mã QR kích hoạt quyền truy cập.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>

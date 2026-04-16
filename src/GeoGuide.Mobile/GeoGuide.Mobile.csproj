@@ -72,6 +72,8 @@
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
 		<PackageReference Include="Npgsql" Version="8.0.7" />
 		<PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
+		<PackageReference Include="ZXing.Net.MAUI" Version="0.6.0" />
+		<PackageReference Include="ZXing.Net.MAUI.Controls" Version="0.6.0" />
 	</ItemGroup>
 
 </Project>

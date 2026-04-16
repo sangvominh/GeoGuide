@@ -93,6 +93,8 @@ public partial class MainMapPage : ContentPage
     {
         base.OnAppearing();
 
+        UpdateAccessModeUiState();
+
         if (!_isInitialized)
         {
             _isInitialized = true;
@@ -1054,22 +1056,15 @@ public partial class MainMapPage : ContentPage
 
     private async void OnQrActivateTapped(object? sender, EventArgs e)
     {
-        var payload = await DisplayPromptAsync(
-            "Kích hoạt bằng QR",
-            "Nhập payload QR (demo: GEOGUIDE:TRIAL:DEMO hoặc GEOGUIDE:FULL:DEMO)",
-            "Kích hoạt",
-            "Hủy",
-            maxLength: 300,
-            initialValue: "GEOGUIDE:TRIAL:DEMO");
-
-        if (string.IsNullOrWhiteSpace(payload))
+        var services = Application.Current?.Handler?.MauiContext?.Services;
+        if (services == null)
         {
+            await DisplayAlertAsync("Quét QR", "Không mở được màn quét QR lúc này.", "OK");
             return;
         }
 
-        var success = _accessModeService.TryActivateFromQrPayload(payload, out var message);
-        _ = _offlineAnalyticsLogService.LogQrScannedAsync(payload);
-        await DisplayAlertAsync(success ? "Kích hoạt thành công" : "Kích hoạt thất bại", message, "OK");
+        var scannerPage = services.GetRequiredService<QrScannerPage>();
+        await Navigation.PushModalAsync(scannerPage);
         UpdateAccessModeUiState();
     }
 

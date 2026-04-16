@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:zxing="clr-namespace:ZXing.Net.Maui.Controls;assembly=ZXing.Net.MAUI.Controls"
+             x:Class="MauiApp1.Pages.QrScannerPage"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="#0F1115">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <Grid Grid.Row="0"
+              ColumnDefinitions="Auto,*,Auto"
+              Padding="18,22,18,12">
+            <Border WidthRequest="42"
+                    HeightRequest="42"
+                    BackgroundColor="#1E232B"
+                    StrokeThickness="0">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="21"/>
+                </Border.StrokeShape>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnCloseTapped"/>
+                </Border.GestureRecognizers>
+                <Label Text="&#xe5c4;"
+                       FontFamily="MaterialIcons"
+                       FontSize="22"
+                       TextColor="White"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+            </Border>
+
+            <VerticalStackLayout Grid.Column="1"
+                                 Padding="12,0,12,0"
+                                 Spacing="2"
+                                 VerticalOptions="Center">
+                <Label Text="Quét mã QR"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="White" />
+                <Label Text="Hướng camera vào mã QR GeoGuide để kích hoạt quyền truy cập"
+                       FontSize="11"
+                       TextColor="#B9C1CC" />
+            </VerticalStackLayout>
+
+            <Border Grid.Column="2"
+                    BackgroundColor="#1E232B"
+                    Padding="10,6"
+                    StrokeThickness="0"
+                    VerticalOptions="Center">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="999"/>
+                </Border.StrokeShape>
+                <Label x:Name="AccessStateLabel"
+                       Text="TRIAL"
+                       FontSize="10"
+                       FontAttributes="Bold"
+                       TextColor="#FFD7BF" />
+            </Border>
+        </Grid>
+
+        <Grid Grid.Row="1" Margin="18,8,18,8">
+            <zxing:CameraBarcodeReaderView x:Name="CameraView"
+                                           IsDetecting="True"
+                                           BarcodesDetected="OnBarcodesDetected" />
+
+            <Grid InputTransparent="True">
+                <Border Margin="20"
+                        BackgroundColor="#00000000"
+                        Stroke="#4CFFFFFF"
+                        StrokeThickness="2"
+                        HorizontalOptions="Fill"
+                        VerticalOptions="Fill">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="28"/>
+                    </Border.StrokeShape>
+                </Border>
+
+                <Border HorizontalOptions="Center"
+                        VerticalOptions="Center"
+                        WidthRequest="230"
+                        HeightRequest="230"
+                        BackgroundColor="#00000000"
+                        Stroke="#FFFFFF"
+                        StrokeThickness="3">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="28"/>
+                    </Border.StrokeShape>
+                </Border>
+            </Grid>
+
+            <Border x:Name="LoadingOverlay"
+                    IsVisible="False"
+                    BackgroundColor="#B3000000"
+                    StrokeThickness="0">
+                <VerticalStackLayout VerticalOptions="Center"
+                                     HorizontalOptions="Center"
+                                     Spacing="12">
+                    <ActivityIndicator IsRunning="True"
+                                       Color="White"
+                                       WidthRequest="36"
+                                       HeightRequest="36" />
+                    <Label x:Name="LoadingLabel"
+                           Text="Đang xử lý mã QR..."
+                           FontSize="13"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+
+        <VerticalStackLayout Grid.Row="2"
+                             Padding="18,8,18,20"
+                             Spacing="10">
+            <Border BackgroundColor="#1A1F27"
+                    Padding="14,12"
+                    StrokeThickness="0">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="18"/>
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Chỉ hỗ trợ QR theo định dạng:"
+                           FontSize="11"
+                           TextColor="#D7DDE7" />
+                    <Label Text="GEOGUIDE:TRIAL:&lt;token&gt; hoặc GEOGUIDE:FULL:&lt;token&gt;"
+                           FontSize="11"
+                           FontAttributes="Bold"
+                           TextColor="White" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Button Text="Nhập payload thủ công"
+                    Clicked="OnManualEntryTapped"
+                    BackgroundColor="#2A3340"
+                    TextColor="White"
+                    CornerRadius="16"
+                    Padding="14,12" />
+        </VerticalStackLayout>
+    </Grid>
+
+</ContentPage>
