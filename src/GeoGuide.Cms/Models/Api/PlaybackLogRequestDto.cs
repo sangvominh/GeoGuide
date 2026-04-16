@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace GeoGuide.Cms.Models;
+namespace GeoGuide.Cms.Models.Api;
 
-public class PlaybackLogRequest
+public class PlaybackLogRequestDto
 {
     [Required]
     public Guid PoiId { get; set; }

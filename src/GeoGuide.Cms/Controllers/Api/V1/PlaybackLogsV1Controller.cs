@@ -1,16 +1,17 @@
 using GeoGuide.Cms.Data;
 using GeoGuide.Cms.Models;
+using GeoGuide.Cms.Models.Api;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace GeoGuide.Cms.Controllers.Api;
+namespace GeoGuide.Cms.Controllers.Api.V1;
 
 [ApiController]
-[Route("api/logs")]
-public class LogsController(ApplicationDbContext dbContext) : ControllerBase
+[Route("api/v1/logs")]
+public class PlaybackLogsV1Controller(ApplicationDbContext dbContext) : ControllerBase
 {
     [HttpPost("playback")]
-    public async Task<IActionResult> CreatePlaybackLog([FromBody] PlaybackLogRequest request)
+    public async Task<IActionResult> Create([FromBody] PlaybackLogRequestDto request)
     {
         if (!ModelState.IsValid)
         {
@@ -20,7 +21,7 @@ public class LogsController(ApplicationDbContext dbContext) : ControllerBase
         var poiExists = await dbContext.Pois.AnyAsync(p => p.Id == request.PoiId);
         if (!poiExists)
         {
-            ModelState.AddModelError(nameof(request.PoiId), "POI does not exist.");
+            ModelState.AddModelError(nameof(request.PoiId), "POI không tồn tại.");
             return ValidationProblem(ModelState);
         }
 
@@ -39,7 +40,7 @@ public class LogsController(ApplicationDbContext dbContext) : ControllerBase
 
         return Accepted(new
         {
-            message = "Playback log accepted.",
+            message = "Đã ghi nhận nhật ký phát thuyết minh.",
             logId = log.Id
         });
     }
