@@ -19,7 +19,7 @@
             Padding="20,14,20,12"
             ZIndex="50">
             <VerticalStackLayout Spacing="12">
-                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
                     <VerticalStackLayout Grid.Column="0"
                                          Spacing="0"
                                          VerticalOptions="Center">
@@ -32,6 +32,12 @@
                             Text="Bản đồ dẫn đường và thuyết minh"
                             FontSize="11"
                             TextColor="{StaticResource OnSurfaceVariant}" />
+                        <Label
+                            x:Name="AccessModeLabel"
+                            Text="TRIAL MODE"
+                            FontSize="10"
+                            FontAttributes="Bold"
+                            TextColor="#B84A00" />
                     </VerticalStackLayout>
 
                     <Border Grid.Column="1"
@@ -60,6 +66,28 @@
                     </Border>
 
                     <Border Grid.Column="2"
+                            BackgroundColor="#F3F5F8"
+                            WidthRequest="42"
+                            HeightRequest="42"
+                            StrokeThickness="0"
+                            VerticalOptions="Center">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="21"/>
+                        </Border.StrokeShape>
+                        <Label
+                            Text="&#xe4f7;"
+                            FontFamily="MaterialIcons"
+                            FontSize="20"
+                            TextColor="{StaticResource Outline}"
+                            HorizontalOptions="Center"
+                            VerticalOptions="Center">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnQrActivateTapped"/>
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </Border>
+
+                    <Border Grid.Column="3"
                             BackgroundColor="#F3F5F8"
                             WidthRequest="42"
                             HeightRequest="42"

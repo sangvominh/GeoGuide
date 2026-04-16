@@ -27,6 +27,7 @@ public partial class MainMapPage : ContentPage
     private readonly PoiRepository _poiRepository;
     private readonly GeofenceEngineService _geofenceEngineService;
     private readonly TriggerGuardService _triggerGuardService;
+    private readonly AccessModeService _accessModeService;
     private readonly NarrationService _narrationService;
     private readonly List<PointOfInterest> _allPois = [];
     private readonly List<(string Key, string Label)> _categoryFilters =
@@ -68,6 +69,7 @@ public partial class MainMapPage : ContentPage
         _poiRepository = services.GetRequiredService<PoiRepository>();
         _geofenceEngineService = services.GetRequiredService<GeofenceEngineService>();
         _triggerGuardService = services.GetRequiredService<TriggerGuardService>();
+        _accessModeService = services.GetRequiredService<AccessModeService>();
         _narrationService = services.GetRequiredService<NarrationService>();
         _narrationService.PlaybackChanged += OnNarrationPlaybackChanged;
         _locationService.LocationUpdated += OnLocationUpdated;
@@ -80,6 +82,7 @@ public partial class MainMapPage : ContentPage
         BuildCategoryChips();
         UpdateAutoNarrationUiState();
         UpdateFollowUserUiState();
+        UpdateAccessModeUiState();
     }
 
     protected override async void OnAppearing()
@@ -594,7 +597,7 @@ public partial class MainMapPage : ContentPage
 
     private async Task EvaluateAutoTriggerAsync()
     {
-        if (!_isAutoNarrationEnabled || _currentLocation == null)
+        if (!_isAutoNarrationEnabled || _currentLocation == null || !GetAccessState().IsFullAccess)
         {
             return;
         }
@@ -651,15 +654,37 @@ public partial class MainMapPage : ContentPage
 
     private void UpdateAutoNarrationUiState()
     {
+        var isFullAccess = GetAccessState().IsFullAccess;
+        if (!isFullAccess)
+        {
+            _isAutoNarrationEnabled = false;
+        }
+
         if (AutoNarrationSwitch.IsToggled != _isAutoNarrationEnabled)
         {
             AutoNarrationSwitch.IsToggled = _isAutoNarrationEnabled;
         }
 
-        AutoNarrationStateLabel.Text = _isAutoNarrationEnabled ? "Tự động bật" : "Tự động tắt";
+        AutoNarrationSwitch.IsEnabled = isFullAccess;
+        AutoNarrationStateLabel.Text = isFullAccess
+            ? (_isAutoNarrationEnabled ? "Tự động bật" : "Tự động tắt")
+            : "Tự động: Full";
         AutoNarrationStateLabel.TextColor = _isAutoNarrationEnabled
             ? MauiColor.FromArgb("#1DB954")
             : MauiColor.FromArgb("#B3B3B3");
+    }
+
+    private AccessModeState GetAccessState() => _accessModeService.GetState();
+
+    private void UpdateAccessModeUiState()
+    {
+        var state = GetAccessState();
+        AccessModeLabel.Text = state.IsFullAccess ? "FULL ACCESS" : "TRIAL MODE";
+        AccessModeLabel.TextColor = state.IsFullAccess
+            ? MauiColor.FromArgb("#1E824C")
+            : MauiColor.FromArgb("#B84A00");
+
+        UpdateAutoNarrationUiState();
     }
 
     private async Task HandleMapInfoAsync(MapInfoEventArgs eventArgs)
@@ -892,6 +917,15 @@ public partial class MainMapPage : ContentPage
 
     private async void OnAutoNarrationToggled(object? sender, ToggledEventArgs e)
     {
+        if (e.Value && !GetAccessState().IsFullAccess)
+        {
+            _isAutoNarrationEnabled = false;
+            UpdateAutoNarrationUiState();
+            NearbyStatusLabel.IsVisible = true;
+            NearbyStatusLabel.Text = "Tự động phát chỉ khả dụng ở Full Access.";
+            return;
+        }
+
         _isAutoNarrationEnabled = e.Value;
         UpdateAutoNarrationUiState();
 
@@ -904,6 +938,26 @@ public partial class MainMapPage : ContentPage
         {
             await EvaluateAutoTriggerAsync();
         }
+    }
+
+    private async void OnQrActivateTapped(object? sender, EventArgs e)
+    {
+        var payload = await DisplayPromptAsync(
+            "Kích hoạt bằng QR",
+            "Nhập payload QR (demo: GEOGUIDE:TRIAL:DEMO hoặc GEOGUIDE:FULL:DEMO)",
+            "Kích hoạt",
+            "Hủy",
+            maxLength: 300,
+            initialValue: "GEOGUIDE:TRIAL:DEMO");
+
+        if (string.IsNullOrWhiteSpace(payload))
+        {
+            return;
+        }
+
+        var success = _accessModeService.TryActivateFromQrPayload(payload, out var message);
+        await DisplayAlertAsync(success ? "Kích hoạt thành công" : "Kích hoạt thất bại", message, "OK");
+        UpdateAccessModeUiState();
     }
 
     private void OnNarrationPlaybackChanged(object? sender, NarrationPlaybackEventArgs e)

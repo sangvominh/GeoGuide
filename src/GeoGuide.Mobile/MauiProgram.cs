@@ -60,6 +60,7 @@ namespace MauiApp1
             builder.Services.AddSingleton<GeofenceEngineService>();
             builder.Services.AddSingleton<TriggerGuardService>();
             builder.Services.AddSingleton<TtsSettingsService>();
+            builder.Services.AddSingleton<AccessModeService>();
             builder.Services.AddSingleton<NarrationService>();
             builder.Services.AddSingleton<StartupWarmupService>();
 
