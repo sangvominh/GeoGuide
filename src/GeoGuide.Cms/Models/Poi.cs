@@ -6,6 +6,10 @@ public class Poi
 {
     public Guid Id { get; set; }
 
+    public Guid? TenantId { get; set; }
+
+    public PoiTenant? Tenant { get; set; }
+
     [Required, StringLength(200)]
     public string Name { get; set; } = string.Empty;
 

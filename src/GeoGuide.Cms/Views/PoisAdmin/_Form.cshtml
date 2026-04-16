@@ -4,6 +4,18 @@
 
 <div class="row g-3">
     <div class="col-md-6">
+        <label asp-for="TenantId" class="form-label">Tenant</label>
+        <select asp-for="TenantId" asp-items="ViewBag.TenantOptions" class="form-select" disabled="@(ViewBag.IsSystemAdmin is bool isSystemAdmin && !isSystemAdmin)">
+            <option value="">Chon tenant</option>
+        </select>
+        @if (ViewBag.IsSystemAdmin is bool canChooseTenant && !canChooseTenant)
+        {
+            <input asp-for="TenantId" type="hidden" />
+            <div class="form-text">Tai khoan tenant chi quan ly du lieu trong pham vi da duoc gan.</div>
+        }
+        <span asp-validation-for="TenantId" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
         <label asp-for="Name" class="form-label"></label>
         <input asp-for="Name" class="form-control" />
         <span asp-validation-for="Name" class="text-danger"></span>

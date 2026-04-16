@@ -1,3 +1,8 @@
+@using GeoGuide.Cms.Models
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,16 +24,36 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-white" asp-controller="Home" asp-action="Index">Dashboard</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white" asp-controller="PoisAdmin" asp-action="Index">POIs</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white" href="/api/pois">API</a>
-                        </li>
+                        @if (SignInManager.IsSignedIn(User))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-controller="Home" asp-action="Index">Dashboard</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-controller="PoisAdmin" asp-action="Index">POIs</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white" href="/api/pois">API</a>
+                            </li>
+                        }
                     </ul>
+                    <div class="d-flex align-items-center gap-3">
+                        @if (SignInManager.IsSignedIn(User))
+                        {
+                            var currentUser = await UserManager.GetUserAsync(User);
+                            <span class="navbar-text text-white small">
+                                @(currentUser?.DisplayName ?? User.Identity?.Name)
+                            </span>
+                            <form asp-controller="Account" asp-action="Logout" method="post" class="mb-0">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-outline-light btn-sm">Dang xuat</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <a class="btn btn-outline-light btn-sm" asp-controller="Account" asp-action="Login">Dang nhap</a>
+                        }
+                    </div>
                 </div>
             </div>
         </nav>
