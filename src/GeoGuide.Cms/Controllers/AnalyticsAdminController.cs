@@ -11,10 +11,10 @@ public class AnalyticsAdminController(ApplicationDbContext dbContext) : Controll
 {
     public async Task<IActionResult> Index(DateTimeOffset? startDate = null, DateTimeOffset? endDate = null)
     {
-        var (start, end) = NormalizeRange(startDate, endDate);
+        var range = NormalizeRange(startDate, endDate);
 
         var query = dbContext.PlaybackLogs
-            .Where(log => log.PlayedAt >= start && log.PlayedAt <= end);
+            .Where(log => log.PlayedAt >= range.StartUtc && log.PlayedAt < range.EndExclusiveUtc);
 
         var totalUsers = await query
             .Select(log => log.DeviceId)
@@ -27,50 +27,76 @@ public class AnalyticsAdminController(ApplicationDbContext dbContext) : Controll
             ? (int)Math.Round(await query.AverageAsync(log => log.DurationSeconds))
             : 0;
 
-        var topPois = await query
-            .Join(
-                dbContext.Pois.IgnoreQueryFilters(),
-                log => log.PoiId,
-                poi => poi.Id,
-                (log, poi) => new { log, poi })
-            .GroupBy(row => new { row.poi.Id, row.poi.Name })
-            .Select(group => new AnalyticsTopPoiRow
+        var topPoiStats = await query
+            .GroupBy(log => log.PoiId)
+            .Select(group => new
             {
-                PoiId = group.Key.Id,
-                Name = group.Key.Name,
+                PoiId = group.Key,
                 ListenCount = group.Count(),
-                AverageDurationSeconds = (int)Math.Round(group.Average(x => x.log.DurationSeconds))
+                AverageDurationSeconds = (int)Math.Round(group.Average(x => x.DurationSeconds))
             })
             .OrderByDescending(row => row.ListenCount)
-            .ThenBy(row => row.Name)
             .Take(10)
             .ToListAsync();
 
-        var heatmap = await query
-            .Join(
-                dbContext.Pois.IgnoreQueryFilters(),
-                log => log.PoiId,
-                poi => poi.Id,
-                (log, poi) => new { poi.Latitude, poi.Longitude })
-            .GroupBy(row => new
+        var heatmapStats = await query
+            .GroupBy(log => log.PoiId)
+            .Select(group => new
             {
-                Lat = Math.Round(row.Latitude, 4),
-                Lng = Math.Round(row.Longitude, 4)
-            })
-            .Select(group => new AnalyticsHeatmapRow
-            {
-                Lat = group.Key.Lat,
-                Lng = group.Key.Lng,
+                PoiId = group.Key,
                 Weight = group.Count()
             })
             .OrderByDescending(row => row.Weight)
             .Take(200)
             .ToListAsync();
 
+        var poiIds = topPoiStats
+            .Select(row => row.PoiId)
+            .Concat(heatmapStats.Select(row => row.PoiId))
+            .Distinct()
+            .ToList();
+
+        var poiLookup = await dbContext.Pois
+            .IgnoreQueryFilters()
+            .Where(poi => poiIds.Contains(poi.Id))
+            .Select(poi => new { poi.Id, poi.Name, poi.Latitude, poi.Longitude })
+            .ToDictionaryAsync(poi => poi.Id);
+
+        var topPois = topPoiStats
+            .Select(row => new AnalyticsTopPoiRow
+            {
+                PoiId = row.PoiId,
+                Name = poiLookup.TryGetValue(row.PoiId, out var poi) ? poi.Name : "Unknown POI",
+                ListenCount = row.ListenCount,
+                AverageDurationSeconds = row.AverageDurationSeconds
+            })
+            .OrderByDescending(row => row.ListenCount)
+            .ThenBy(row => row.Name)
+            .ToList();
+
+        var heatmap = heatmapStats
+            .Where(row => poiLookup.ContainsKey(row.PoiId))
+            .GroupBy(row => new
+            {
+                Lat = Math.Round(poiLookup[row.PoiId].Latitude, 4),
+                Lng = Math.Round(poiLookup[row.PoiId].Longitude, 4)
+            })
+            .Select(group => new AnalyticsHeatmapRow
+            {
+                Lat = group.Key.Lat,
+                Lng = group.Key.Lng,
+                Weight = group.Sum(x => x.Weight)
+            })
+            .OrderByDescending(row => row.Weight)
+            .Take(200)
+            .ToList();
+
         var vm = new AnalyticsDashboardViewModel
         {
-            StartDate = start,
-            EndDate = end,
+            StartDate = range.StartUtc,
+            EndDate = range.EndExclusiveUtc.AddTicks(-1),
+            StartDateInput = range.StartDateInput,
+            EndDateInput = range.EndDateInput,
             TotalUsers = totalUsers,
             TotalListens = totalListens,
             AverageDurationSeconds = averageDurationSeconds,
@@ -81,15 +107,35 @@ public class AnalyticsAdminController(ApplicationDbContext dbContext) : Controll
         return View(vm);
     }
 
-    private static (DateTimeOffset Start, DateTimeOffset End) NormalizeRange(DateTimeOffset? startDate, DateTimeOffset? endDate)
+    private static AnalyticsRange NormalizeRange(DateTimeOffset? startDate, DateTimeOffset? endDate)
     {
-        var end = endDate ?? DateTimeOffset.UtcNow;
-        var start = startDate ?? end.AddDays(-30);
-        if (start > end)
+        var localToday = DateTime.Today;
+        var startLocalDate = startDate?.Date ?? localToday.AddDays(-30);
+        var endLocalDate = endDate?.Date ?? localToday;
+
+        if (startLocalDate > endLocalDate)
         {
-            (start, end) = (end, start);
+            (startLocalDate, endLocalDate) = (endLocalDate, startLocalDate);
         }
 
-        return (start, end);
+        var startLocal = new DateTimeOffset(startLocalDate, TimeZoneInfo.Local.GetUtcOffset(startLocalDate));
+        var endExclusiveLocalDate = endLocalDate.AddDays(1);
+        var endExclusiveLocal = new DateTimeOffset(endExclusiveLocalDate, TimeZoneInfo.Local.GetUtcOffset(endExclusiveLocalDate));
+
+        return new AnalyticsRange
+        {
+            StartUtc = startLocal.ToUniversalTime(),
+            EndExclusiveUtc = endExclusiveLocal.ToUniversalTime(),
+            StartDateInput = startLocalDate.ToString("yyyy-MM-dd"),
+            EndDateInput = endLocalDate.ToString("yyyy-MM-dd")
+        };
+    }
+
+    private sealed class AnalyticsRange
+    {
+        public required DateTimeOffset StartUtc { get; init; }
+        public required DateTimeOffset EndExclusiveUtc { get; init; }
+        public required string StartDateInput { get; init; }
+        public required string EndDateInput { get; init; }
     }
 }
