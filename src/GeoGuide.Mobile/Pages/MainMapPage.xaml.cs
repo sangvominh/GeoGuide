@@ -1,3 +1,4 @@
+using CommunityToolkit.Maui.Core;
 using Mapsui;
 using Mapsui.Extensions;
 using Mapsui.Features;
@@ -44,13 +45,16 @@ public partial class MainMapPage : ContentPage
     private MemoryLayer? _poiLayer;
     private Location? _currentLocation;
     private PointOfInterest? _nearestPoi;
+    private PointOfInterest? _selectedPoiForPlayback;
     private bool _isInitialized;
     private bool _isLoadingPois;
     private bool _isMapFullScreen;
     private bool _isNarrationRunning;
+    private bool _isAutoNarrationEnabled = true;
     private DateTimeOffset _lastPoiRefreshUtc = DateTimeOffset.MinValue;
     private string _selectedCategoryKey = "all";
     private string _searchKeyword = string.Empty;
+    private TaskCompletionSource<bool>? _audioPlaybackCompletionSource;
 
     public MainMapPage()
     {
@@ -70,6 +74,7 @@ public partial class MainMapPage : ContentPage
 
         InitializeMap();
         BuildCategoryChips();
+        UpdateAutoNarrationUiState();
     }
 
     protected override async void OnAppearing()
@@ -109,6 +114,7 @@ public partial class MainMapPage : ContentPage
     {
         var map = MapControl.Map;
         map.Layers.Add(Mapsui.Tiling.OpenStreetMap.CreateTileLayer());
+        MapControl.Info += async (_, e) => await HandleMapInfoAsync(e);
 
         _userLocationLayer = new MemoryLayer
         {
@@ -277,6 +283,13 @@ public partial class MainMapPage : ContentPage
 
     private void UpdateNearestPoiStatus()
     {
+        UpdateAutoNarrationUiState();
+
+        if (_selectedPoiForPlayback != null && _allPois.All(poi => poi.Id != _selectedPoiForPlayback.Id))
+        {
+            _selectedPoiForPlayback = null;
+        }
+
         if (_currentLocation == null)
         {
             NearestPoiLabel.Text = "Chưa có vị trí hiện tại. Cấp quyền để gợi ý địa điểm gần nhất.";
@@ -284,8 +297,7 @@ public partial class MainMapPage : ContentPage
             GpsStatusDot.Color = MauiColor.FromArgb("#F78A44");
             LocationStateTitleLabel.Text = "Vị trí hiện tại";
             LocationStateDetailLabel.Text = "Cần quyền GPS để xác định khu vực bạn đang đứng";
-            MiniPlayerPoiLabel.Text = "Chưa sẵn sàng thuyết minh";
-            MiniPlayerStatusLabel.Text = "Bật vị trí để app gợi ý nội dung theo địa điểm gần bạn";
+            UpdateMiniPlayerLabels("Chưa sẵn sàng thuyết minh", "Bật vị trí để app gợi ý nội dung theo địa điểm gần bạn");
             return;
         }
 
@@ -296,8 +308,7 @@ public partial class MainMapPage : ContentPage
             GpsStatusDot.Color = MauiColor.FromArgb("#22A35A");
             LocationStateTitleLabel.Text = "Vị trí hiện tại";
             LocationStateDetailLabel.Text = "Đã có vị trí, đang chờ dữ liệu địa điểm phù hợp";
-            MiniPlayerPoiLabel.Text = "Chưa có địa điểm gần bạn";
-            MiniPlayerStatusLabel.Text = "Mini player sẽ hiện nội dung khi có POI nằm trong tầm theo dõi";
+            UpdateMiniPlayerLabels("Chưa có địa điểm gần bạn", "Mini player sẽ hiện nội dung khi có POI nằm trong tầm theo dõi");
             return;
         }
 
@@ -306,8 +317,13 @@ public partial class MainMapPage : ContentPage
         GpsStatusDot.Color = MauiColor.FromArgb("#22A35A");
         LocationStateTitleLabel.Text = "Vị trí hiện tại";
         LocationStateDetailLabel.Text = $"Gần {_nearestPoi.Name} • {_nearestPoi.DistanceDisplay}";
-        MiniPlayerPoiLabel.Text = _nearestPoi.Name;
-        MiniPlayerStatusLabel.Text = $"Sẵn sàng phát thuyết minh khi bạn vào bán kính {Math.Round(_nearestPoi.TriggerRadiusMeters)}m";
+
+        var activePoi = GetActivePlaybackPoi();
+        UpdateMiniPlayerLabels(
+            activePoi?.Name ?? _nearestPoi.Name,
+            activePoi == null || activePoi.Id == _nearestPoi.Id
+                ? $"Sẵn sàng phát thuyết minh khi bạn vào bán kính {Math.Round(_nearestPoi.TriggerRadiusMeters)}m"
+                : $"Đã chọn thủ công • Cách {activePoi.DistanceDisplay}");
     }
 
     private void BindNearbyCards(IEnumerable<PointOfInterest> pois)
@@ -526,7 +542,10 @@ public partial class MainMapPage : ContentPage
         foreach (var poi in pois)
         {
             var point = SphericalMercator.FromLonLat(poi.Longitude, poi.Latitude).ToMPoint();
-            var feature = new PointFeature(point);
+            var feature = new PointFeature(point)
+            {
+                Data = poi
+            };
             feature.Styles.Add(new SymbolStyle
             {
                 SymbolType = SymbolType.Ellipse,
@@ -552,28 +571,32 @@ public partial class MainMapPage : ContentPage
             return;
         }
 
+        _selectedPoiForPlayback = poi;
         _isNarrationRunning = true;
         NearbyStatusLabel.IsVisible = true;
         NearbyStatusLabel.Text = userInitiated
             ? $"Đang phát thuyết minh: {poi.Name}"
             : $"Đang tự động phát theo vị trí: {poi.Name}";
-        MiniPlayerPoiLabel.Text = poi.Name;
-        MiniPlayerStatusLabel.Text = userInitiated
+        UpdateMiniPlayerLabels(
+            poi.Name,
+            userInitiated
             ? "Đang phát thủ công từ mini player"
-            : "Đang phát tự động theo vị trí hiện tại";
+            : "Đang phát tự động theo vị trí hiện tại");
 
         try
         {
-            await _narrationService.PlayAsync(poi, triggerType);
+            await _narrationService.PlayAsync(poi, triggerType, PlayAudioAsync);
             _lastPlaybackByPoiId[poi.Id] = DateTimeOffset.UtcNow;
             NearbyStatusLabel.Text = $"Đã phát xong: {poi.Name}";
-            MiniPlayerStatusLabel.Text = $"Đã phát xong. Sẵn sàng cho lần kích hoạt tiếp theo quanh {poi.Name}";
+            UpdateMiniPlayerLabels(poi.Name, $"Đã phát xong. Sẵn sàng cho lần kích hoạt tiếp theo quanh {poi.Name}");
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Narration error: {ex.Message}");
-            NearbyStatusLabel.Text = "Không thể phát thuyết minh lúc này.";
-            MiniPlayerStatusLabel.Text = "Chưa thể phát thuyết minh lúc này";
+            NearbyStatusLabel.Text = ex is InvalidOperationException
+                ? ex.Message
+                : "Không thể phát thuyết minh lúc này.";
+            UpdateMiniPlayerLabels(poi.Name, NearbyStatusLabel.Text);
         }
         finally
         {
@@ -583,7 +606,7 @@ public partial class MainMapPage : ContentPage
 
     private async Task EvaluateAutoTriggerAsync()
     {
-        if (_currentLocation == null || _isNarrationRunning)
+        if (!_isAutoNarrationEnabled || _currentLocation == null || _isNarrationRunning)
         {
             return;
         }
@@ -620,6 +643,110 @@ public partial class MainMapPage : ContentPage
         }
 
         await EvaluateAutoTriggerAsync();
+    }
+
+    private void UpdateAutoNarrationUiState()
+    {
+        if (AutoNarrationSwitch.IsToggled != _isAutoNarrationEnabled)
+        {
+            AutoNarrationSwitch.IsToggled = _isAutoNarrationEnabled;
+        }
+
+        AutoNarrationStateLabel.Text = _isAutoNarrationEnabled ? "Tự động bật" : "Tự động tắt";
+        AutoNarrationStateLabel.TextColor = _isAutoNarrationEnabled
+            ? MauiColor.FromArgb("#1DB954")
+            : MauiColor.FromArgb("#B3B3B3");
+    }
+
+    private async Task HandleMapInfoAsync(MapInfoEventArgs eventArgs)
+    {
+        if (_poiLayer == null)
+        {
+            return;
+        }
+
+        var mapInfo = eventArgs.GetMapInfo?.Invoke([_poiLayer]);
+        if (mapInfo?.Feature?.Data is not PointOfInterest poi)
+        {
+            return;
+        }
+
+        eventArgs.Handled = true;
+        await ShowPoiPopupAsync(poi);
+    }
+
+    private async Task ShowPoiPopupAsync(PointOfInterest poi)
+    {
+        _selectedPoiForPlayback = poi;
+        UpdateMiniPlayerLabels(poi.Name, $"Đã chọn trên bản đồ • Cách {poi.DistanceDisplay}");
+
+        var action = await DisplayActionSheetAsync(
+            $"{poi.Name} • {poi.DistanceDisplay}",
+            "Đóng",
+            null,
+            "Phát thuyết minh");
+
+        if (action == "Phát thuyết minh")
+        {
+            await PlayNarrationAsync(poi, "map-tap", userInitiated: true);
+        }
+    }
+
+    private PointOfInterest? GetActivePlaybackPoi()
+    {
+        return _selectedPoiForPlayback ?? _nearestPoi;
+    }
+
+    private void UpdateMiniPlayerLabels(string title, string status)
+    {
+        MiniPlayerPoiLabel.Text = title;
+        MiniPlayerStatusLabel.Text = status;
+    }
+
+    private Task PlayAudioAsync(Uri audioUri, CancellationToken cancellationToken)
+    {
+        var completionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _audioPlaybackCompletionSource = completionSource;
+
+        return MainThread.InvokeOnMainThreadAsync(async () =>
+        {
+            try
+            {
+                NarrationMediaElement.Stop();
+                NarrationMediaElement.Source = audioUri;
+                NarrationMediaElement.MetadataTitle = _selectedPoiForPlayback?.Name ?? "GeoGuide";
+                NarrationMediaElement.MetadataArtist = "GeoGuide";
+                NarrationMediaElement.Play();
+
+                using var registration = cancellationToken.Register(() =>
+                {
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        NarrationMediaElement.Stop();
+                        _audioPlaybackCompletionSource?.TrySetCanceled(cancellationToken);
+                    });
+                });
+
+                await completionSource.Task;
+            }
+            finally
+            {
+                if (ReferenceEquals(_audioPlaybackCompletionSource, completionSource))
+                {
+                    _audioPlaybackCompletionSource = null;
+                }
+            }
+        });
+    }
+
+    private void OnNarrationMediaEnded(object? sender, EventArgs e)
+    {
+        _audioPlaybackCompletionSource?.TrySetResult(true);
+    }
+
+    private void OnNarrationMediaFailed(object? sender, MediaFailedEventArgs e)
+    {
+        _audioPlaybackCompletionSource?.TrySetException(new InvalidOperationException($"Không phát được audio từ backend: {e.ErrorMessage}"));
     }
 
     private async Task FilterNearbyPoiAsync(string keyword)
@@ -744,6 +871,35 @@ public partial class MainMapPage : ContentPage
         await RefreshCurrentLocationAsync(requestIfMissing: true, recenterMap: true);
         await LoadPoisAsync(force: true);
         await EvaluateAutoTriggerAsync();
+    }
+
+    private async void OnMiniPlayerPlayTapped(object? sender, EventArgs e)
+    {
+        var poi = GetActivePlaybackPoi();
+        if (poi == null)
+        {
+            NearbyStatusLabel.IsVisible = true;
+            NearbyStatusLabel.Text = "Chưa có POI khả dụng để phát.";
+            return;
+        }
+
+        await PlayNarrationAsync(poi, "mini-player", userInitiated: true);
+    }
+
+    private async void OnAutoNarrationToggled(object? sender, ToggledEventArgs e)
+    {
+        _isAutoNarrationEnabled = e.Value;
+        UpdateAutoNarrationUiState();
+
+        NearbyStatusLabel.IsVisible = true;
+        NearbyStatusLabel.Text = _isAutoNarrationEnabled
+            ? "Đã bật tự động phát theo bán kính POI."
+            : "Đã tắt tự động phát. Bạn vẫn có thể bấm Play thủ công.";
+
+        if (_isAutoNarrationEnabled)
+        {
+            await EvaluateAutoTriggerAsync();
+        }
     }
 
     private void OnExpandMapTapped(object? sender, EventArgs e)
