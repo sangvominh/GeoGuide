@@ -1,54 +1,90 @@
-﻿CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
-    "MigrationId" character varying(150) NOT NULL,
-    "ProductVersion" character varying(32) NOT NULL,
-    CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY ("MigrationId")
+-- Phase 1 baseline schema script for manual database provisioning.
+-- Source of truth remains EF Core migrations in src/GeoGuide.Cms/Migrations.
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE TABLE IF NOT EXISTS poi_tenants (
+    id UUID PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    slug VARCHAR(100) NOT NULL UNIQUE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    updated_at TIMESTAMPTZ NOT NULL
 );
 
-START TRANSACTION;
-CREATE TABLE pois (
-    id uuid NOT NULL,
-    name character varying(200) NOT NULL,
-    description text NOT NULL,
-    latitude double precision NOT NULL,
-    longitude double precision NOT NULL,
-    trigger_radius_meters integer NOT NULL,
-    priority integer NOT NULL,
-    category_key character varying(100) NOT NULL,
-    category_label character varying(200) NOT NULL,
-    image_url text NOT NULL,
-    map_url text NOT NULL,
-    audio_url text NOT NULL,
-    tts_script text NOT NULL,
-    language_code character varying(20) NOT NULL,
-    is_active boolean NOT NULL,
-    updated_at timestamp with time zone NOT NULL,
-    CONSTRAINT "PK_pois" PRIMARY KEY (id)
+CREATE TABLE IF NOT EXISTS pois (
+    id UUID PRIMARY KEY,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    tenant_id UUID NULL REFERENCES poi_tenants(id) ON DELETE SET NULL,
+    approval_status INTEGER NOT NULL DEFAULT 0,
+    name VARCHAR(200) NOT NULL,
+    description TEXT NOT NULL,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    trigger_radius_meters INTEGER NOT NULL,
+    cooldown_minutes INTEGER NOT NULL,
+    priority INTEGER NOT NULL,
+    category_key VARCHAR(100) NOT NULL,
+    category_label VARCHAR(200) NOT NULL,
+    image_url TEXT NOT NULL,
+    map_url TEXT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT ck_pois_latitude_range CHECK (latitude >= -90 AND latitude <= 90),
+    CONSTRAINT ck_pois_longitude_range CHECK (longitude >= -180 AND longitude <= 180),
+    CONSTRAINT ck_pois_trigger_radius_positive CHECK (trigger_radius_meters > 0),
+    CONSTRAINT ck_pois_cooldown_minutes_non_negative CHECK (cooldown_minutes >= 0),
+    CONSTRAINT ck_pois_priority_non_negative CHECK (priority >= 0)
 );
 
-CREATE TABLE playback_logs (
-    id uuid NOT NULL,
-    poi_id uuid NOT NULL,
-    played_at timestamp with time zone NOT NULL,
-    trigger_type character varying(20) NOT NULL,
-    duration_seconds integer NOT NULL,
-    device_id character varying(200) NOT NULL,
-    CONSTRAINT "PK_playback_logs" PRIMARY KEY (id),
-    CONSTRAINT "FK_playback_logs_pois_poi_id" FOREIGN KEY (poi_id) REFERENCES pois (id) ON DELETE CASCADE
+CREATE TABLE IF NOT EXISTS poi_audios (
+    id UUID PRIMARY KEY,
+    poi_id UUID NOT NULL REFERENCES pois(id) ON DELETE CASCADE,
+    language_code VARCHAR(10) NOT NULL,
+    content_type INTEGER NOT NULL,
+    audio_url TEXT NULL,
+    tts_content TEXT NULL,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    CONSTRAINT ck_poi_audios_content_payload CHECK (
+        (content_type = 1 AND audio_url IS NOT NULL)
+        OR (content_type = 2 AND tts_content IS NOT NULL)
+    )
 );
 
-INSERT INTO pois (id, audio_url, category_key, category_label, description, image_url, is_active, language_code, latitude, longitude, map_url, name, priority, trigger_radius_meters, tts_script, updated_at)
-VALUES ('458a1a0e-b524-4e95-92f4-684e80ea7b97', 'https://example.com/audio/notre-dame-cathedral.mp3', 'attraction', 'Tham quan', 'Nha tho Duc Ba Sai Gon voi kien truc Phap tieu bieu.', 'https://images.unsplash.com/photo-1583417267826-aebc4d1542e1', TRUE, 'vi-VN', 10.7798, 106.699, 'https://maps.google.com/?q=10.7798,106.6990', 'Notre-Dame Cathedral', 2, 90, 'Nha tho Duc Ba la mot diem nhan kien truc va lich su ngay giua trung tam thanh pho.', TIMESTAMPTZ '2026-04-09T10:00:00+00:00');
-INSERT INTO pois (id, audio_url, category_key, category_label, description, image_url, is_active, language_code, latitude, longitude, map_url, name, priority, trigger_radius_meters, tts_script, updated_at)
-VALUES ('5807657e-240d-42cb-b6e8-b46fd35652ce', 'https://example.com/audio/tao-dan-park.mp3', 'park', 'Cong vien', 'Cong vien xanh phu hop cho di bo va thu gian.', 'https://images.unsplash.com/photo-1506744038136-46273834b3fb', TRUE, 'vi-VN', 10.777799999999999, 106.6927, 'https://maps.google.com/?q=10.7778,106.6927', 'Tao Dan Park', 3, 100, 'Cong vien Tao Dan la khoang xanh hien hoi, noi nguoi dan dia phuong thuong tap the duc vao sang som.', TIMESTAMPTZ '2026-04-09T10:00:00+00:00');
-INSERT INTO pois (id, audio_url, category_key, category_label, description, image_url, is_active, language_code, latitude, longitude, map_url, name, priority, trigger_radius_meters, tts_script, updated_at)
-VALUES ('9f0bbf75-a9fc-4a94-93a1-7c5ef0fc6a01', 'https://example.com/audio/ben-thanh-market.mp3', 'attraction', 'Tham quan', 'Khu cho noi tieng o trung tam TP.HCM.', 'https://images.unsplash.com/photo-1555921015-5532091f6026', TRUE, 'vi-VN', 10.772, 106.6983, 'https://maps.google.com/?q=10.7720,106.6983', 'Ben Thanh Market', 1, 80, 'Day la cho Ben Thanh, mot bieu tuong van hoa va du lich cua thanh pho.', TIMESTAMPTZ '2026-04-09T10:00:00+00:00');
-INSERT INTO pois (id, audio_url, category_key, category_label, description, image_url, is_active, language_code, latitude, longitude, map_url, name, priority, trigger_radius_meters, tts_script, updated_at)
-VALUES ('a76542f8-e34f-45ee-96c9-0e3961c4ca30', 'https://example.com/audio/hcm-city-museum.mp3', 'museum', 'Bao tang', 'Bao tang gioi thieu lich su va van hoa thanh pho.', 'https://images.unsplash.com/photo-1518998053901-5348d3961a04', TRUE, 'vi-VN', 10.7765, 106.70099999999999, 'https://maps.google.com/?q=10.7765,106.7010', 'Ho Chi Minh City Museum', 4, 75, 'Bao tang Thanh pho Ho Chi Minh luu giu nhieu tu lieu va hien vat quan trong.', TIMESTAMPTZ '2026-04-09T10:00:00+00:00');
+CREATE TABLE IF NOT EXISTS tours (
+    id UUID PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    thumbnail_url TEXT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL
+);
 
-CREATE INDEX "IX_playback_logs_poi_id" ON playback_logs (poi_id);
+CREATE TABLE IF NOT EXISTS tour_poi_mappings (
+    tour_id UUID NOT NULL REFERENCES tours(id) ON DELETE CASCADE,
+    poi_id UUID NOT NULL REFERENCES pois(id) ON DELETE CASCADE,
+    order_index INTEGER NOT NULL,
+    PRIMARY KEY (tour_id, poi_id)
+);
 
-INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-VALUES ('20260409073359_InitialCreate', '10.0.5');
+CREATE TABLE IF NOT EXISTS playback_logs (
+    id UUID PRIMARY KEY,
+    poi_id UUID NOT NULL REFERENCES pois(id) ON DELETE CASCADE,
+    played_at TIMESTAMPTZ NOT NULL,
+    trigger_type VARCHAR(20) NOT NULL,
+    duration_seconds INTEGER NOT NULL,
+    device_id VARCHAR(200) NOT NULL,
+    CONSTRAINT ck_playback_logs_trigger_type CHECK (trigger_type IN ('gps', 'qr', 'manual')),
+    CONSTRAINT ck_playback_logs_duration_non_negative CHECK (duration_seconds >= 0)
+);
 
-COMMIT;
-
+CREATE INDEX IF NOT EXISTS ix_pois_latitude_longitude ON pois (latitude, longitude);
+CREATE INDEX IF NOT EXISTS ix_poi_audios_poi_id_language_code_content_type_is_deleted
+    ON poi_audios (poi_id, language_code, content_type, is_deleted);
+CREATE INDEX IF NOT EXISTS ix_tour_poi_mappings_poi_id ON tour_poi_mappings (poi_id);
+CREATE INDEX IF NOT EXISTS ix_playback_logs_poi_id ON playback_logs (poi_id);
+CREATE INDEX IF NOT EXISTS ix_playback_logs_played_at ON playback_logs (played_at);

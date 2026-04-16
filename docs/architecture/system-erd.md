@@ -1,32 +1,78 @@
-# MVP ERD
+# System ERD (Phase 1 Baseline)
 
 ## Purpose
 
-This ERD defines the minimum relational model required to support the shared POI contract and playback logging contract.
+Tài liệu này là nguồn mô tả dữ liệu cho Giai đoạn 1, khớp với:
 
-## Entity Relationship Diagram
+- `src/GeoGuide.Cms/Data/ApplicationDbContext.cs`
+- EF migrations hiện tại trong `src/GeoGuide.Cms/Migrations`
+
+## ERD
 
 ```mermaid
 erDiagram
+    POI_TENANT ||--o{ POI : "owns"
+    POI ||--o{ POI_AUDIO : "has contents"
+    TOUR ||--o{ TOUR_POI_MAPPING : "contains"
+    POI ||--o{ TOUR_POI_MAPPING : "mapped in"
     POI ||--o{ PLAYBACK_LOG : "produces"
+
+    POI_TENANT {
+        uuid id PK
+        string name
+        string slug UNIQUE
+        bool is_active
+        datetime updated_at
+    }
 
     POI {
         uuid id PK
+        datetime created_at
+        datetime updated_at
+        bool is_deleted
+        uuid tenant_id FK
+        int approval_status
         string name
         string description
-        decimal latitude
-        decimal longitude
+        float latitude
+        float longitude
         int trigger_radius_meters
+        int cooldown_minutes
         int priority
         string category_key
         string category_label
         string image_url
         string map_url
-        string audio_url
-        string tts_script
+        bool is_active
+    }
+
+    POI_AUDIO {
+        uuid id PK
+        uuid poi_id FK
         string language_code
-        boolean is_active
+        int content_type
+        string audio_url NULL
+        string tts_content NULL
+        datetime created_at
         datetime updated_at
+        bool is_deleted
+    }
+
+    TOUR {
+        uuid id PK
+        string name
+        string description
+        string thumbnail_url
+        bool is_active
+        bool is_deleted
+        datetime created_at
+        datetime updated_at
+    }
+
+    TOUR_POI_MAPPING {
+        uuid tour_id PK, FK
+        uuid poi_id PK, FK
+        int order_index
     }
 
     PLAYBACK_LOG {
@@ -39,40 +85,20 @@ erDiagram
     }
 ```
 
-## Mapping To Shared API Contract
+## Core Constraints
 
-| API field | Database column |
-| --- | --- |
-| `id` | `id` |
-| `name` | `name` |
-| `description` | `description` |
-| `latitude` | `latitude` |
-| `longitude` | `longitude` |
-| `triggerRadiusMeters` | `trigger_radius_meters` |
-| `priority` | `priority` |
-| `categoryKey` | `category_key` |
-| `categoryLabel` | `category_label` |
-| `imageUrl` | `image_url` |
-| `mapUrl` | `map_url` |
-| `audioUrl` | `audio_url` |
-| `ttsScript` | `tts_script` |
-| `languageCode` | `language_code` |
-| `isActive` | `is_active` |
-| `updatedAt` | `updated_at` |
-
-## Data Constraints
-
-- `poi.id` must be a UUID.
-- `poi.latitude` must be within `-90` to `90`.
-- `poi.longitude` must be within `-180` to `180`.
-- `poi.trigger_radius_meters` must be greater than `0`.
-- `poi.priority` defaults to `1`.
-- `poi.language_code` defaults to `vi-VN` for the demo seed unless another language is explicitly needed.
-- `playback_log.trigger_type` is restricted to `gps`, `qr`, or `manual`.
-- `playback_log.poi_id` must reference an existing POI.
+- `pois.latitude` trong khoảng `[-90, 90]`.
+- `pois.longitude` trong khoảng `[-180, 180]`.
+- `pois.trigger_radius_meters > 0`.
+- `pois.cooldown_minutes >= 0`.
+- `pois.priority >= 0`.
+- `poi_audios` bắt buộc hợp lệ theo `content_type`:
+  - `1` -> phải có `audio_url`.
+  - `2` -> phải có `tts_content`.
+- `playback_logs.trigger_type` chỉ nhận `gps | qr | manual`.
+- `playback_logs.duration_seconds >= 0`.
 
 ## Notes
 
-- Column names may use snake_case in PostgreSQL, but API payloads must remain camelCase.
-- The current CMS implementation stores these entities in `pois` and `playback_logs`.
-- The MVP does not require separate tables for categories, tours, or media assets.
+- Đây là schema Phase 1 hướng “nền tảng dữ liệu + CMS”, không còn mô hình POI gộp `audio_url/tts_script` như bản MVP cũ.
+- API vẫn trả camelCase; DB dùng snake_case.

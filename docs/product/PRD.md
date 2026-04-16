@@ -2,8 +2,8 @@
 
 **Tên dự án:** GeoGuide - Ứng dụng Thuyết minh Địa điểm Tự động  
 **Người phụ trách (PO/PM):** Võ Minh Sang  
-**Phiên bản tài liệu:** 2.0 - MVP Integrated  
-**Ngày cập nhật cuối:** 10/04/2026
+**Phiên bản tài liệu:** 2.1 - Phase 1 Data Baseline  
+**Ngày cập nhật cuối:** 17/04/2026
 
 ---
 
@@ -124,19 +124,26 @@ Các trường chính của POI:
 - `categoryLabel`
 - `imageUrl`
 - `mapUrl`
-- `audioUrl`
-- `ttsScript`
-- `languageCode`
 - `isActive`
 - `updatedAt`
+
+Nội dung thuyết minh/audio đã được tách khỏi `POI` sang bảng `PoiAudio`:
+
+- `poiId`
+- `languageCode`
+- `contentType` (`AudioFile` hoặc `TtsScript`)
+- `audioUrl` (nullable)
+- `ttsContent` (nullable)
 
 ### 4.2. Backend API
 
 API hiện tại cung cấp tối thiểu:
 
-- `GET /api/pois`
-- `GET /api/pois/{id}`
-- `POST /api/logs/playback`
+- `GET /api/v1/pois`
+- `GET /api/v1/pois/{id}`
+- `GET /api/v1/sync/bootstrap`
+- `GET /api/v1/sync/delta`
+- `POST /api/v1/playback-logs`
 
 Yêu cầu contract:
 
@@ -279,32 +286,79 @@ flowchart LR
 
 ### 7.1. Thực thể chính
 
+- `POI_TENANT`
 - `POI`
+- `POI_AUDIO`
+- `TOUR`
+- `TOUR_POI_MAPPING`
 - `PLAYBACK_LOG`
 
 ### 7.2. ERD
 
 ```mermaid
 erDiagram
+    POI_TENANT ||--o{ POI : "owns"
+    POI ||--o{ POI_AUDIO : "has contents"
+    TOUR ||--o{ TOUR_POI_MAPPING : "contains"
+    POI ||--o{ TOUR_POI_MAPPING : "mapped in"
     POI ||--o{ PLAYBACK_LOG : "produces"
+
+    POI_TENANT {
+        uuid id PK
+        string name
+        string slug
+        bool is_active
+        datetime updated_at
+    }
 
     POI {
         uuid id PK
+        datetime created_at
+        datetime updated_at
+        bool is_deleted
+        uuid tenant_id FK
+        int approval_status
         string name
         string description
         decimal latitude
         decimal longitude
         int trigger_radius_meters
+        int cooldown_minutes
         int priority
         string category_key
         string category_label
         string image_url
         string map_url
-        string audio_url
-        string tts_script
-        string language_code
         boolean is_active
+    }
+
+    POI_AUDIO {
+        uuid id PK
+        uuid poi_id FK
+        string language_code
+        int content_type
+        string audio_url
+        string tts_content
+        datetime created_at
         datetime updated_at
+        bool is_deleted
+    }
+
+    TOUR {
+        uuid id PK
+        string name
+        string description
+        string thumbnail_url
+        bool is_active
+        bool is_deleted
+        datetime created_at
+        datetime updated_at
+    }
+
+    TOUR_POI_MAPPING {
+        uuid tour_id PK, FK
+        uuid poi_id PK, FK
+        int order_index
     }
 
     PLAYBACK_LOG {
@@ -319,8 +373,8 @@ erDiagram
 
 ### 7.3. Ghi chú
 
-- MVP chưa tách bảng `tour`, `translation`, `audio_asset`.
-- Tên bảng thực tế ở CMS hiện tại là `pois` và `playback_logs`.
+- Schema hiện tại đã tách bảng `poi_audios` và có `tour_poi_mappings` cho quan hệ N-N.
+- Tên bảng thực tế ở CMS gồm: `poi_tenants`, `pois`, `poi_audios`, `tours`, `tour_poi_mappings`, `playback_logs`.
 - API dùng camelCase, database dùng snake_case hoặc naming convention tương đương.
 
 ---

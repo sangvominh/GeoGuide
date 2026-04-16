@@ -70,7 +70,14 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
         modelBuilder.Entity<Poi>(entity =>
         {
-            entity.ToTable("pois");
+            entity.ToTable("pois", table =>
+            {
+                table.HasCheckConstraint("CK_pois_latitude_range", "latitude >= -90 AND latitude <= 90");
+                table.HasCheckConstraint("CK_pois_longitude_range", "longitude >= -180 AND longitude <= 180");
+                table.HasCheckConstraint("CK_pois_trigger_radius_positive", "trigger_radius_meters > 0");
+                table.HasCheckConstraint("CK_pois_cooldown_minutes_non_negative", "cooldown_minutes >= 0");
+                table.HasCheckConstraint("CK_pois_priority_non_negative", "priority >= 0");
+            });
             entity.HasKey(p => p.Id);
             entity.HasQueryFilter(p => !p.IsDeleted);
 
@@ -103,7 +110,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
         modelBuilder.Entity<PoiAudio>(entity =>
         {
-            entity.ToTable("poi_audios");
+            entity.ToTable("poi_audios", table =>
+            {
+                table.HasCheckConstraint(
+                    "CK_poi_audios_content_payload",
+                    "(content_type = 1 AND audio_url IS NOT NULL) OR (content_type = 2 AND tts_content IS NOT NULL)");
+            });
             entity.HasKey(p => p.Id);
             entity.HasQueryFilter(p => !p.IsDeleted);
 
@@ -121,11 +133,17 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .WithMany(p => p.Audios)
                 .HasForeignKey(p => p.PoiId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(p => new { p.PoiId, p.LanguageCode, p.ContentType, p.IsDeleted });
         });
 
         modelBuilder.Entity<PlaybackLog>(entity =>
         {
-            entity.ToTable("playback_logs");
+            entity.ToTable("playback_logs", table =>
+            {
+                table.HasCheckConstraint("CK_playback_logs_trigger_type", "trigger_type IN ('gps', 'qr', 'manual')");
+                table.HasCheckConstraint("CK_playback_logs_duration_non_negative", "duration_seconds >= 0");
+            });
             entity.HasKey(p => p.Id);
 
             entity.Property(p => p.Id).HasColumnName("id");
@@ -139,6 +157,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .WithMany()
                 .HasForeignKey(p => p.PoiId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(p => p.PlayedAt);
         });
 
         modelBuilder.Entity<Tour>(entity =>
