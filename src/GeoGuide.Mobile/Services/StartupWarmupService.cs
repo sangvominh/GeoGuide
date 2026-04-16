@@ -14,11 +14,13 @@ namespace MauiApp1.Services
     {
         private readonly LocationService _locationService;
         private readonly PoiRepository _poiRepository;
+        private readonly MediaPrefetchService _mediaPrefetchService;
 
-        public StartupWarmupService(LocationService locationService, PoiRepository poiRepository)
+        public StartupWarmupService(LocationService locationService, PoiRepository poiRepository, MediaPrefetchService mediaPrefetchService)
         {
             _locationService = locationService;
             _poiRepository = poiRepository;
+            _mediaPrefetchService = mediaPrefetchService;
         }
 
         public async Task PrepareLocalPoiAsync(CancellationToken cancellationToken = default)
@@ -57,12 +59,9 @@ namespace MauiApp1.Services
             }
         }
 
-        private static async Task PrefetchNearbyAudioAsync(IReadOnlyList<Models.PointOfInterest> pois, int maxItems, CancellationToken cancellationToken)
+        private async Task PrefetchNearbyAudioAsync(IReadOnlyList<Models.PointOfInterest> pois, int maxItems, CancellationToken cancellationToken)
         {
-            foreach (var _ in pois.Take(maxItems))
-            {
-                await Task.Delay(60, cancellationToken);
-            }
+            await _mediaPrefetchService.PrefetchNearbyAsync(pois, maxItems, cancellationToken);
         }
     }
 }

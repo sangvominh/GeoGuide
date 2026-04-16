@@ -6,12 +6,12 @@ public class NarrationService
 {
     private const string DeviceIdPreferenceKey = "mobile_device_id";
     private readonly PoiApiService _poiApiService;
-    private readonly PoiApiOptions _poiApiOptions;
+    private readonly MediaPrefetchService _mediaPrefetchService;
 
-    public NarrationService(PoiApiService poiApiService, PoiApiOptions poiApiOptions)
+    public NarrationService(PoiApiService poiApiService, MediaPrefetchService mediaPrefetchService)
     {
         _poiApiService = poiApiService;
-        _poiApiOptions = poiApiOptions;
+        _mediaPrefetchService = mediaPrefetchService;
     }
 
     public async Task PlayAsync(
@@ -21,7 +21,7 @@ public class NarrationService
         CancellationToken cancellationToken = default)
     {
         var startedAt = DateTimeOffset.UtcNow;
-        var audioUri = ResolveAudioUri(poi.AudioUrl);
+        var audioUri = await _mediaPrefetchService.ResolvePlaybackUriAsync(poi.AudioUrl, cancellationToken);
         if (audioUri != null && playAudioAsync != null)
         {
             await playAudioAsync(audioUri, cancellationToken);
@@ -110,23 +110,6 @@ public class NarrationService
             DurationSeconds = Math.Max(1, (int)Math.Round((DateTimeOffset.UtcNow - startedAt).TotalSeconds)),
             DeviceId = GetOrCreateDeviceId()
         };
-    }
-
-    private Uri? ResolveAudioUri(string audioUrl)
-    {
-        if (string.IsNullOrWhiteSpace(audioUrl))
-        {
-            return null;
-        }
-
-        if (Uri.TryCreate(audioUrl, UriKind.Absolute, out var absoluteUri))
-        {
-            return absoluteUri;
-        }
-
-        return Uri.TryCreate(new Uri(_poiApiOptions.BaseUrl, UriKind.Absolute), audioUrl.TrimStart('/'), out var relativeUri)
-            ? relativeUri
-            : null;
     }
 
     private static void EnsureSupportedVoice(string languageCode, Locale? locale)
