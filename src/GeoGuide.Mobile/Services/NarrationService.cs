@@ -32,6 +32,7 @@ public class NarrationService
     private const string DeviceIdPreferenceKey = "mobile_device_id";
     private readonly PoiApiService _poiApiService;
     private readonly MediaPrefetchService _mediaPrefetchService;
+    private readonly TtsSettingsService _ttsSettingsService;
     private readonly PriorityQueue<NarrationQueueItem, int> _queue = new();
     private readonly HashSet<string> _queuedPoiIds = [];
     private readonly SemaphoreSlim _queueLock = new(1, 1);
@@ -42,10 +43,14 @@ public class NarrationService
     public event EventHandler<NarrationPlaybackEventArgs>? PlaybackChanged;
     public bool IsBusy => _currentItem != null || _queue.Count > 0;
 
-    public NarrationService(PoiApiService poiApiService, MediaPrefetchService mediaPrefetchService)
+    public NarrationService(
+        PoiApiService poiApiService,
+        MediaPrefetchService mediaPrefetchService,
+        TtsSettingsService ttsSettingsService)
     {
         _poiApiService = poiApiService;
         _mediaPrefetchService = mediaPrefetchService;
+        _ttsSettingsService = ttsSettingsService;
     }
 
     public async Task EnqueueAsync(
@@ -167,9 +172,18 @@ public class NarrationService
         }
 
         var narrationText = BuildNarrationText(item.Poi);
-        var locale = await ResolveLocaleAsync(item.Poi.LanguageCode);
-        EnsureSupportedVoice(item.Poi.LanguageCode, locale);
-        await SpeakWithFallbackAsync(narrationText, locale, cancellationToken);
+        var ttsSettings = _ttsSettingsService.Get();
+        var targetLanguage = string.IsNullOrWhiteSpace(ttsSettings.PreferredLanguageCode)
+            ? item.Poi.LanguageCode
+            : ttsSettings.PreferredLanguageCode;
+        var locale = await ResolveLocaleAsync(targetLanguage);
+        var softWarning = BuildSoftVoiceWarning(targetLanguage, locale);
+        if (!string.IsNullOrWhiteSpace(softWarning))
+        {
+            PublishPlaybackState(item.Poi, NarrationPlaybackState.Queued, softWarning);
+        }
+
+        await SpeakWithFallbackAsync(narrationText, locale, ttsSettings, cancellationToken);
     }
 
     private async Task<Locale?> ResolveLocaleAsync(string languageCode)
@@ -182,24 +196,26 @@ public class NarrationService
             ?? locales.FirstOrDefault(locale => locale.Language.StartsWith(languagePrefix, StringComparison.OrdinalIgnoreCase));
     }
 
-    private static async Task SpeakWithFallbackAsync(string narrationText, Locale? locale, CancellationToken cancellationToken)
+    private static async Task SpeakWithFallbackAsync(
+        string narrationText,
+        Locale? locale,
+        TtsSettings settings,
+        CancellationToken cancellationToken)
     {
+        var options = new SpeechOptions
+        {
+            Pitch = settings.Pitch,
+            Volume = settings.Volume
+        };
+
         if (locale == null)
         {
-            await TextToSpeech.Default.SpeakAsync(narrationText, new SpeechOptions
-            {
-                Pitch = 1.0f,
-                Volume = 1.0f
-            }, cancellationToken);
+            await TextToSpeech.Default.SpeakAsync(narrationText, options, cancellationToken);
             return;
         }
 
-        await TextToSpeech.Default.SpeakAsync(narrationText, new SpeechOptions
-        {
-            Locale = locale,
-            Pitch = 1.0f,
-            Volume = 1.0f
-        }, cancellationToken);
+        options.Locale = locale;
+        await TextToSpeech.Default.SpeakAsync(narrationText, options, cancellationToken);
     }
 
     private static string BuildNarrationText(PointOfInterest poi)
@@ -247,18 +263,20 @@ public class NarrationService
         };
     }
 
-    private static void EnsureSupportedVoice(string languageCode, Locale? locale)
+    private static string BuildSoftVoiceWarning(string languageCode, Locale? locale)
     {
         var normalizedCode = (languageCode ?? string.Empty).Trim();
         if (!normalizedCode.StartsWith("vi", StringComparison.OrdinalIgnoreCase))
         {
-            return;
+            return string.Empty;
         }
 
         if (locale == null)
         {
-            throw new InvalidOperationException("Thiết bị chưa có giọng đọc tiếng Việt. Hãy dùng audio từ backend hoặc cài gói speech tiếng Việt.");
+            return "Thiết bị chưa có giọng đọc tiếng Việt, hệ thống sẽ dùng giọng mặc định.";
         }
+
+        return string.Empty;
     }
 
     private static string GetOrCreateDeviceId()
