@@ -31,11 +31,11 @@ public partial class MainMapPage : ContentPage
     private readonly List<(string Key, string Label)> _categoryFilters =
     [
         ("all", "Tat ca"),
-        ("food", "Quan an"),
+        ("food", "Am thuc"),
         ("cafe", "Cafe"),
         ("park", "Cong vien"),
-        ("play", "Khu vui choi"),
-        ("theatre", "Nha hat"),
+        ("play", "Vui choi"),
+        ("theatre", "San khau"),
         ("attraction", "Tham quan")
     ];
 
@@ -221,9 +221,9 @@ public partial class MainMapPage : ContentPage
             _lastPoiRefreshUtc = DateTimeOffset.UtcNow;
             DataSourceLabel.Text = result.DataSource switch
             {
-                PoiDataSource.Api => "Nguồn: API",
-                PoiDataSource.Cache => "Nguồn: cache",
-                _ => "Nguồn: fallback"
+                PoiDataSource.Api => "Nguon: API",
+                PoiDataSource.Cache => "Nguon: cache",
+                _ => "Nguon: fallback"
             };
 
             RecalculatePoiDistances();
@@ -233,7 +233,7 @@ public partial class MainMapPage : ContentPage
         {
             System.Diagnostics.Debug.WriteLine($"POI load error: {ex.Message}");
             NearbyStatusLabel.IsVisible = true;
-            NearbyStatusLabel.Text = "Khong tai duoc danh sach POI.";
+            NearbyStatusLabel.Text = "Khong tai duoc danh sach dia diem.";
             DiscoveryList.Children.Clear();
             UpdatePoiMarkers([]);
         }
@@ -278,17 +278,35 @@ public partial class MainMapPage : ContentPage
     {
         if (_currentLocation == null)
         {
-            NearestPoiLabel.Text = "Chua co vi tri hien tai. Cap quyen de tim POI gan nhat.";
+            NearestPoiLabel.Text = "Chua co vi tri hien tai. Cap quyen de goi y dia diem gan nhat.";
+            GpsStatusLabel.Text = "GPS dang cho";
+            GpsStatusDot.Color = MauiColor.FromArgb("#F78A44");
+            LocationStateTitleLabel.Text = "Vi tri hien tai";
+            LocationStateDetailLabel.Text = "Can quyen GPS de xac dinh khu vuc ban dang dung";
+            MiniPlayerPoiLabel.Text = "Chua san sang thuyet minh";
+            MiniPlayerStatusLabel.Text = "Bat vi tri de app goi y noi dung theo dia diem gan ban";
             return;
         }
 
         if (_nearestPoi == null || _nearestPoi.DistanceMeters == double.MaxValue)
         {
-            NearestPoiLabel.Text = "Chua co POI gan ban.";
+            NearestPoiLabel.Text = "Chua co dia diem phu hop gan ban.";
+            GpsStatusLabel.Text = "GPS san sang";
+            GpsStatusDot.Color = MauiColor.FromArgb("#22A35A");
+            LocationStateTitleLabel.Text = "Vi tri hien tai";
+            LocationStateDetailLabel.Text = "Da co vi tri, dang cho du lieu dia diem phu hop";
+            MiniPlayerPoiLabel.Text = "Chua co dia diem gan ban";
+            MiniPlayerStatusLabel.Text = "Mini player se hien noi dung khi co POI nam trong tam theo doi";
             return;
         }
 
         NearestPoiLabel.Text = $"Gan nhat: {_nearestPoi.Name} ({_nearestPoi.DistanceDisplay})";
+        GpsStatusLabel.Text = "GPS san sang";
+        GpsStatusDot.Color = MauiColor.FromArgb("#22A35A");
+        LocationStateTitleLabel.Text = "Vi tri hien tai";
+        LocationStateDetailLabel.Text = $"Gan {_nearestPoi.Name} • {_nearestPoi.DistanceDisplay}";
+        MiniPlayerPoiLabel.Text = _nearestPoi.Name;
+        MiniPlayerStatusLabel.Text = $"San sang phat thuyet minh khi ban vao ban kinh {Math.Round(_nearestPoi.TriggerRadiusMeters)}m";
     }
 
     private void BindNearbyCards(IEnumerable<PointOfInterest> pois)
@@ -306,7 +324,8 @@ public partial class MainMapPage : ContentPage
         {
             BackgroundColor = MauiColor.FromArgb("#FFFFFF"),
             Padding = new Thickness(16),
-            StrokeThickness = 0,
+            Stroke = MauiColor.FromArgb("#E5EAF2"),
+            StrokeThickness = 1,
             StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = new CornerRadius(24) }
         };
 
@@ -357,12 +376,12 @@ public partial class MainMapPage : ContentPage
         {
             Text = poi.CategoryLabel,
             FontSize = 12,
-            TextColor = MauiColor.FromArgb("#414755")
+            TextColor = MauiColor.FromArgb("#6B7382")
         });
 
         infoStack.Children.Add(new Label
         {
-            Text = $"Cach {poi.DistanceDisplay} • Ban kinh {Math.Round(poi.TriggerRadiusMeters)}m",
+            Text = $"Cach {poi.DistanceDisplay} • Kich hoat trong {Math.Round(poi.TriggerRadiusMeters)}m",
             FontSize = 12,
             FontAttributes = FontAttributes.Bold,
             TextColor = MauiColor.FromArgb("#414755")
@@ -389,7 +408,7 @@ public partial class MainMapPage : ContentPage
             FontSize = 13,
             Padding = new Thickness(14, 8),
             CornerRadius = 18,
-            BackgroundColor = MauiColor.FromArgb("#0058BC"),
+            BackgroundColor = MauiColor.FromArgb("#F78A44"),
             TextColor = Colors.White,
             VerticalOptions = LayoutOptions.Center
         };
@@ -491,7 +510,7 @@ public partial class MainMapPage : ContentPage
 
         NearbyStatusLabel.IsVisible = filtered.Count == 0;
         NearbyStatusLabel.Text = filtered.Count == 0
-            ? "Khong tim thay POI phu hop."
+            ? "Khong tim thay dia diem phu hop."
             : string.Empty;
     }
 
@@ -536,18 +555,24 @@ public partial class MainMapPage : ContentPage
         NearbyStatusLabel.IsVisible = true;
         NearbyStatusLabel.Text = userInitiated
             ? $"Dang phat thuyet minh: {poi.Name}"
-            : $"Tu dong phat theo vi tri: {poi.Name}";
+            : $"Dang tu dong phat theo vi tri: {poi.Name}";
+        MiniPlayerPoiLabel.Text = poi.Name;
+        MiniPlayerStatusLabel.Text = userInitiated
+            ? "Dang phat thu cong tu mini player"
+            : "Dang phat tu dong theo vi tri hien tai";
 
         try
         {
             await _narrationService.PlayAsync(poi, triggerType);
             _lastPlaybackByPoiId[poi.Id] = DateTimeOffset.UtcNow;
             NearbyStatusLabel.Text = $"Da phat xong: {poi.Name}";
+            MiniPlayerStatusLabel.Text = $"Da phat xong. San sang cho lan kich hoat tiep theo quanh {poi.Name}";
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Narration error: {ex.Message}");
             NearbyStatusLabel.Text = "Khong the phat thuyet minh luc nay.";
+            MiniPlayerStatusLabel.Text = "Chua the phat thuyet minh luc nay";
         }
         finally
         {

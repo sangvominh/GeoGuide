@@ -13,147 +13,214 @@
         <Border
             x:Name="HeaderBar"
             Grid.Row="0"
-            BackgroundColor="#F8FAFC"
+            BackgroundColor="#CCFFFFFF"
             StrokeThickness="0"
-            Padding="0"
+            Padding="20,14,20,12"
             ZIndex="50">
-            <Border.StrokeShape>
-                <RoundRectangle CornerRadius="0"/>
-            </Border.StrokeShape>
+            <VerticalStackLayout Spacing="12">
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                    <VerticalStackLayout Grid.Column="0"
+                                         Spacing="0"
+                                         VerticalOptions="Center">
+                        <Label
+                            Text="GeoGuide"
+                            FontSize="20"
+                            FontAttributes="Bold"
+                            TextColor="{StaticResource OnSurface}" />
+                        <Label
+                            Text="Ban do dan duong va thuyet minh"
+                            FontSize="11"
+                            TextColor="{StaticResource OnSurfaceVariant}" />
+                    </VerticalStackLayout>
 
-            <VerticalStackLayout Spacing="0">
-                <Grid ColumnDefinitions="Auto,*,Auto" Padding="24,16" ColumnSpacing="16">
-                    <!-- Search icon -->
-                    <Label
-                        x:Name="SearchIcon"
-                        Grid.Column="0"
-                        Text="&#xe8b6;"
-                        FontFamily="MaterialIcons"
-                        FontSize="24"
-                        TextColor="{StaticResource Primary}"
-                        VerticalOptions="Center">
-                        <Label.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnSearchToggleTapped"/>
-                        </Label.GestureRecognizers>
-                    </Label>
+                    <Border Grid.Column="1"
+                            BackgroundColor="#EAF6EE"
+                            Padding="10,7"
+                            StrokeThickness="0"
+                            VerticalOptions="Center">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="999" />
+                        </Border.StrokeShape>
+                        <HorizontalStackLayout Spacing="6">
+                            <BoxView WidthRequest="8"
+                                     HeightRequest="8"
+                                     CornerRadius="4"
+                                     x:Name="GpsStatusDot"
+                                     Color="#22A35A"
+                                     VerticalOptions="Center" />
+                            <Label
+                                x:Name="GpsStatusLabel"
+                                Text="GPS san sang"
+                                FontSize="10"
+                                FontAttributes="Bold"
+                                TextColor="#216B41"
+                                VerticalTextAlignment="Center" />
+                        </HorizontalStackLayout>
+                    </Border>
 
-                    <!-- Title -->
-                    <Label
-                        Grid.Column="1"
-                        Text="Ống Kính Âm Thanh"
-                        FontSize="20"
-                        FontAttributes="Bold"
-                        TextColor="{StaticResource OnSurface}"
-                        VerticalOptions="Center"/>
-
-                    <!-- Settings icon -->
-                    <Label
-                        x:Name="SettingsIcon"
-                        Grid.Column="2"
-                        Text="&#xe429;"
-                        FontFamily="MaterialIcons"
-                        FontSize="24"
-                        TextColor="{StaticResource Outline}"
-                        VerticalOptions="Center">
-                        <Label.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnSettingsTapped"/>
-                        </Label.GestureRecognizers>
-                    </Label>
+                    <Border Grid.Column="2"
+                            BackgroundColor="#F3F5F8"
+                            WidthRequest="42"
+                            HeightRequest="42"
+                            StrokeThickness="0"
+                            VerticalOptions="Center">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="21"/>
+                        </Border.StrokeShape>
+                        <Label
+                            x:Name="SettingsIcon"
+                            Text="&#xe429;"
+                            FontFamily="MaterialIcons"
+                            FontSize="20"
+                            TextColor="{StaticResource Outline}"
+                            HorizontalOptions="Center"
+                            VerticalOptions="Center">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnSettingsTapped"/>
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </Border>
                 </Grid>
-
-                <!-- Divider -->
-                <BoxView HeightRequest="1" Color="{StaticResource SurfaceDim}" Opacity="0.5"/>
 
                 <Border
                     x:Name="SearchOverlay"
                     IsVisible="False"
-                    BackgroundColor="#E6FFFFFF"
+                    HeightRequest="0"
+                    Padding="0"
                     StrokeThickness="0"
-                    Margin="24,0,24,12"
-                    Padding="14,8">
+                    BackgroundColor="Transparent">
                     <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="16"/>
+                        <RoundRectangle CornerRadius="18"/>
                     </Border.StrokeShape>
-                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
-                        <Label
-                            Grid.Column="0"
-                            Text="&#xe8b6;"
-                            FontFamily="MaterialIcons"
-                            FontSize="20"
-                            TextColor="{StaticResource Outline}"
-                            VerticalOptions="Center"/>
                         <Entry
                             x:Name="SearchEntry"
-                            Grid.Column="1"
-                            Placeholder="Tìm kiếm địa điểm gần đây"
-                            ReturnType="Search"
-                            Completed="OnSearchCompleted"
-                            TextChanged="OnSearchTextChanged"
-                            FontSize="14"
-                            VerticalOptions="Center"/>
-                        <Label
-                            Grid.Column="2"
-                            Text="&#xe5cd;"
-                            FontFamily="MaterialIcons"
-                            FontSize="20"
-                            TextColor="{StaticResource Outline}"
-                            VerticalOptions="Center">
-                            <Label.GestureRecognizers>
-                                <TapGestureRecognizer Tapped="OnSearchCloseTapped"/>
-                            </Label.GestureRecognizers>
-                        </Label>
-                    </Grid>
+                            IsVisible="False" />
                 </Border>
             </VerticalStackLayout>
         </Border>
 
         <!-- ===== MAIN CONTENT ===== -->
-        <Grid x:Name="MainContentGrid" Grid.Row="1" RowDefinitions="*,3*" BackgroundColor="{StaticResource SurfaceContainerLow}">
-            <Grid Grid.Row="0" Padding="16,12,16,8">
-                <Border
-                    x:Name="CompactMapHost"
-                    BackgroundColor="#FFFFFF"
-                    StrokeThickness="0">
+        <Grid x:Name="MainContentGrid" Grid.Row="1" RowDefinitions="*" BackgroundColor="#EAF1F8">
+            <Border
+                x:Name="CompactMapHost"
+                Grid.Row="0"
+                BackgroundColor="#DDEAF7"
+                StrokeThickness="0">
+                <mapsui:MapControl x:Name="MapControl"/>
+            </Border>
+
+            <VerticalStackLayout Padding="18,18,18,12"
+                                 Spacing="14"
+                                 VerticalOptions="Start"
+                                 ZIndex="120">
+                <Border BackgroundColor="#F9FBFF"
+                        Stroke="#E1E7EF"
+                        StrokeThickness="1"
+                        Padding="16,14"
+                        MaximumWidthRequest="340">
                     <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="24"/>
+                        <RoundRectangle CornerRadius="22"/>
                     </Border.StrokeShape>
-                    <mapsui:MapControl x:Name="MapControl"/>
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                        <Border BackgroundColor="#EAF1FF"
+                                WidthRequest="42"
+                                HeightRequest="42"
+                                StrokeThickness="0">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="14"/>
+                            </Border.StrokeShape>
+                            <Label Text="&#xe55c;"
+                                   FontFamily="MaterialIcons"
+                                   FontSize="20"
+                                   TextColor="{StaticResource Primary}"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"/>
+                        </Border>
+
+                        <VerticalStackLayout Grid.Column="1"
+                                             Spacing="2"
+                                             VerticalOptions="Center">
+                            <Label x:Name="LocationStateTitleLabel"
+                                   Text="Vi tri hien tai"
+                                   FontSize="12"
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource OnSurface}" />
+                            <Label x:Name="LocationStateDetailLabel"
+                                   Text="Dang xac dinh vi tri va dia diem gan nhat"
+                                   FontSize="12"
+                                   TextColor="{StaticResource OnSurfaceVariant}" />
+                        </VerticalStackLayout>
+                    </Grid>
                 </Border>
 
-                <Border
-                    x:Name="FabRecenter"
-                    WidthRequest="52"
-                    HeightRequest="52"
-                    BackgroundColor="#FFFFFF"
-                    StrokeThickness="0"
-                    HorizontalOptions="End"
-                    VerticalOptions="End"
-                    Margin="0,0,24,22"
-                    ZIndex="200">
+                <Border BackgroundColor="#0F4A7A"
+                        StrokeThickness="0"
+                        Padding="14,12"
+                        HorizontalOptions="End"
+                        MaximumWidthRequest="340">
                     <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="26"/>
+                        <RoundRectangle CornerRadius="20"/>
                     </Border.StrokeShape>
-                    <Border.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnRecenterTapped"/>
-                    </Border.GestureRecognizers>
-                    <Label
-                        Text="&#xe55c;"
-                        FontFamily="MaterialIcons"
-                        FontSize="22"
-                        TextColor="{StaticResource Primary}"
-                        HorizontalOptions="Center"
-                        VerticalOptions="Center"/>
-                </Border>
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                        <Border BackgroundColor="#2AFFFFFF"
+                                WidthRequest="46"
+                                HeightRequest="46"
+                                StrokeThickness="0">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="14"/>
+                            </Border.StrokeShape>
+                            <Label Text="&#xe405;"
+                                   FontFamily="MaterialIcons"
+                                   FontSize="22"
+                                   TextColor="White"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"/>
+                        </Border>
 
+                        <VerticalStackLayout Grid.Column="1"
+                                             Spacing="2"
+                                             VerticalOptions="Center">
+                            <Label Text="Trang thai phat"
+                                   FontSize="10"
+                                   FontAttributes="Bold"
+                                   TextColor="#A8D5FF" />
+                            <Label Text="San sang thuyet minh theo vi tri"
+                                   FontSize="13"
+                                   FontAttributes="Bold"
+                                   TextColor="White" />
+                        </VerticalStackLayout>
+
+                        <Border Grid.Column="2"
+                                BackgroundColor="#F78A44"
+                                WidthRequest="38"
+                                HeightRequest="38"
+                                StrokeThickness="0"
+                                VerticalOptions="Center">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="19"/>
+                            </Border.StrokeShape>
+                            <Label Text="&#xe034;"
+                                   FontFamily="MaterialIcons"
+                                   FontSize="18"
+                                   TextColor="White"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"/>
+                        </Border>
+                    </Grid>
+                </Border>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout HorizontalOptions="End"
+                                 VerticalOptions="End"
+                                 Margin="0,0,18,156"
+                                 Spacing="12"
+                                 ZIndex="150">
                 <Border
                     WidthRequest="52"
                     HeightRequest="52"
-                    BackgroundColor="#FFFFFF"
-                    StrokeThickness="0"
-                    HorizontalOptions="End"
-                    VerticalOptions="Start"
-                    Margin="0,20,24,0"
-                    ZIndex="200">
+                    BackgroundColor="#F8FAFC"
+                    Stroke="#E0E6EE"
+                    StrokeThickness="1">
                     <Border.StrokeShape>
                         <RoundRectangle CornerRadius="26"/>
                     </Border.StrokeShape>
@@ -168,17 +235,138 @@
                         HorizontalOptions="Center"
                         VerticalOptions="Center"/>
                 </Border>
-            </Grid>
 
-            <Border Grid.Row="1" Margin="16,8,16,16" BackgroundColor="#F8FAFC" StrokeThickness="0">
+                <Border
+                    x:Name="FabRecenter"
+                    WidthRequest="52"
+                    HeightRequest="52"
+                    BackgroundColor="#F8FAFC"
+                    Stroke="#E0E6EE"
+                    StrokeThickness="1">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="26"/>
+                    </Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnRecenterTapped"/>
+                    </Border.GestureRecognizers>
+                    <Label
+                        Text="&#xe55c;"
+                        FontFamily="MaterialIcons"
+                        FontSize="22"
+                        TextColor="{StaticResource Primary}"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center"/>
+                </Border>
+            </VerticalStackLayout>
+
+            <Border Grid.Row="0"
+                    Margin="16,0,16,18"
+                    Padding="16,14"
+                    BackgroundColor="#10243A"
+                    StrokeThickness="0"
+                    VerticalOptions="End"
+                    ZIndex="140">
                 <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="28"/>
+                    <RoundRectangle CornerRadius="24"/>
                 </Border.StrokeShape>
-                <VerticalStackLayout Spacing="0" Padding="20,18,20,20">
-                    <Grid ColumnDefinitions="*,Auto" Padding="0,0,0,12">
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+                    <Border WidthRequest="48"
+                            HeightRequest="48"
+                            BackgroundColor="#1F3C59"
+                            StrokeThickness="0"
+                            VerticalOptions="Center">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="16"/>
+                        </Border.StrokeShape>
+                        <Label Text="&#xe405;"
+                               FontFamily="MaterialIcons"
+                               FontSize="22"
+                               TextColor="White"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"/>
+                    </Border>
+
+                    <VerticalStackLayout Grid.Column="1"
+                                         Spacing="2"
+                                         VerticalOptions="Center">
+                        <Label x:Name="MiniPlayerCaptionLabel"
+                               Text="THUYET MINH THEO VI TRI"
+                               FontSize="10"
+                               FontAttributes="Bold"
+                               TextColor="#8FC8FF" />
+                        <Label x:Name="MiniPlayerPoiLabel"
+                               Text="Dang tim dia diem gan nhat..."
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="White"
+                               LineBreakMode="TailTruncation" />
+                        <Label x:Name="MiniPlayerStatusLabel"
+                               Text="San sang phat noi dung khi ban den vung kich hoat"
+                               FontSize="11"
+                               TextColor="#C6D8EA"
+                               LineBreakMode="TailTruncation" />
+                    </VerticalStackLayout>
+
+                    <HorizontalStackLayout Grid.Column="2"
+                                           Spacing="8"
+                                           VerticalOptions="Center">
+                        <Border WidthRequest="34"
+                                HeightRequest="34"
+                                BackgroundColor="#1F3C59"
+                                StrokeThickness="0">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="17"/>
+                            </Border.StrokeShape>
+                            <Label Text="&#xe5d5;"
+                                   FontFamily="MaterialIcons"
+                                   FontSize="18"
+                                   TextColor="White"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"/>
+                        </Border>
+
+                        <Border WidthRequest="42"
+                                HeightRequest="42"
+                                BackgroundColor="#F78A44"
+                                StrokeThickness="0">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="21"/>
+                            </Border.StrokeShape>
+                            <Label Text="&#xe037;"
+                                   FontFamily="MaterialIcons"
+                                   FontSize="22"
+                                   TextColor="White"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"/>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <Border Grid.Row="0"
+                    Margin="16,0,16,18"
+                    Padding="0"
+                    BackgroundColor="#FDFEFF"
+                    StrokeThickness="0"
+                    VerticalOptions="End"
+                    ZIndex="10"
+                    IsVisible="False"
+                    InputTransparent="True">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="30"/>
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="0" Padding="0,8,0,0">
+                    <Grid Padding="0,0,0,4">
+                        <BoxView WidthRequest="52"
+                                 HeightRequest="4"
+                                 CornerRadius="2"
+                                 Color="#D1D7E0"
+                                 HorizontalOptions="Center" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,Auto" Padding="18,12,18,10">
                         <VerticalStackLayout Grid.Column="0" Spacing="2">
                             <Label
-                                Text="Điểm thuyết minh lân cận"
+                                Text="Diem thuyet minh gan ban"
                                 FontSize="20"
                                 FontAttributes="Bold"
                                 TextColor="{StaticResource OnSurface}"/>
@@ -191,26 +379,25 @@
                         <VerticalStackLayout Grid.Column="1" Spacing="2" HorizontalOptions="End">
                             <Label
                                 x:Name="RadiusLabel"
-                                Text="BÁN KÍNH 1.5KM"
-                                FontSize="12"
+                                Text="BAN KINH 1.5KM"
+                                FontSize="11"
                                 FontAttributes="Bold"
-                                TextColor="{StaticResource Primary}"
+                                TextColor="{StaticResource Tertiary}"
                                 HorizontalTextAlignment="End"
                                 VerticalOptions="End"/>
                             <Label
                                 x:Name="DataSourceLabel"
-                                Text="Nguồn: chờ tải"
+                                Text="Nguon: cho tai"
                                 FontSize="11"
                                 TextColor="{StaticResource OnSurfaceVariant}"
                                 HorizontalTextAlignment="End"/>
                         </VerticalStackLayout>
                     </Grid>
-
-                    <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never" Padding="0,0,0,10">
+                    <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never" Padding="18,0,18,10">
                         <HorizontalStackLayout x:Name="CategoryChipContainer" Spacing="8" />
                     </ScrollView>
 
-                    <ScrollView Padding="0,0,0,0">
+                    <ScrollView Padding="18,0,18,20">
                         <VerticalStackLayout Spacing="12">
                             <ActivityIndicator x:Name="NearbyLoadingIndicator" IsVisible="False" IsRunning="False" HorizontalOptions="Center"/>
                             <Label x:Name="NearbyStatusLabel" IsVisible="False" FontSize="13" TextColor="{StaticResource OnSurfaceVariant}" HorizontalTextAlignment="Center"/>
@@ -227,25 +414,25 @@
             Grid.Row="2"
             BackgroundColor="#F8FAFC"
             StrokeThickness="0"
-            Padding="0">
+            Padding="16,10,16,22">
             <Border.StrokeShape>
-                <RoundRectangle CornerRadius="24,24,0,0"/>
+                <RoundRectangle CornerRadius="26,26,0,0"/>
             </Border.StrokeShape>
 
-            <Grid ColumnDefinitions="*,*,*,*" Padding="16,12,16,24">
+            <Grid ColumnDefinitions="*,*,*,*">
                 <!-- Explore (Active) -->
                 <VerticalStackLayout Grid.Column="0" HorizontalOptions="Center" Spacing="4">
                     <Label
                         Text="&#xe87a;"
                         FontFamily="MaterialIcons"
                         FontSize="24"
-                        TextColor="{StaticResource Primary}"
+                        TextColor="{StaticResource Tertiary}"
                         HorizontalTextAlignment="Center"/>
                     <Label
-                        Text="KHÁM PHÁ"
-                        FontSize="11"
+                        Text="KHAM PHA"
+                        FontSize="10"
                         FontAttributes="Bold"
-                        TextColor="{StaticResource Primary}"
+                        TextColor="{StaticResource Tertiary}"
                         HorizontalTextAlignment="Center"
                         CharacterSpacing="0.5"/>
                 </VerticalStackLayout>
@@ -253,14 +440,14 @@
                 <!-- Favorites -->
                 <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center" Spacing="4">
                     <Label
-                        Text="&#xe87d;"
+                        Text="&#xe405;"
                         FontFamily="MaterialIcons"
                         FontSize="24"
                         TextColor="{StaticResource Outline}"
                         HorizontalTextAlignment="Center"/>
                     <Label
-                        Text="YÊU THÍCH"
-                        FontSize="11"
+                        Text="NGHE"
+                        FontSize="10"
                         FontAttributes="Bold"
                         TextColor="{StaticResource Outline}"
                         HorizontalTextAlignment="Center"
@@ -270,14 +457,14 @@
                 <!-- History -->
                 <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center" Spacing="4">
                     <Label
-                        Text="&#xe889;"
+                        Text="&#xe866;"
                         FontFamily="MaterialIcons"
                         FontSize="24"
                         TextColor="{StaticResource Outline}"
                         HorizontalTextAlignment="Center"/>
                     <Label
-                        Text="LỊCH SỬ"
-                        FontSize="11"
+                        Text="DA LUU"
+                        FontSize="10"
                         FontAttributes="Bold"
                         TextColor="{StaticResource Outline}"
                         HorizontalTextAlignment="Center"
@@ -293,8 +480,8 @@
                         TextColor="{StaticResource Outline}"
                         HorizontalTextAlignment="Center"/>
                     <Label
-                        Text="CÁ NHÂN"
-                        FontSize="11"
+                        Text="CA NHAN"
+                        FontSize="10"
                         FontAttributes="Bold"
                         TextColor="{StaticResource Outline}"
                         HorizontalTextAlignment="Center"

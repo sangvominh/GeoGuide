@@ -352,43 +352,44 @@ namespace MauiApp1.Pages
         {
             var isVietnamese = _selectedLanguageCode == "vi-VN";
 
-            ContinueButton.Text = "Tiếp tục";
-            LanguageSelectorTitle.Text = "Chọn ngôn ngữ";
+            AppTitle.Text = "GeoGuide";
+            ContinueButton.Text = "Bat dau";
+            LanguageSelectorTitle.Text = "Chon ngon ngu";
             EnglishOptionButton.BackgroundColor = isVietnamese
-                ? Color.FromArgb("#E9E7ED")
-                : Color.FromArgb("#0058BC");
-            EnglishOptionButton.TextColor = isVietnamese ? Color.FromArgb("#414755") : Colors.White;
+                ? Color.FromArgb("#26FFFFFF")
+                : Color.FromArgb("#F78A44");
+            EnglishOptionButton.TextColor = Colors.White;
             VietnameseOptionButton.BackgroundColor = isVietnamese
-                ? Color.FromArgb("#0058BC")
-                : Color.FromArgb("#E9E7ED");
-            VietnameseOptionButton.TextColor = isVietnamese ? Colors.White : Color.FromArgb("#414755");
-            FooterLabel.Text = "ĐANG KHỞI ĐỘNG HỆ THỐNG KỂ CHUYỆN";
+                ? Color.FromArgb("#F78A44")
+                : Color.FromArgb("#26FFFFFF");
+            VietnameseOptionButton.TextColor = Colors.White;
+            FooterLabel.Text = "DANG TAI DU LIEU POI VA KHOI DONG DINH VI";
         }
 
         private string GetText(string key)
         {
             return key switch
             {
-                "LanguagePickerTitle" => "Chọn ngôn ngữ",
-                "LanguageTitle" => "Ngôn ngữ",
-                "LanguageRequiredMessage" => "Vui lòng chọn ngôn ngữ trước khi tiếp tục.",
-                "Cancel" => "Hủy",
-                "LocationTitle" => "Vị trí",
-                "LocationDeniedMessage" => "Quyền truy cập vị trí bị từ chối. Bạn có thể bật lại trong Cài đặt.",
-                "PreparingLocalData" => "Đang chuẩn bị dữ liệu địa danh cục bộ...",
-                "UpdatingNearbyData" => "Đang đồng bộ và tải sẵn âm thanh gần bạn...",
-                "WarmupCompleted" => "Sẵn sàng trải nghiệm trên bản đồ",
-                "WarmupOfflineFallback" => "Mạng yếu. Đang ưu tiên dữ liệu ngoại tuyến",
-                "WarmupAwaitPermission" => "Cần cấp quyền vị trí để kích hoạt âm thanh gần bạn",
-                "WarmupFailed" => "Khởi động cơ bản hoàn tất",
-                "Continue" => "Tiếp tục",
-                "ContinueAndAllowLocation" => "Tiếp tục và cấp quyền vị trí",
-                "OpeningMapLoading" => "Đang mở...",
-                "OpenMap" => "Mở bản đồ",
-                "ReturningTitle" => "Có gì mới",
-                "ReturningMessage" => "Nội dung cập nhật cho phiên bản mới sẽ hiển thị tại đây.",
-                "ErrorTitle" => "Lỗi",
-                "GenericErrorMessage" => "Đã xảy ra lỗi khi khởi động. Ứng dụng sẽ tiếp tục với chế độ cơ bản.",
+                "LanguagePickerTitle" => "Chon ngon ngu",
+                "LanguageTitle" => "Ngon ngu",
+                "LanguageRequiredMessage" => "Vui long chon ngon ngu truoc khi tiep tuc.",
+                "Cancel" => "Huy",
+                "LocationTitle" => "Vi tri",
+                "LocationDeniedMessage" => "Quyen truy cap vi tri bi tu choi. Ban co the bat lai trong Cai dat.",
+                "PreparingLocalData" => "Dang chuan bi du lieu POI tren thiet bi...",
+                "UpdatingNearbyData" => "Dang dong bo dia diem va lam nong du lieu gan ban...",
+                "WarmupCompleted" => "San sang mo ban do va bat dau thuyet minh",
+                "WarmupOfflineFallback" => "Mang yeu. He thong uu tien du lieu da luu tren may",
+                "WarmupAwaitPermission" => "Can cap quyen vi tri de goi y dia diem gan ban",
+                "WarmupFailed" => "Khoi dong co ban da hoan tat",
+                "Continue" => "Bat dau",
+                "ContinueAndAllowLocation" => "Bat dau va cap quyen vi tri",
+                "OpeningMapLoading" => "Dang mo ban do...",
+                "OpenMap" => "Vao ban do",
+                "ReturningTitle" => "San sang tiep tuc",
+                "ReturningMessage" => "GeoGuide se dua ban quay lai ban do va danh sach POI gan nhat.",
+                "ErrorTitle" => "Loi",
+                "GenericErrorMessage" => "Da xay ra loi khi khoi dong. Ung dung se tiep tuc voi che do co ban.",
                 "Ok" => "OK",
                 _ => string.Empty
             };
