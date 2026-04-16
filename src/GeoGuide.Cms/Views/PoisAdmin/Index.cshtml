@@ -92,11 +92,13 @@
                                         <button type="submit" class="btn btn-sm btn-success">Approve</button>
                                     </form>
                                 }
+                                <a class="btn btn-sm btn-outline-secondary" asp-controller="PoiContentsAdmin" asp-action="Index" asp-route-poiId="@poi.Id">Contents</a>
                                 <a class="btn btn-sm btn-outline-primary" asp-action="Edit" asp-route-id="@poi.Id">Edit</a>
                                 <a class="btn btn-sm btn-outline-danger" asp-action="Delete" asp-route-id="@poi.Id">Delete</a>
                             }
                             else if (poi.ApprovalStatus == GeoGuide.Cms.Models.PoiApprovalStatus.PendingApproval)
                             {
+                                <a class="btn btn-sm btn-outline-secondary" asp-controller="PoiContentsAdmin" asp-action="Index" asp-route-poiId="@poi.Id">Contents</a>
                                 <a class="btn btn-sm btn-outline-primary" asp-action="Edit" asp-route-id="@poi.Id">Edit</a>
                                 <a class="btn btn-sm btn-outline-danger" asp-action="Delete" asp-route-id="@poi.Id">Delete</a>
                             }

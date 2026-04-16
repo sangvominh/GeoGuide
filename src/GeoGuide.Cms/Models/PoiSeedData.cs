@@ -2,8 +2,32 @@ namespace GeoGuide.Cms.Models;
 
 public static class PoiSeedData
 {
-    public static readonly Poi[] All =
+    public static readonly Poi[] All = BuildPois();
+
+    public static readonly PoiTenant[] Tenants =
     [
+        new()
+        {
+            Id = PoiTenant.DemoTenantId,
+            Name = "Demo POI Tenant",
+            Slug = "demo-poi-tenant",
+            IsActive = true,
+            UpdatedAt = DateTimeOffset.Parse("2026-04-09T10:00:00Z")
+        },
+        new()
+        {
+            Id = PoiTenant.VinhKhanhTenantId,
+            Name = "Vinh Khanh Food Street",
+            Slug = "vinh-khanh-food-street",
+            IsActive = true,
+            UpdatedAt = DateTimeOffset.Parse("2026-04-16T03:30:00Z")
+        }
+    ];
+
+    private static Poi[] BuildPois()
+    {
+        Poi[] pois =
+        [
         new()
         {
             Id = Guid.Parse("9f0bbf75-a9fc-4a94-93a1-7c5ef0fc6a01"),
@@ -298,25 +322,17 @@ public static class PoiSeedData
             IsActive = true,
             UpdatedAt = DateTimeOffset.Parse("2026-04-16T03:30:00Z")
         }
-    ];
+        ];
 
-    public static readonly PoiTenant[] Tenants =
-    [
-        new()
+        foreach (var poi in pois)
         {
-            Id = PoiTenant.DemoTenantId,
-            Name = "Demo POI Tenant",
-            Slug = "demo-poi-tenant",
-            IsActive = true,
-            UpdatedAt = DateTimeOffset.Parse("2026-04-09T10:00:00Z")
-        },
-        new()
-        {
-            Id = PoiTenant.VinhKhanhTenantId,
-            Name = "Vinh Khanh Food Street",
-            Slug = "vinh-khanh-food-street",
-            IsActive = true,
-            UpdatedAt = DateTimeOffset.Parse("2026-04-16T03:30:00Z")
+            poi.CreatedAt = poi.UpdatedAt;
+            if (poi.CooldownMinutes == 0)
+            {
+                poi.CooldownMinutes = 15;
+            }
         }
-    ];
+
+        return pois;
+    }
 }

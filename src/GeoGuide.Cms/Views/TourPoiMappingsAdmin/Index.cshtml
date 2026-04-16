@@ -1,0 +1,72 @@
+@model GeoGuide.Cms.Models.TourPoiMappingsAdminViewModel
+
+@{
+    ViewData["Title"] = "Tour POI Mappings";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h3 mb-1">Gan POI vao tour</h1>
+        <p class="text-muted mb-0">Tour: <strong>@Model.Tour.Name</strong></p>
+    </div>
+    <a class="btn btn-outline-secondary" asp-controller="ToursAdmin" asp-action="Edit" asp-route-id="@Model.Tour.Id">Quay lai Tour</a>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <h2 class="h5">Them POI vao tour</h2>
+        <form asp-action="Add" method="post" class="row g-3 align-items-end">
+            <input type="hidden" name="tourId" value="@Model.Tour.Id" />
+            <div class="col-md-7">
+                <label class="form-label">POI</label>
+                <select name="poiId" asp-items="Model.AvailablePois" class="form-select"></select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Thu tu</label>
+                <input name="orderIndex" type="number" min="1" value="@(Model.Mappings.Count + 1)" class="form-control" />
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Them</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-striped align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Thu tu</th>
+                    <th>POI</th>
+                    <th>Category</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var mapping in Model.Mappings)
+                {
+                    <tr>
+                        <td style="width: 160px;">
+                            <form asp-action="UpdateOrder" method="post" class="d-flex gap-2">
+                                <input type="hidden" name="tourId" value="@mapping.TourId" />
+                                <input type="hidden" name="poiId" value="@mapping.PoiId" />
+                                <input type="number" name="orderIndex" value="@mapping.OrderIndex" min="1" class="form-control form-control-sm" />
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Luu</button>
+                            </form>
+                        </td>
+                        <td>@mapping.Poi?.Name</td>
+                        <td>@mapping.Poi?.CategoryLabel</td>
+                        <td class="text-end">
+                            <form asp-action="Remove" method="post" class="d-inline">
+                                <input type="hidden" name="tourId" value="@mapping.TourId" />
+                                <input type="hidden" name="poiId" value="@mapping.PoiId" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Go bo</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

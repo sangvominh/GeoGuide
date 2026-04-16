@@ -64,6 +64,7 @@ public class PoisAdminController(ApplicationDbContext dbContext, CmsAccessServic
         }
 
         poi.Id = Guid.NewGuid();
+        poi.CreatedAt = DateTimeOffset.UtcNow;
         poi.ApprovalStatus = scope.IsSystemAdmin ? PoiApprovalStatus.Approved : PoiApprovalStatus.PendingApproval;
         poi.IsActive = scope.IsSystemAdmin && poi.IsActive;
         poi.UpdatedAt = DateTimeOffset.UtcNow;
@@ -110,6 +111,7 @@ public class PoisAdminController(ApplicationDbContext dbContext, CmsAccessServic
         existingPoi.Latitude = poi.Latitude;
         existingPoi.Longitude = poi.Longitude;
         existingPoi.TriggerRadiusMeters = poi.TriggerRadiusMeters;
+        existingPoi.CooldownMinutes = poi.CooldownMinutes;
         existingPoi.Priority = poi.Priority;
         existingPoi.CategoryKey = poi.CategoryKey;
         existingPoi.CategoryLabel = poi.CategoryLabel;
@@ -143,7 +145,9 @@ public class PoisAdminController(ApplicationDbContext dbContext, CmsAccessServic
             return NotFound();
         }
 
-        dbContext.Pois.Remove(poi);
+        poi.IsDeleted = true;
+        poi.IsActive = false;
+        poi.UpdatedAt = DateTimeOffset.UtcNow;
         await dbContext.SaveChangesAsync();
 
         return RedirectToAction(nameof(Index));

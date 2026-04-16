@@ -10,7 +10,8 @@
         </p>
         <div class="d-flex gap-2 flex-wrap">
             <a class="btn btn-primary" asp-controller="PoisAdmin" asp-action="Index">Quản lý POI</a>
-            <a class="btn btn-outline-secondary" href="/api/pois">GET /api/pois</a>
+            <a class="btn btn-outline-secondary" asp-controller="ToursAdmin" asp-action="Index">Quản lý Tour</a>
+            <a class="btn btn-outline-secondary" href="/api/v1/pois">GET /api/v1/pois</a>
         </div>
     </div>
 </div>
@@ -29,6 +30,14 @@
             <div class="card-body">
                 <h2 class="h5">Bootstrap tài khoản</h2>
                 <p class="mb-0">Khởi động app sẽ migrate database, seed tenant demo, role CMS và 2 tài khoản mặc định để tiếp tục mở rộng các module audio, dịch vụ và nội dung theo tenant.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h5">Phase 1 baseline</h2>
+                <p class="mb-0">CMS đang được mở rộng theo hướng schema nền, tour management, media đa ngôn ngữ và API v1 để mobile có dữ liệu ổn định hơn.</p>
             </div>
         </div>
     </div>

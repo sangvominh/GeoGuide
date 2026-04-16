@@ -1,0 +1,39 @@
+@model GeoGuide.Cms.Models.PoiAudio
+
+<div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <label asp-for="LanguageCode" class="form-label"></label>
+        <input asp-for="LanguageCode" class="form-control" />
+        <span asp-validation-for="LanguageCode" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="ContentType" class="form-label"></label>
+        <select asp-for="ContentType" asp-items="Html.GetEnumSelectList<GeoGuide.Cms.Models.PoiContentType>()" class="form-select"></select>
+        <span asp-validation-for="ContentType" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="AudioUrl" class="form-label"></label>
+        <input asp-for="AudioUrl" class="form-control" />
+        @if (!string.IsNullOrWhiteSpace(Model.AudioUrl))
+        {
+            <div class="form-text">
+                Current file:
+                <a href="@Model.AudioUrl" target="_blank" rel="noopener noreferrer">@Model.AudioUrl</a>
+            </div>
+        }
+        <span asp-validation-for="AudioUrl" class="text-danger"></span>
+    </div>
+    <div class="col-md-8">
+        <label asp-for="UploadFile" class="form-label">Upload audio file</label>
+        <input asp-for="UploadFile" class="form-control" type="file" accept="audio/*" />
+        <div class="form-text">Use upload for local CMS-managed files, or keep AudioUrl for an external source.</div>
+        <span asp-validation-for="UploadFile" class="text-danger"></span>
+    </div>
+    <div class="col-12">
+        <label asp-for="TtsContent" class="form-label"></label>
+        <textarea asp-for="TtsContent" class="form-control" rows="5"></textarea>
+        <span asp-validation-for="TtsContent" class="text-danger"></span>
+    </div>
+</div>

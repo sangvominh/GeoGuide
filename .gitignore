@@ -25,3 +25,7 @@ Thumbs.db
 *.nuget.props
 *.nuget.targets
 packages/
+
+# --- Local temporary build folders ---
+.tmp/
+.artifacts/

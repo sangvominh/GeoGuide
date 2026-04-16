@@ -13,7 +13,10 @@
             <p class="text-muted mb-0">Tenant chỉ được sửa POI đang ở trạng thái chờ duyệt.</p>
         }
     </div>
-    <a class="btn btn-outline-secondary" asp-action="Index">Quay lại</a>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" asp-controller="PoiContentsAdmin" asp-action="Index" asp-route-poiId="@Model.Id">Noi dung</a>
+        <a class="btn btn-outline-secondary" asp-action="Index">Quay lại</a>
+    </div>
 </div>
 
 <form asp-action="Edit" method="post" class="card shadow-sm p-4">

@@ -1,0 +1,26 @@
+@model GeoGuide.Cms.Models.PoiAudio
+
+@{
+    ViewData["Title"] = "Them noi dung POI";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h3 mb-0">Them noi dung POI</h1>
+        <p class="text-muted mb-0">POI: @ViewBag.PoiName</p>
+    </div>
+    <a class="btn btn-outline-secondary" asp-action="Index" asp-route-poiId="@ViewBag.PoiId">Quay lai</a>
+</div>
+
+<form asp-action="Create" method="post" enctype="multipart/form-data" class="card shadow-sm p-4">
+    <input asp-for="PoiId" type="hidden" />
+    <partial name="_Form" model="Model" />
+    <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Luu</button>
+        <a class="btn btn-outline-secondary" asp-action="Index" asp-route-poiId="@ViewBag.PoiId">Huy</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

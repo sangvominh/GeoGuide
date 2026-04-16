@@ -6,9 +6,19 @@ public class Poi
 {
     public Guid Id { get; set; }
 
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+
+    public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
+
+    public bool IsDeleted { get; set; }
+
     public Guid? TenantId { get; set; }
 
     public PoiTenant? Tenant { get; set; }
+
+    public ICollection<PoiAudio> Audios { get; set; } = [];
+
+    public ICollection<TourPoiMapping> TourMappings { get; set; } = [];
 
     public PoiApprovalStatus ApprovalStatus { get; set; } = PoiApprovalStatus.PendingApproval;
 
@@ -26,6 +36,9 @@ public class Poi
 
     [Range(1, 10000)]
     public int TriggerRadiusMeters { get; set; } = 80;
+
+    [Range(0, 1440)]
+    public int CooldownMinutes { get; set; } = 15;
 
     [Range(0, 1000)]
     public int Priority { get; set; } = 1;
@@ -52,6 +65,4 @@ public class Poi
     public string LanguageCode { get; set; } = "vi-VN";
 
     public bool IsActive { get; set; } = true;
-
-    public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 }

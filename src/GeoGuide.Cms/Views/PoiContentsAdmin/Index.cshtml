@@ -1,0 +1,54 @@
+@model GeoGuide.Cms.Models.PoiContentsAdminIndexViewModel
+
+@{
+    ViewData["Title"] = "POI Contents";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h3 mb-1">Noi dung POI</h1>
+        <p class="text-muted mb-0">Quan ly audio/TTS da ngon ngu cho <strong>@Model.Poi.Name</strong>.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" asp-controller="PoisAdmin" asp-action="Edit" asp-route-id="@Model.Poi.Id">Quay lai POI</a>
+        <a class="btn btn-primary" asp-action="Create" asp-route-poiId="@Model.Poi.Id">Them noi dung</a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-striped align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Language</th>
+                    <th>Type</th>
+                    <th>AudioUrl</th>
+                    <th>TTS</th>
+                    <th>Updated</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var content in Model.Contents)
+                {
+                    <tr>
+                        <td>@content.LanguageCode</td>
+                        <td>@content.ContentType</td>
+                        <td class="small">
+                            @if (!string.IsNullOrWhiteSpace(content.AudioUrl))
+                            {
+                                <a href="@content.AudioUrl" target="_blank" rel="noopener noreferrer">@content.AudioUrl</a>
+                            }
+                        </td>
+                        <td class="small">@content.TtsContent</td>
+                        <td>@content.UpdatedAt.ToUniversalTime().ToString("u")</td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-outline-primary" asp-action="Edit" asp-route-id="@content.Id">Edit</a>
+                            <a class="btn btn-sm btn-outline-danger" asp-action="Delete" asp-route-id="@content.Id">Delete</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
