@@ -181,6 +181,198 @@
                         </VerticalStackLayout>
                     </Grid>
                 </Border>
+
+                <Border BackgroundColor="#FFFFFF"
+                        Stroke="#E1E7EF"
+                        StrokeThickness="1"
+                        Padding="14,14,14,12"
+                        MaximumWidthRequest="340">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="22"/>
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Tính năng sẵn sàng demo"
+                               FontSize="13"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource OnSurface}" />
+
+                        <Grid ColumnDefinitions="*,*"
+                              RowDefinitions="Auto,Auto,Auto"
+                              ColumnSpacing="10"
+                              RowSpacing="10">
+                            <Border Grid.Row="0" Grid.Column="0"
+                                    BackgroundColor="#F6F9FC"
+                                    StrokeThickness="0"
+                                    Padding="10">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="16"/>
+                                </Border.StrokeShape>
+                                <VerticalStackLayout Spacing="3">
+                                    <Label Text="OFFLINE"
+                                           FontSize="10"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource Primary}" />
+                                    <Label x:Name="OfflineModeValueLabel"
+                                           Text="Chưa đồng bộ"
+                                           FontSize="12"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource OnSurface}" />
+                                    <Label x:Name="OfflineModeHintLabel"
+                                           Text="POI local: 0"
+                                           FontSize="10"
+                                           TextColor="{StaticResource OnSurfaceVariant}" />
+                                </VerticalStackLayout>
+                            </Border>
+
+                            <Border Grid.Row="0" Grid.Column="1"
+                                    BackgroundColor="#F6F9FC"
+                                    StrokeThickness="0"
+                                    Padding="10">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="16"/>
+                                </Border.StrokeShape>
+                                <VerticalStackLayout Spacing="3">
+                                    <Label Text="MEDIA CACHE"
+                                           FontSize="10"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource Primary}" />
+                                    <Label x:Name="MediaCacheValueLabel"
+                                           Text="0 file"
+                                           FontSize="12"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource OnSurface}" />
+                                    <Label x:Name="MediaCacheHintLabel"
+                                           Text="Pre-download đang chờ"
+                                           FontSize="10"
+                                           TextColor="{StaticResource OnSurfaceVariant}" />
+                                </VerticalStackLayout>
+                            </Border>
+
+                            <Border Grid.Row="1" Grid.Column="0"
+                                    BackgroundColor="#F6F9FC"
+                                    StrokeThickness="0"
+                                    Padding="10">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="16"/>
+                                </Border.StrokeShape>
+                                <VerticalStackLayout Spacing="3">
+                                    <Label Text="GEOFENCING"
+                                           FontSize="10"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource Primary}" />
+                                    <Label x:Name="GeofenceValueLabel"
+                                           Text="Chưa có vùng kích hoạt"
+                                           FontSize="12"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource OnSurface}" />
+                                    <Label x:Name="GeofenceHintLabel"
+                                           Text="Đang tính POI gần nhất"
+                                           FontSize="10"
+                                           TextColor="{StaticResource OnSurfaceVariant}" />
+                                </VerticalStackLayout>
+                            </Border>
+
+                            <Border Grid.Row="1" Grid.Column="1"
+                                    BackgroundColor="#F6F9FC"
+                                    StrokeThickness="0"
+                                    Padding="10">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="16"/>
+                                </Border.StrokeShape>
+                                <VerticalStackLayout Spacing="3">
+                                    <Label Text="TTS + AUDIO"
+                                           FontSize="10"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource Primary}" />
+                                    <Label x:Name="NarrationValueLabel"
+                                           Text="Sẵn sàng phát"
+                                           FontSize="12"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource OnSurface}" />
+                                    <Label x:Name="NarrationHintLabel"
+                                           Text="vi-VN • tốc độ 1.0x"
+                                           FontSize="10"
+                                           TextColor="{StaticResource OnSurfaceVariant}" />
+                                </VerticalStackLayout>
+                            </Border>
+
+                            <Border Grid.Row="2" Grid.Column="0"
+                                    BackgroundColor="#F6F9FC"
+                                    StrokeThickness="0"
+                                    Padding="10">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="16"/>
+                                </Border.StrokeShape>
+                                <VerticalStackLayout Spacing="3">
+                                    <Label Text="QR ACCESS"
+                                           FontSize="10"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource Primary}" />
+                                    <Label x:Name="QrAccessValueLabel"
+                                           Text="Trial Mode"
+                                           FontSize="12"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource OnSurface}" />
+                                    <Label x:Name="QrAccessHintLabel"
+                                           Text="Quét QR để mở Full"
+                                           FontSize="10"
+                                           TextColor="{StaticResource OnSurfaceVariant}" />
+                                </VerticalStackLayout>
+                            </Border>
+
+                            <Border Grid.Row="2" Grid.Column="1"
+                                    BackgroundColor="#F6F9FC"
+                                    StrokeThickness="0"
+                                    Padding="10">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="16"/>
+                                </Border.StrokeShape>
+                                <VerticalStackLayout Spacing="3">
+                                    <Label Text="LOGGING"
+                                           FontSize="10"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource Primary}" />
+                                    <Label x:Name="LoggingValueLabel"
+                                           Text="0 log chờ sync"
+                                           FontSize="12"
+                                           FontAttributes="Bold"
+                                           TextColor="{StaticResource OnSurface}" />
+                                    <Label x:Name="LoggingHintLabel"
+                                           Text="Đồng bộ khi có mạng"
+                                           FontSize="10"
+                                           TextColor="{StaticResource OnSurfaceVariant}" />
+                                </VerticalStackLayout>
+                            </Border>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                            <Button Grid.Column="0"
+                                    Text="Chi tiết POI"
+                                    FontSize="11"
+                                    Clicked="OnQuickPoiDetailTapped"
+                                    BackgroundColor="#ECF3FF"
+                                    TextColor="{StaticResource Primary}"
+                                    CornerRadius="14"
+                                    Padding="10,8" />
+                            <Button Grid.Column="1"
+                                    Text="Quét QR"
+                                    FontSize="11"
+                                    Clicked="OnQrActivateTapped"
+                                    BackgroundColor="#FFF1E8"
+                                    TextColor="#B84A00"
+                                    CornerRadius="14"
+                                    Padding="10,8" />
+                            <Button Grid.Column="2"
+                                    Text="TTS"
+                                    FontSize="11"
+                                    Clicked="OnSettingsTapped"
+                                    BackgroundColor="#EEF8F0"
+                                    TextColor="#216B41"
+                                    CornerRadius="14"
+                                    Padding="10,8" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
             </VerticalStackLayout>
 
             <VerticalStackLayout HorizontalOptions="End"

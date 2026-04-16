@@ -45,6 +45,20 @@ public sealed class MediaPrefetchService
         return sourceUri;
     }
 
+    public Task<int> CountCachedMediaAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var root = Path.Combine(FileSystem.Current.AppDataDirectory, "media-cache");
+        if (!Directory.Exists(root))
+        {
+            return Task.FromResult(0);
+        }
+
+        var count = Directory.EnumerateFiles(root, "*", SearchOption.TopDirectoryOnly).Count();
+        return Task.FromResult(count);
+    }
+
     private async Task EnsureAudioCachedAsync(string audioUrl, CancellationToken cancellationToken)
     {
         var sourceUri = ResolveSourceUri(audioUrl);

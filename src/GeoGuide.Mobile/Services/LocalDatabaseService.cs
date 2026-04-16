@@ -54,6 +54,12 @@ public sealed class LocalDatabaseService
         return await _connection!.Table<LocalPoiRecord>().ToListAsync();
     }
 
+    public async Task<int> CountPoisAsync(CancellationToken cancellationToken = default)
+    {
+        await InitializeAsync(cancellationToken);
+        return await _connection!.Table<LocalPoiRecord>().CountAsync();
+    }
+
     public async Task<string?> GetSyncStateValueAsync(string key, CancellationToken cancellationToken = default)
     {
         await InitializeAsync(cancellationToken);
@@ -94,6 +100,16 @@ public sealed class LocalDatabaseService
             .OrderBy(row => row.TimestampUtcIso)
             .Take(limit)
             .ToListAsync();
+    }
+
+    public async Task<int> CountPendingOfflineLogsAsync(CancellationToken cancellationToken = default)
+    {
+        await InitializeAsync(cancellationToken);
+
+        return await _connection!
+            .Table<LocalOfflineLogRecord>()
+            .Where(row => row.SyncStatus == 0)
+            .CountAsync();
     }
 
     public async Task UpdateOfflineLogSyncStatusAsync(string id, int status, CancellationToken cancellationToken = default)

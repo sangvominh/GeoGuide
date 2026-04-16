@@ -31,6 +31,8 @@ public partial class MainMapPage : ContentPage
     private readonly TtsSettingsService _ttsSettingsService;
     private readonly OfflineAnalyticsLogService _offlineAnalyticsLogService;
     private readonly NarrationService _narrationService;
+    private readonly MediaPrefetchService _mediaPrefetchService;
+    private readonly LocalDatabaseService _localDatabaseService;
     private readonly List<PointOfInterest> _allPois = [];
     private readonly List<(string Key, string Label)> _categoryFilters =
     [
@@ -58,6 +60,7 @@ public partial class MainMapPage : ContentPage
     private string _selectedCategoryKey = "all";
     private string _searchKeyword = string.Empty;
     private TaskCompletionSource<bool>? _audioPlaybackCompletionSource;
+    private PoiDataSource _lastPoiDataSource = PoiDataSource.BundledFallback;
 
     public MainMapPage()
     {
@@ -75,6 +78,8 @@ public partial class MainMapPage : ContentPage
         _ttsSettingsService = services.GetRequiredService<TtsSettingsService>();
         _offlineAnalyticsLogService = services.GetRequiredService<OfflineAnalyticsLogService>();
         _narrationService = services.GetRequiredService<NarrationService>();
+        _mediaPrefetchService = services.GetRequiredService<MediaPrefetchService>();
+        _localDatabaseService = services.GetRequiredService<LocalDatabaseService>();
         _narrationService.PlaybackChanged += OnNarrationPlaybackChanged;
         _locationService.LocationUpdated += OnLocationUpdated;
 
@@ -87,6 +92,7 @@ public partial class MainMapPage : ContentPage
         UpdateAutoNarrationUiState();
         UpdateFollowUserUiState();
         UpdateAccessModeUiState();
+        UpdateDemoFeaturePanelAsync().SafeFireAndForget();
     }
 
     protected override async void OnAppearing()
@@ -126,6 +132,7 @@ public partial class MainMapPage : ContentPage
         await RefreshCurrentLocationAsync(requestIfMissing: false, recenterMap: true);
         await LoadPoisAsync(force: true);
         await EvaluateAutoTriggerAsync();
+        await UpdateDemoFeaturePanelAsync();
     }
 
     private void InitializeMap()
@@ -243,6 +250,7 @@ public partial class MainMapPage : ContentPage
             var result = await _poiRepository.GetPoisAsync();
             _allPois.Clear();
             _allPois.AddRange(result.Pois.Where(static poi => poi.IsActive));
+            _lastPoiDataSource = result.DataSource;
             _lastPoiRefreshUtc = DateTimeOffset.UtcNow;
             DataSourceLabel.Text = result.DataSource switch
             {
@@ -253,6 +261,7 @@ public partial class MainMapPage : ContentPage
 
             RecalculatePoiDistances();
             ApplyFilters();
+            await UpdateDemoFeaturePanelAsync();
         }
         catch (Exception ex)
         {
@@ -261,6 +270,7 @@ public partial class MainMapPage : ContentPage
             NearbyStatusLabel.Text = "Không tải được danh sách địa điểm.";
             DiscoveryList.Children.Clear();
             UpdatePoiMarkers([]);
+            await UpdateDemoFeaturePanelAsync();
         }
         finally
         {
@@ -306,6 +316,7 @@ public partial class MainMapPage : ContentPage
             LocationStateTitleLabel.Text = "Vị trí hiện tại";
             LocationStateDetailLabel.Text = "Cần quyền GPS để xác định khu vực bạn đang đứng";
             UpdateMiniPlayerLabels("Chưa sẵn sàng thuyết minh", "Bật vị trí để app gợi ý nội dung theo địa điểm gần bạn");
+            UpdateDemoGeoFeature();
             return;
         }
 
@@ -317,6 +328,7 @@ public partial class MainMapPage : ContentPage
             LocationStateTitleLabel.Text = "Vị trí hiện tại";
             LocationStateDetailLabel.Text = "Đã có vị trí, đang chờ dữ liệu địa điểm phù hợp";
             UpdateMiniPlayerLabels("Chưa có địa điểm gần bạn", "Mini player sẽ hiện nội dung khi có POI nằm trong tầm theo dõi");
+            UpdateDemoGeoFeature();
             return;
         }
 
@@ -332,6 +344,7 @@ public partial class MainMapPage : ContentPage
             activePoi == null || activePoi.Id == _nearestPoi.Id
                 ? $"Sẵn sàng phát thuyết minh khi bạn vào bán kính {Math.Round(_nearestPoi.TriggerRadiusMeters)}m"
                 : $"Đã chọn thủ công • Cách {activePoi.DistanceDisplay}");
+        UpdateDemoGeoFeature();
     }
 
     private void BindNearbyCards(IEnumerable<PointOfInterest> pois)
@@ -642,6 +655,7 @@ public partial class MainMapPage : ContentPage
         }
 
         await EvaluateAutoTriggerAsync();
+        await UpdateDemoFeaturePanelAsync();
     }
 
     private void OnLocationUpdated(object? sender, Location location)
@@ -682,6 +696,7 @@ public partial class MainMapPage : ContentPage
         AutoNarrationStateLabel.TextColor = _isAutoNarrationEnabled
             ? MauiColor.FromArgb("#1DB954")
             : MauiColor.FromArgb("#B3B3B3");
+        UpdateDemoNarrationFeature();
     }
 
     private AccessModeState GetAccessState() => _accessModeService.GetState();
@@ -695,6 +710,7 @@ public partial class MainMapPage : ContentPage
             : MauiColor.FromArgb("#B84A00");
 
         UpdateAutoNarrationUiState();
+        UpdateDemoAccessFeature();
     }
 
     private async Task HandleMapInfoAsync(MapInfoEventArgs eventArgs)
@@ -1084,6 +1100,9 @@ public partial class MainMapPage : ContentPage
             {
                 UpdateMiniPlayerLabels(e.PoiName, e.Message);
             }
+
+            UpdateDemoNarrationFeature(e.Message);
+            UpdateDemoFeaturePanelAsync().SafeFireAndForget();
         });
     }
 
@@ -1156,6 +1175,115 @@ public partial class MainMapPage : ContentPage
         if (FollowUserSwitch.IsToggled != _isFollowUserEnabled)
         {
             FollowUserSwitch.IsToggled = _isFollowUserEnabled;
+        }
+    }
+
+    private async Task UpdateDemoFeaturePanelAsync()
+    {
+        try
+        {
+            var localPoiCount = await _localDatabaseService.CountPoisAsync();
+            var pendingLogCount = await _localDatabaseService.CountPendingOfflineLogsAsync();
+            var cachedMediaCount = await _mediaPrefetchService.CountCachedMediaAsync();
+            var ttsSettings = _ttsSettingsService.Get();
+
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                OfflineModeValueLabel.Text = _lastPoiDataSource switch
+                {
+                    PoiDataSource.Api => "Online + offline",
+                    PoiDataSource.Cache => "Offline từ cache",
+                    _ => "Offline fallback"
+                };
+                OfflineModeHintLabel.Text = $"POI local: {localPoiCount}";
+
+                MediaCacheValueLabel.Text = cachedMediaCount == 1 ? "1 file cache" : $"{cachedMediaCount} file cache";
+                MediaCacheHintLabel.Text = cachedMediaCount > 0
+                    ? "Pre-download đã sẵn sàng"
+                    : "Chưa có audio được tải trước";
+
+                LoggingValueLabel.Text = pendingLogCount == 1 ? "1 log chờ sync" : $"{pendingLogCount} log chờ sync";
+                LoggingHintLabel.Text = pendingLogCount > 0
+                    ? "Sẽ đẩy lên CMS khi có mạng"
+                    : "Nhật ký đã đồng bộ hoặc chưa phát sinh";
+
+                NarrationHintLabel.Text =
+                    $"{(string.IsNullOrWhiteSpace(ttsSettings.PreferredLanguageCode) ? "Theo POI" : ttsSettings.PreferredLanguageCode)} • tốc độ {ttsSettings.SpeechRate:0.##}x";
+
+                UpdateDemoGeoFeature();
+                UpdateDemoNarrationFeature();
+                UpdateDemoAccessFeature();
+            });
+        }
+        catch
+        {
+        }
+    }
+
+    private void UpdateDemoGeoFeature()
+    {
+        if (_currentLocation == null)
+        {
+            GeofenceValueLabel.Text = "GPS chưa sẵn sàng";
+            GeofenceHintLabel.Text = "Cần vị trí để tính vùng kích hoạt";
+            return;
+        }
+
+        if (_nearestPoi == null || _nearestPoi.DistanceMeters == double.MaxValue)
+        {
+            GeofenceValueLabel.Text = "Chưa có POI gần";
+            GeofenceHintLabel.Text = "Đang chờ dữ liệu hoặc di chuyển";
+            return;
+        }
+
+        var isInside = _nearestPoi.DistanceMeters <= _nearestPoi.TriggerRadiusMeters;
+        GeofenceValueLabel.Text = isInside ? "Đang trong vùng kích hoạt" : $"Gần {_nearestPoi.Name}";
+        GeofenceHintLabel.Text = isInside
+            ? $"Auto trigger trong {_nearestPoi.TriggerRadiusMeters:0}m"
+            : $"{_nearestPoi.DistanceDisplay} • bán kính {_nearestPoi.TriggerRadiusMeters:0}m";
+    }
+
+    private void UpdateDemoNarrationFeature(string? playbackMessage = null)
+    {
+        var settings = _ttsSettingsService.Get();
+        NarrationValueLabel.Text = _narrationService.IsBusy ? "Đang phát / xếp hàng" : "Sẵn sàng phát";
+        NarrationHintLabel.Text = !string.IsNullOrWhiteSpace(playbackMessage)
+            ? playbackMessage
+            : $"{(string.IsNullOrWhiteSpace(settings.PreferredLanguageCode) ? "Theo POI" : settings.PreferredLanguageCode)} • tốc độ {settings.SpeechRate:0.##}x";
+    }
+
+    private void UpdateDemoAccessFeature()
+    {
+        var state = GetAccessState();
+        QrAccessValueLabel.Text = state.IsFullAccess ? "Full Access" : "Trial Mode";
+        QrAccessHintLabel.Text = state.ActivatedAt != default
+            ? $"Kích hoạt {state.ActivatedAt.LocalDateTime:dd/MM HH:mm}"
+            : "Quét QR để đổi quyền truy cập";
+    }
+
+    private async void OnQuickPoiDetailTapped(object? sender, EventArgs e)
+    {
+        var poi = _nearestPoi ?? _selectedPoiForPlayback ?? _allPois.FirstOrDefault();
+        if (poi == null)
+        {
+            await DisplayAlertAsync("Chi tiết POI", "Chưa có POI nào sẵn sàng để xem chi tiết.", "Đóng");
+            return;
+        }
+
+        await ShowPoiDetailAsync(poi);
+    }
+}
+
+internal static class TaskExtensions
+{
+    public static async void SafeFireAndForget(this Task task)
+    {
+        try
+        {
+            await task;
+        }
+        catch
+        {
         }
     }
 }
