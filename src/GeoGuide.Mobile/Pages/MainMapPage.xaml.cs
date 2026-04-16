@@ -30,12 +30,12 @@ public partial class MainMapPage : ContentPage
     private readonly Dictionary<string, DateTimeOffset> _lastPlaybackByPoiId = [];
     private readonly List<(string Key, string Label)> _categoryFilters =
     [
-        ("all", "Tat ca"),
-        ("food", "Am thuc"),
+        ("all", "Tất cả"),
+        ("food", "Ẩm thực"),
         ("cafe", "Cafe"),
-        ("park", "Cong vien"),
-        ("play", "Vui choi"),
-        ("theatre", "San khau"),
+        ("park", "Công viên"),
+        ("play", "Vui chơi"),
+        ("theatre", "Sân khấu"),
         ("attraction", "Tham quan")
     ];
 
@@ -55,6 +55,7 @@ public partial class MainMapPage : ContentPage
     public MainMapPage()
     {
         InitializeComponent();
+        Mapsui.Widgets.InfoWidgets.LoggingWidget.ShowLoggingInMap = Mapsui.Widgets.ActiveMode.No;
 
         var services = Application.Current?.Handler?.MauiContext?.Services
             ?? throw new InvalidOperationException("Service provider is not available.");
@@ -221,9 +222,9 @@ public partial class MainMapPage : ContentPage
             _lastPoiRefreshUtc = DateTimeOffset.UtcNow;
             DataSourceLabel.Text = result.DataSource switch
             {
-                PoiDataSource.Api => "Nguon: API",
-                PoiDataSource.Cache => "Nguon: cache",
-                _ => "Nguon: fallback"
+                PoiDataSource.Api => "Nguồn: API",
+                PoiDataSource.Cache => "Nguồn: cache",
+                _ => "Nguồn: fallback"
             };
 
             RecalculatePoiDistances();
@@ -233,7 +234,7 @@ public partial class MainMapPage : ContentPage
         {
             System.Diagnostics.Debug.WriteLine($"POI load error: {ex.Message}");
             NearbyStatusLabel.IsVisible = true;
-            NearbyStatusLabel.Text = "Khong tai duoc danh sach dia diem.";
+            NearbyStatusLabel.Text = "Không tải được danh sách địa điểm.";
             DiscoveryList.Children.Clear();
             UpdatePoiMarkers([]);
         }
@@ -278,35 +279,35 @@ public partial class MainMapPage : ContentPage
     {
         if (_currentLocation == null)
         {
-            NearestPoiLabel.Text = "Chua co vi tri hien tai. Cap quyen de goi y dia diem gan nhat.";
-            GpsStatusLabel.Text = "GPS dang cho";
+            NearestPoiLabel.Text = "Chưa có vị trí hiện tại. Cấp quyền để gợi ý địa điểm gần nhất.";
+            GpsStatusLabel.Text = "GPS đang chờ";
             GpsStatusDot.Color = MauiColor.FromArgb("#F78A44");
-            LocationStateTitleLabel.Text = "Vi tri hien tai";
-            LocationStateDetailLabel.Text = "Can quyen GPS de xac dinh khu vuc ban dang dung";
-            MiniPlayerPoiLabel.Text = "Chua san sang thuyet minh";
-            MiniPlayerStatusLabel.Text = "Bat vi tri de app goi y noi dung theo dia diem gan ban";
+            LocationStateTitleLabel.Text = "Vị trí hiện tại";
+            LocationStateDetailLabel.Text = "Cần quyền GPS để xác định khu vực bạn đang đứng";
+            MiniPlayerPoiLabel.Text = "Chưa sẵn sàng thuyết minh";
+            MiniPlayerStatusLabel.Text = "Bật vị trí để app gợi ý nội dung theo địa điểm gần bạn";
             return;
         }
 
         if (_nearestPoi == null || _nearestPoi.DistanceMeters == double.MaxValue)
         {
-            NearestPoiLabel.Text = "Chua co dia diem phu hop gan ban.";
-            GpsStatusLabel.Text = "GPS san sang";
+            NearestPoiLabel.Text = "Chưa có địa điểm phù hợp gần bạn.";
+            GpsStatusLabel.Text = "GPS sẵn sàng";
             GpsStatusDot.Color = MauiColor.FromArgb("#22A35A");
-            LocationStateTitleLabel.Text = "Vi tri hien tai";
-            LocationStateDetailLabel.Text = "Da co vi tri, dang cho du lieu dia diem phu hop";
-            MiniPlayerPoiLabel.Text = "Chua co dia diem gan ban";
-            MiniPlayerStatusLabel.Text = "Mini player se hien noi dung khi co POI nam trong tam theo doi";
+            LocationStateTitleLabel.Text = "Vị trí hiện tại";
+            LocationStateDetailLabel.Text = "Đã có vị trí, đang chờ dữ liệu địa điểm phù hợp";
+            MiniPlayerPoiLabel.Text = "Chưa có địa điểm gần bạn";
+            MiniPlayerStatusLabel.Text = "Mini player sẽ hiện nội dung khi có POI nằm trong tầm theo dõi";
             return;
         }
 
-        NearestPoiLabel.Text = $"Gan nhat: {_nearestPoi.Name} ({_nearestPoi.DistanceDisplay})";
-        GpsStatusLabel.Text = "GPS san sang";
+        NearestPoiLabel.Text = $"Gần nhất: {_nearestPoi.Name} ({_nearestPoi.DistanceDisplay})";
+        GpsStatusLabel.Text = "GPS sẵn sàng";
         GpsStatusDot.Color = MauiColor.FromArgb("#22A35A");
-        LocationStateTitleLabel.Text = "Vi tri hien tai";
-        LocationStateDetailLabel.Text = $"Gan {_nearestPoi.Name} • {_nearestPoi.DistanceDisplay}";
+        LocationStateTitleLabel.Text = "Vị trí hiện tại";
+        LocationStateDetailLabel.Text = $"Gần {_nearestPoi.Name} • {_nearestPoi.DistanceDisplay}";
         MiniPlayerPoiLabel.Text = _nearestPoi.Name;
-        MiniPlayerStatusLabel.Text = $"San sang phat thuyet minh khi ban vao ban kinh {Math.Round(_nearestPoi.TriggerRadiusMeters)}m";
+        MiniPlayerStatusLabel.Text = $"Sẵn sàng phát thuyết minh khi bạn vào bán kính {Math.Round(_nearestPoi.TriggerRadiusMeters)}m";
     }
 
     private void BindNearbyCards(IEnumerable<PointOfInterest> pois)
@@ -361,7 +362,7 @@ public partial class MainMapPage : ContentPage
         cardGrid.Children.Add(icon);
 
         var infoStack = new VerticalStackLayout { Spacing = 5, VerticalOptions = LayoutOptions.Center };
-        var titleText = _nearestPoi?.Id == poi.Id ? $"{poi.Name} • Gan nhat" : poi.Name;
+        var titleText = _nearestPoi?.Id == poi.Id ? $"{poi.Name} • Gần nhất" : poi.Name;
 
         infoStack.Children.Add(new Label
         {
@@ -381,7 +382,7 @@ public partial class MainMapPage : ContentPage
 
         infoStack.Children.Add(new Label
         {
-            Text = $"Cach {poi.DistanceDisplay} • Kich hoat trong {Math.Round(poi.TriggerRadiusMeters)}m",
+            Text = $"Cách {poi.DistanceDisplay} • Kích hoạt trong {Math.Round(poi.TriggerRadiusMeters)}m",
             FontSize = 12,
             FontAttributes = FontAttributes.Bold,
             TextColor = MauiColor.FromArgb("#414755")
@@ -404,7 +405,7 @@ public partial class MainMapPage : ContentPage
 
         var playButton = new Button
         {
-            Text = "Phat",
+            Text = "Phát",
             FontSize = 13,
             Padding = new Thickness(14, 8),
             CornerRadius = 18,
@@ -510,7 +511,7 @@ public partial class MainMapPage : ContentPage
 
         NearbyStatusLabel.IsVisible = filtered.Count == 0;
         NearbyStatusLabel.Text = filtered.Count == 0
-            ? "Khong tim thay dia diem phu hop."
+            ? "Không tìm thấy địa điểm phù hợp."
             : string.Empty;
     }
 
@@ -554,25 +555,25 @@ public partial class MainMapPage : ContentPage
         _isNarrationRunning = true;
         NearbyStatusLabel.IsVisible = true;
         NearbyStatusLabel.Text = userInitiated
-            ? $"Dang phat thuyet minh: {poi.Name}"
-            : $"Dang tu dong phat theo vi tri: {poi.Name}";
+            ? $"Đang phát thuyết minh: {poi.Name}"
+            : $"Đang tự động phát theo vị trí: {poi.Name}";
         MiniPlayerPoiLabel.Text = poi.Name;
         MiniPlayerStatusLabel.Text = userInitiated
-            ? "Dang phat thu cong tu mini player"
-            : "Dang phat tu dong theo vi tri hien tai";
+            ? "Đang phát thủ công từ mini player"
+            : "Đang phát tự động theo vị trí hiện tại";
 
         try
         {
             await _narrationService.PlayAsync(poi, triggerType);
             _lastPlaybackByPoiId[poi.Id] = DateTimeOffset.UtcNow;
-            NearbyStatusLabel.Text = $"Da phat xong: {poi.Name}";
-            MiniPlayerStatusLabel.Text = $"Da phat xong. San sang cho lan kich hoat tiep theo quanh {poi.Name}";
+            NearbyStatusLabel.Text = $"Đã phát xong: {poi.Name}";
+            MiniPlayerStatusLabel.Text = $"Đã phát xong. Sẵn sàng cho lần kích hoạt tiếp theo quanh {poi.Name}";
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Narration error: {ex.Message}");
-            NearbyStatusLabel.Text = "Khong the phat thuyet minh luc nay.";
-            MiniPlayerStatusLabel.Text = "Chua the phat thuyet minh luc nay";
+            NearbyStatusLabel.Text = "Không thể phát thuyết minh lúc này.";
+            MiniPlayerStatusLabel.Text = "Chưa thể phát thuyết minh lúc này";
         }
         finally
         {
@@ -664,15 +665,15 @@ public partial class MainMapPage : ContentPage
 
     private async void OnSettingsTapped(object? sender, EventArgs e)
     {
-        var action = await DisplayActionSheetAsync("Cai dat", "Dong", null, "Ngon ngu", "Vi tri");
+        var action = await DisplayActionSheetAsync("Cài đặt", "Đóng", null, "Ngôn ngữ", "Vị trí");
 
-        if (action == "Ngon ngu")
+        if (action == "Ngôn ngữ")
         {
             await ChangeLanguageAsync();
             return;
         }
 
-        if (action == "Vi tri")
+        if (action == "Vị trí")
         {
             await HandleLocationSettingsAsync();
         }
@@ -699,10 +700,10 @@ public partial class MainMapPage : ContentPage
         if (status != PermissionStatus.Granted)
         {
             var grant = await DisplayAlertAsync(
-                "Quyen vi tri",
-                "Ung dung can quyen vi tri de tim POI gan ban va phat audio theo ngu canh.",
-                "Cap quyen",
-                "Huy");
+                "Quyền vị trí",
+                "Ứng dụng cần quyền vị trí để tìm POI gần bạn và phát audio theo ngữ cảnh.",
+                "Cấp quyền",
+                "Hủy");
 
             if (!grant)
             {
@@ -721,10 +722,10 @@ public partial class MainMapPage : ContentPage
         }
 
         var openSettings = await DisplayAlertAsync(
-            "Quyen vi tri",
-            "Ban da tu choi quyen vi tri. Hay mo cai dat he thong de cap quyen.",
-            "Mo cai dat",
-            "De sau");
+            "Quyền vị trí",
+            "Bạn đã từ chối quyền vị trí. Hãy mở cài đặt hệ thống để cấp quyền.",
+            "Mở cài đặt",
+            "Để sau");
 
         if (openSettings)
         {

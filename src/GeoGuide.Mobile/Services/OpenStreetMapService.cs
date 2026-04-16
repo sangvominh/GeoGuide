@@ -229,13 +229,13 @@ namespace MauiApp1.Services
         {
             return categoryKey switch
             {
-                "food" => "Quan an",
+                "food" => "Quán ăn",
                 "cafe" => "Cafe",
-                "park" => "Cong vien",
-                "play" => "Khu vui choi",
-                "theatre" => "Nha hat",
+                "park" => "Công viên",
+                "play" => "Khu vui chơi",
+                "theatre" => "Nhà hát",
                 "attraction" => "Tham quan",
-                _ => "Dia diem khac"
+                _ => "Địa điểm khác"
             };
         }
 
@@ -248,12 +248,12 @@ namespace MauiApp1.Services
 
             return categoryKey switch
             {
-                "food" => "Diem an uong gan ban",
-                "cafe" => "Khong gian thu gian va do uong",
-                "park" => "Khong gian xanh thu gian",
-                "play" => "Khu vui choi va hoat dong",
-                "theatre" => "Khong gian nghe thuat giai tri",
-                "attraction" => "Diem tham quan noi bat",
+                "food" => "Điểm ăn uống gần bạn",
+                "cafe" => "Không gian thư giãn và đồ uống",
+                "park" => "Không gian xanh thư giãn",
+                "play" => "Khu vui chơi và hoạt động",
+                "theatre" => "Không gian nghệ thuật giải trí",
+                "attraction" => "Điểm tham quan nổi bật",
                 _ => $"OSM tags: {amenity ?? leisure ?? tourism ?? "unknown"}"
             };
         }
