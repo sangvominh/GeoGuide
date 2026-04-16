@@ -264,11 +264,15 @@
 
                         <Border WidthRequest="34"
                                 HeightRequest="34"
+                                x:Name="MiniPlayerPlayButton"
                                 BackgroundColor="White"
                                 StrokeThickness="0">
                             <Border.StrokeShape>
                                 <RoundRectangle CornerRadius="17"/>
                             </Border.StrokeShape>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnMiniPlayerPlayTapped"/>
+                            </Border.GestureRecognizers>
                             <Label Text="&#xe037;"
                                    FontFamily="MaterialIcons"
                                    FontSize="20"

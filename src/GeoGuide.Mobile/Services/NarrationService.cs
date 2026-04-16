@@ -18,17 +18,10 @@ public class NarrationService
         CancellationToken cancellationToken = default)
     {
         var startedAt = DateTimeOffset.UtcNow;
-        var narrationText = string.IsNullOrWhiteSpace(poi.NarrationText)
-            ? poi.Name
-            : poi.NarrationText;
+        var narrationText = BuildNarrationText(poi);
 
         var locale = await ResolveLocaleAsync(poi.LanguageCode);
-        await TextToSpeech.Default.SpeakAsync(narrationText, new SpeechOptions
-        {
-            Locale = locale,
-            Pitch = 1.0f,
-            Volume = 1.0f
-        }, cancellationToken);
+        await SpeakWithFallbackAsync(narrationText, locale, cancellationToken);
 
         _ = TryLogPlaybackAsync(new PlaybackLogEntry
         {
@@ -43,8 +36,54 @@ public class NarrationService
     private async Task<Locale?> ResolveLocaleAsync(string languageCode)
     {
         var locales = await TextToSpeech.Default.GetLocalesAsync();
-        return locales.FirstOrDefault(locale => string.Equals(locale.Language, languageCode, StringComparison.OrdinalIgnoreCase))
-            ?? locales.FirstOrDefault(locale => locale.Language.StartsWith(languageCode.Split('-')[0], StringComparison.OrdinalIgnoreCase));
+        var normalizedCode = (languageCode ?? string.Empty).Trim();
+        var languagePrefix = normalizedCode.Split('-', StringSplitOptions.RemoveEmptyEntries)[0];
+
+        return locales.FirstOrDefault(locale => string.Equals(locale.Language, normalizedCode, StringComparison.OrdinalIgnoreCase))
+            ?? locales.FirstOrDefault(locale => locale.Language.StartsWith(languagePrefix, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static async Task SpeakWithFallbackAsync(string narrationText, Locale? locale, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await TextToSpeech.Default.SpeakAsync(narrationText, new SpeechOptions
+            {
+                Locale = locale,
+                Pitch = 1.0f,
+                Volume = 1.0f
+            }, cancellationToken);
+        }
+        catch when (locale != null)
+        {
+            await TextToSpeech.Default.SpeakAsync(narrationText, new SpeechOptions
+            {
+                Pitch = 1.0f,
+                Volume = 1.0f
+            }, cancellationToken);
+        }
+    }
+
+    private static string BuildNarrationText(PointOfInterest poi)
+    {
+        if (!string.IsNullOrWhiteSpace(poi.TtsScript))
+        {
+            return poi.TtsScript.Trim();
+        }
+
+        var parts = new List<string> { poi.Name.Trim() };
+
+        if (!string.IsNullOrWhiteSpace(poi.Description))
+        {
+            parts.Add(poi.Description.Trim());
+        }
+
+        if (!string.IsNullOrWhiteSpace(poi.CategoryLabel))
+        {
+            parts.Add($"Đây là điểm {poi.CategoryLabel.ToLowerInvariant()} nổi bật trong khu vực.");
+        }
+
+        return string.Join(". ", parts.Where(static part => !string.IsNullOrWhiteSpace(part)));
     }
 
     private async Task TryLogPlaybackAsync(PlaybackLogEntry entry)

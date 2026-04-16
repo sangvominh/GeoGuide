@@ -20,7 +20,6 @@ public partial class MainMapPage : ContentPage
     private const string LanguageSelectedKey = "app_language_selected";
     private const double DefaultLatitude = 10.8231;
     private const double DefaultLongitude = 106.6297;
-    private const double MarkerTapThresholdMeters = 120;
     private static readonly TimeSpan PoiRefreshInterval = TimeSpan.FromMinutes(2);
     private static readonly TimeSpan AutoTriggerCooldown = TimeSpan.FromMinutes(5);
 
@@ -45,6 +44,7 @@ public partial class MainMapPage : ContentPage
     private MemoryLayer? _poiLayer;
     private Location? _currentLocation;
     private PointOfInterest? _nearestPoi;
+    private PointOfInterest? _selectedPoiForPlayback;
     private bool _isInitialized;
     private bool _isLoadingPois;
     private bool _isMapFullScreen;
@@ -112,11 +112,7 @@ public partial class MainMapPage : ContentPage
     {
         var map = MapControl.Map;
         map.Layers.Add(Mapsui.Tiling.OpenStreetMap.CreateTileLayer());
-        MapControl.MapTapped += async (_, e) =>
-        {
-            var (longitude, latitude) = ConvertWorldToLonLat(e.WorldPosition.X, e.WorldPosition.Y);
-            await HandleMapTappedAsync(longitude, latitude);
-        };
+        MapControl.Info += async (_, e) => await HandleMapInfoAsync(e);
 
         _userLocationLayer = new MemoryLayer
         {
@@ -287,6 +283,11 @@ public partial class MainMapPage : ContentPage
     {
         UpdateAutoNarrationUiState();
 
+        if (_selectedPoiForPlayback != null && _allPois.All(poi => poi.Id != _selectedPoiForPlayback.Id))
+        {
+            _selectedPoiForPlayback = null;
+        }
+
         if (_currentLocation == null)
         {
             NearestPoiLabel.Text = "Chưa có vị trí hiện tại. Cấp quyền để gợi ý địa điểm gần nhất.";
@@ -294,8 +295,7 @@ public partial class MainMapPage : ContentPage
             GpsStatusDot.Color = MauiColor.FromArgb("#F78A44");
             LocationStateTitleLabel.Text = "Vị trí hiện tại";
             LocationStateDetailLabel.Text = "Cần quyền GPS để xác định khu vực bạn đang đứng";
-            MiniPlayerPoiLabel.Text = "Chưa sẵn sàng thuyết minh";
-            MiniPlayerStatusLabel.Text = "Bật vị trí để app gợi ý nội dung theo địa điểm gần bạn";
+            UpdateMiniPlayerLabels("Chưa sẵn sàng thuyết minh", "Bật vị trí để app gợi ý nội dung theo địa điểm gần bạn");
             return;
         }
 
@@ -306,8 +306,7 @@ public partial class MainMapPage : ContentPage
             GpsStatusDot.Color = MauiColor.FromArgb("#22A35A");
             LocationStateTitleLabel.Text = "Vị trí hiện tại";
             LocationStateDetailLabel.Text = "Đã có vị trí, đang chờ dữ liệu địa điểm phù hợp";
-            MiniPlayerPoiLabel.Text = "Chưa có địa điểm gần bạn";
-            MiniPlayerStatusLabel.Text = "Mini player sẽ hiện nội dung khi có POI nằm trong tầm theo dõi";
+            UpdateMiniPlayerLabels("Chưa có địa điểm gần bạn", "Mini player sẽ hiện nội dung khi có POI nằm trong tầm theo dõi");
             return;
         }
 
@@ -316,8 +315,13 @@ public partial class MainMapPage : ContentPage
         GpsStatusDot.Color = MauiColor.FromArgb("#22A35A");
         LocationStateTitleLabel.Text = "Vị trí hiện tại";
         LocationStateDetailLabel.Text = $"Gần {_nearestPoi.Name} • {_nearestPoi.DistanceDisplay}";
-        MiniPlayerPoiLabel.Text = _nearestPoi.Name;
-        MiniPlayerStatusLabel.Text = $"Sẵn sàng phát thuyết minh khi bạn vào bán kính {Math.Round(_nearestPoi.TriggerRadiusMeters)}m";
+
+        var activePoi = GetActivePlaybackPoi();
+        UpdateMiniPlayerLabels(
+            activePoi?.Name ?? _nearestPoi.Name,
+            activePoi == null || activePoi.Id == _nearestPoi.Id
+                ? $"Sẵn sàng phát thuyết minh khi bạn vào bán kính {Math.Round(_nearestPoi.TriggerRadiusMeters)}m"
+                : $"Đã chọn thủ công • Cách {activePoi.DistanceDisplay}");
     }
 
     private void BindNearbyCards(IEnumerable<PointOfInterest> pois)
@@ -536,7 +540,10 @@ public partial class MainMapPage : ContentPage
         foreach (var poi in pois)
         {
             var point = SphericalMercator.FromLonLat(poi.Longitude, poi.Latitude).ToMPoint();
-            var feature = new PointFeature(point);
+            var feature = new PointFeature(point)
+            {
+                Data = poi
+            };
             feature.Styles.Add(new SymbolStyle
             {
                 SymbolType = SymbolType.Ellipse,
@@ -562,28 +569,30 @@ public partial class MainMapPage : ContentPage
             return;
         }
 
+        _selectedPoiForPlayback = poi;
         _isNarrationRunning = true;
         NearbyStatusLabel.IsVisible = true;
         NearbyStatusLabel.Text = userInitiated
             ? $"Đang phát thuyết minh: {poi.Name}"
             : $"Đang tự động phát theo vị trí: {poi.Name}";
-        MiniPlayerPoiLabel.Text = poi.Name;
-        MiniPlayerStatusLabel.Text = userInitiated
+        UpdateMiniPlayerLabels(
+            poi.Name,
+            userInitiated
             ? "Đang phát thủ công từ mini player"
-            : "Đang phát tự động theo vị trí hiện tại";
+            : "Đang phát tự động theo vị trí hiện tại");
 
         try
         {
             await _narrationService.PlayAsync(poi, triggerType);
             _lastPlaybackByPoiId[poi.Id] = DateTimeOffset.UtcNow;
             NearbyStatusLabel.Text = $"Đã phát xong: {poi.Name}";
-            MiniPlayerStatusLabel.Text = $"Đã phát xong. Sẵn sàng cho lần kích hoạt tiếp theo quanh {poi.Name}";
+            UpdateMiniPlayerLabels(poi.Name, $"Đã phát xong. Sẵn sàng cho lần kích hoạt tiếp theo quanh {poi.Name}");
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Narration error: {ex.Message}");
             NearbyStatusLabel.Text = "Không thể phát thuyết minh lúc này.";
-            MiniPlayerStatusLabel.Text = "Chưa thể phát thuyết minh lúc này";
+            UpdateMiniPlayerLabels(poi.Name, "Chưa thể phát thuyết minh lúc này");
         }
         finally
         {
@@ -645,46 +654,28 @@ public partial class MainMapPage : ContentPage
             : MauiColor.FromArgb("#B3B3B3");
     }
 
-    private async Task HandleMapTappedAsync(double longitude, double latitude)
+    private async Task HandleMapInfoAsync(MapInfoEventArgs eventArgs)
     {
-        if (_allPois.Count == 0)
+        if (_poiLayer == null)
         {
             return;
         }
 
-        var tappedCandidate = _allPois
-            .Select(poi => new
-            {
-                Poi = poi,
-                DistanceMeters = Location.CalculateDistance(
-                    latitude,
-                    longitude,
-                    poi.Latitude,
-                    poi.Longitude,
-                    DistanceUnits.Kilometers) * 1000d
-            })
-            .OrderBy(item => item.DistanceMeters)
-            .FirstOrDefault();
-
-        if (tappedCandidate == null || tappedCandidate.DistanceMeters > MarkerTapThresholdMeters)
+        var mapInfo = eventArgs.GetMapInfo?.Invoke([_poiLayer]);
+        if (mapInfo?.Feature?.Data is not PointOfInterest poi)
         {
             return;
         }
 
-        await ShowPoiPopupAsync(tappedCandidate.Poi);
-    }
-
-    private static (double Longitude, double Latitude) ConvertWorldToLonLat(double worldX, double worldY)
-    {
-        const double mercatorExtent = 20037508.34;
-        var longitude = worldX / mercatorExtent * 180d;
-        var latitude = worldY / mercatorExtent * 180d;
-        latitude = 180d / Math.PI * (2d * Math.Atan(Math.Exp(latitude * Math.PI / 180d)) - Math.PI / 2d);
-        return (longitude, latitude);
+        eventArgs.Handled = true;
+        await ShowPoiPopupAsync(poi);
     }
 
     private async Task ShowPoiPopupAsync(PointOfInterest poi)
     {
+        _selectedPoiForPlayback = poi;
+        UpdateMiniPlayerLabels(poi.Name, $"Đã chọn trên bản đồ • Cách {poi.DistanceDisplay}");
+
         var action = await DisplayActionSheetAsync(
             $"{poi.Name} • {poi.DistanceDisplay}",
             "Đóng",
@@ -695,6 +686,17 @@ public partial class MainMapPage : ContentPage
         {
             await PlayNarrationAsync(poi, "map-tap", userInitiated: true);
         }
+    }
+
+    private PointOfInterest? GetActivePlaybackPoi()
+    {
+        return _selectedPoiForPlayback ?? _nearestPoi;
+    }
+
+    private void UpdateMiniPlayerLabels(string title, string status)
+    {
+        MiniPlayerPoiLabel.Text = title;
+        MiniPlayerStatusLabel.Text = status;
     }
 
     private async Task FilterNearbyPoiAsync(string keyword)
@@ -819,6 +821,19 @@ public partial class MainMapPage : ContentPage
         await RefreshCurrentLocationAsync(requestIfMissing: true, recenterMap: true);
         await LoadPoisAsync(force: true);
         await EvaluateAutoTriggerAsync();
+    }
+
+    private async void OnMiniPlayerPlayTapped(object? sender, EventArgs e)
+    {
+        var poi = GetActivePlaybackPoi();
+        if (poi == null)
+        {
+            NearbyStatusLabel.IsVisible = true;
+            NearbyStatusLabel.Text = "Chưa có POI khả dụng để phát.";
+            return;
+        }
+
+        await PlayNarrationAsync(poi, "mini-player", userInitiated: true);
     }
 
     private async void OnAutoNarrationToggled(object? sender, ToggledEventArgs e)
