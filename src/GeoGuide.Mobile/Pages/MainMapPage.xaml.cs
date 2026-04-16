@@ -26,6 +26,7 @@ public partial class MainMapPage : ContentPage
 
     private readonly LocationService _locationService;
     private readonly PoiRepository _poiRepository;
+    private readonly GeofenceEngineService _geofenceEngineService;
     private readonly NarrationService _narrationService;
     private readonly List<PointOfInterest> _allPois = [];
     private readonly Dictionary<string, DateTimeOffset> _lastPlaybackByPoiId = [];
@@ -66,6 +67,7 @@ public partial class MainMapPage : ContentPage
 
         _locationService = services.GetRequiredService<LocationService>();
         _poiRepository = services.GetRequiredService<PoiRepository>();
+        _geofenceEngineService = services.GetRequiredService<GeofenceEngineService>();
         _narrationService = services.GetRequiredService<NarrationService>();
         _locationService.LocationUpdated += OnLocationUpdated;
 
@@ -261,30 +263,10 @@ public partial class MainMapPage : ContentPage
 
     private void RecalculatePoiDistances()
     {
-        if (_currentLocation == null)
-        {
-            foreach (var poi in _allPois)
-            {
-                poi.DistanceMeters = double.MaxValue;
-            }
-        }
-        else
-        {
-            foreach (var poi in _allPois)
-            {
-                poi.UpdateDistanceFrom(_currentLocation);
-            }
-        }
-
-        _allPois.Sort(static (left, right) =>
-        {
-            var distanceComparison = left.DistanceMeters.CompareTo(right.DistanceMeters);
-            return distanceComparison != 0
-                ? distanceComparison
-                : right.Priority.CompareTo(left.Priority);
-        });
-
-        _nearestPoi = _allPois.FirstOrDefault();
+        var ranked = _geofenceEngineService.BuildRankedSnapshot(_allPois, _currentLocation);
+        _allPois.Clear();
+        _allPois.AddRange(ranked);
+        _nearestPoi = _geofenceEngineService.SelectNearest(_allPois);
         UpdateNearestPoiStatus();
     }
 
@@ -618,11 +600,7 @@ public partial class MainMapPage : ContentPage
             return;
         }
 
-        var candidate = _allPois
-            .Where(poi => poi.DistanceMeters <= poi.TriggerRadiusMeters)
-            .OrderBy(poi => poi.DistanceMeters)
-            .ThenByDescending(poi => poi.Priority)
-            .FirstOrDefault();
+        var candidate = _geofenceEngineService.SelectTriggerCandidate(_allPois);
 
         if (candidate == null)
         {

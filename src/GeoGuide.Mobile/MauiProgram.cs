@@ -57,6 +57,7 @@ namespace MauiApp1
             builder.Services.AddSingleton<PoiApiService>();
             builder.Services.AddSingleton<MediaPrefetchService>();
             builder.Services.AddSingleton<PoiRepository>();
+            builder.Services.AddSingleton<GeofenceEngineService>();
             builder.Services.AddSingleton<NarrationService>();
             builder.Services.AddSingleton<StartupWarmupService>();
 
