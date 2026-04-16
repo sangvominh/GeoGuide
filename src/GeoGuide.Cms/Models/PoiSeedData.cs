@@ -7,6 +7,7 @@ public static class PoiSeedData
         new()
         {
             Id = Guid.Parse("9f0bbf75-a9fc-4a94-93a1-7c5ef0fc6a01"),
+            TenantId = PoiTenant.DemoTenantId,
             Name = "Ben Thanh Market",
             Description = "Khu cho noi tieng o trung tam TP.HCM.",
             Latitude = 10.7720,
@@ -26,6 +27,7 @@ public static class PoiSeedData
         new()
         {
             Id = Guid.Parse("458a1a0e-b524-4e95-92f4-684e80ea7b97"),
+            TenantId = PoiTenant.DemoTenantId,
             Name = "Notre-Dame Cathedral",
             Description = "Nha tho Duc Ba Sai Gon voi kien truc Phap tieu bieu.",
             Latitude = 10.7798,
@@ -45,6 +47,7 @@ public static class PoiSeedData
         new()
         {
             Id = Guid.Parse("5807657e-240d-42cb-b6e8-b46fd35652ce"),
+            TenantId = PoiTenant.DemoTenantId,
             Name = "Tao Dan Park",
             Description = "Cong vien xanh phu hop cho di bo va thu gian.",
             Latitude = 10.7778,
@@ -64,6 +67,7 @@ public static class PoiSeedData
         new()
         {
             Id = Guid.Parse("a76542f8-e34f-45ee-96c9-0e3961c4ca30"),
+            TenantId = PoiTenant.DemoTenantId,
             Name = "Ho Chi Minh City Museum",
             Description = "Bao tang gioi thieu lich su va van hoa thanh pho.",
             Latitude = 10.7765,
@@ -77,6 +81,18 @@ public static class PoiSeedData
             AudioUrl = "https://example.com/audio/hcm-city-museum.mp3",
             TtsScript = "Bao tang Thanh pho Ho Chi Minh luu giu nhieu tu lieu va hien vat quan trong.",
             LanguageCode = "vi-VN",
+            IsActive = true,
+            UpdatedAt = DateTimeOffset.Parse("2026-04-09T10:00:00Z")
+        }
+    ];
+
+    public static readonly PoiTenant[] Tenants =
+    [
+        new()
+        {
+            Id = PoiTenant.DemoTenantId,
+            Name = "Demo POI Tenant",
+            Slug = "demo-poi-tenant",
             IsActive = true,
             UpdatedAt = DateTimeOffset.Parse("2026-04-09T10:00:00Z")
         }

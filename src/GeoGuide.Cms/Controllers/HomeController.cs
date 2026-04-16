@@ -1,9 +1,11 @@
 using System.Diagnostics;
 using GeoGuide.Cms.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GeoGuide.Cms.Controllers;
 
+[Authorize]
 public class HomeController : Controller
 {
     public IActionResult Index()
