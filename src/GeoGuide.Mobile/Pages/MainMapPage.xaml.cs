@@ -28,6 +28,7 @@ public partial class MainMapPage : ContentPage
     private readonly GeofenceEngineService _geofenceEngineService;
     private readonly TriggerGuardService _triggerGuardService;
     private readonly AccessModeService _accessModeService;
+    private readonly TtsSettingsService _ttsSettingsService;
     private readonly NarrationService _narrationService;
     private readonly List<PointOfInterest> _allPois = [];
     private readonly List<(string Key, string Label)> _categoryFilters =
@@ -70,6 +71,7 @@ public partial class MainMapPage : ContentPage
         _geofenceEngineService = services.GetRequiredService<GeofenceEngineService>();
         _triggerGuardService = services.GetRequiredService<TriggerGuardService>();
         _accessModeService = services.GetRequiredService<AccessModeService>();
+        _ttsSettingsService = services.GetRequiredService<TtsSettingsService>();
         _narrationService = services.GetRequiredService<NarrationService>();
         _narrationService.PlaybackChanged += OnNarrationPlaybackChanged;
         _locationService.LocationUpdated += OnLocationUpdated;
@@ -438,6 +440,11 @@ public partial class MainMapPage : ContentPage
         cardGrid.SetColumn(playButton, 2);
         cardGrid.Children.Add(playButton);
 
+        card.GestureRecognizers.Add(new TapGestureRecognizer
+        {
+            Command = new Command(async () => await ShowPoiDetailAsync(poi))
+        });
+
         card.Content = cardGrid;
         return card;
     }
@@ -713,7 +720,14 @@ public partial class MainMapPage : ContentPage
             $"{poi.Name} • {poi.DistanceDisplay}",
             "Đóng",
             null,
+            "Xem chi tiết",
             "Phát thuyết minh");
+
+        if (action == "Xem chi tiết")
+        {
+            await ShowPoiDetailAsync(poi);
+            return;
+        }
 
         if (action == "Phát thuyết minh")
         {
@@ -821,11 +835,17 @@ public partial class MainMapPage : ContentPage
 
     private async void OnSettingsTapped(object? sender, EventArgs e)
     {
-        var action = await DisplayActionSheetAsync("Cài đặt", "Đóng", null, "Ngôn ngữ", "Vị trí");
+        var action = await DisplayActionSheetAsync("Cài đặt", "Đóng", null, "Ngôn ngữ ứng dụng", "Giọng đọc TTS", "Vị trí");
 
-        if (action == "Ngôn ngữ")
+        if (action == "Ngôn ngữ ứng dụng")
         {
             await ChangeLanguageAsync();
+            return;
+        }
+
+        if (action == "Giọng đọc TTS")
+        {
+            await ConfigureTtsSettingsAsync();
             return;
         }
 
@@ -833,6 +853,95 @@ public partial class MainMapPage : ContentPage
         {
             await HandleLocationSettingsAsync();
         }
+    }
+
+    private async Task ConfigureTtsSettingsAsync()
+    {
+        var current = _ttsSettingsService.Get();
+
+        var languageChoice = await DisplayActionSheetAsync(
+            "Ngôn ngữ giọng đọc TTS",
+            "Hủy",
+            null,
+            "Theo nội dung POI",
+            "Tiếng Việt (vi-VN)",
+            "Tiếng Anh (en-US)");
+
+        if (languageChoice == "Hủy" || string.IsNullOrWhiteSpace(languageChoice))
+        {
+            return;
+        }
+
+        var languageCode = languageChoice switch
+        {
+            "Tiếng Việt (vi-VN)" => "vi-VN",
+            "Tiếng Anh (en-US)" => "en-US",
+            _ => string.Empty
+        };
+
+        var pitchInput = await DisplayPromptAsync(
+            "Pitch TTS",
+            "Nhập giá trị 0.5 - 2.0",
+            "Lưu",
+            "Bỏ qua",
+            initialValue: current.Pitch.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
+
+        var volumeInput = await DisplayPromptAsync(
+            "Volume TTS",
+            "Nhập giá trị 0.0 - 1.0",
+            "Lưu",
+            "Bỏ qua",
+            initialValue: current.Volume.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
+
+        var rateInput = await DisplayPromptAsync(
+            "Tốc độ đọc TTS",
+            "Nhập giá trị 0.25 - 2.0",
+            "Lưu",
+            "Bỏ qua",
+            initialValue: current.SpeechRate.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
+
+        var updated = new TtsSettings
+        {
+            PreferredLanguageCode = languageCode,
+            Pitch = TryParseFloatOrDefault(pitchInput, current.Pitch),
+            Volume = TryParseFloatOrDefault(volumeInput, current.Volume),
+            SpeechRate = TryParseFloatOrDefault(rateInput, current.SpeechRate)
+        };
+
+        _ttsSettingsService.Save(updated);
+        await DisplayAlertAsync("TTS", "Đã lưu cấu hình giọng đọc.", "OK");
+    }
+
+    private async Task ShowPoiDetailAsync(PointOfInterest poi)
+    {
+        var detail = string.Join(
+            Environment.NewLine,
+            new[]
+            {
+                $"Tên: {poi.Name}",
+                $"Danh mục: {poi.CategoryLabel}",
+                $"Khoảng cách: {poi.DistanceDisplay}",
+                $"Bán kính kích hoạt: {Math.Round(poi.TriggerRadiusMeters)}m",
+                $"Cooldown: {poi.CooldownMinutes} phút",
+                $"Ngôn ngữ: {poi.LanguageCode}",
+                string.IsNullOrWhiteSpace(poi.AudioUrl) ? "Audio: Không có file audio" : "Audio: Có file audio",
+                string.IsNullOrWhiteSpace(poi.TtsScript) ? "TTS script: Không có" : "TTS script: Có",
+                string.IsNullOrWhiteSpace(poi.MapUrl) ? "Bản đồ ngoài: Không có" : $"Bản đồ ngoài: {poi.MapUrl}",
+                string.IsNullOrWhiteSpace(poi.Description) ? "Mô tả: Không có" : $"Mô tả: {poi.Description}"
+            });
+
+        await DisplayAlertAsync("Chi tiết POI", detail, "Đóng");
+    }
+
+    private static float TryParseFloatOrDefault(string? value, float fallback)
+    {
+        return float.TryParse(
+            value,
+            System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture,
+            out var parsed)
+            ? parsed
+            : fallback;
     }
 
     private async Task ChangeLanguageAsync()
