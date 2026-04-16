@@ -10,12 +10,12 @@
     <div class="col-md-6">
         <label asp-for="TenantId" class="form-label">Tenant</label>
         <select asp-for="TenantId" asp-items="ViewBag.TenantOptions" class="form-select" disabled="@(!isSystemAdmin)">
-            <option value="">Chon tenant</option>
+            <option value="">Chọn tenant</option>
         </select>
         @if (ViewBag.IsSystemAdmin is bool canChooseTenant && !canChooseTenant)
         {
             <input asp-for="TenantId" type="hidden" />
-            <div class="form-text">Tai khoan tenant chi quan ly du lieu trong pham vi da duoc gan.</div>
+            <div class="form-text">Tài khoản tenant chỉ quản lý dữ liệu trong phạm vi đã được gán.</div>
         }
         <span asp-validation-for="TenantId" class="text-danger"></span>
     </div>
@@ -90,7 +90,7 @@
         else
         {
             <div class="alert alert-warning mb-0 py-2">
-                POI tenant tao moi se mac dinh o trang thai cho duyet va chua duoc kich hoat.
+                POI tenant tạo mới sẽ mặc định ở trạng thái chờ duyệt và chưa được kích hoạt.
             </div>
             <input asp-for="IsActive" type="hidden" />
         }

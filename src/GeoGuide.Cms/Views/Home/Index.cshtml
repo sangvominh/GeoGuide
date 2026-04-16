@@ -6,10 +6,10 @@
     <div class="container-fluid py-3">
         <h1 class="display-6 fw-bold">GeoGuide CMS</h1>
         <p class="col-md-9 fs-5">
-            Nen CMS da duoc tach 2 lop quyen: admin he thong quan ly toan bo va tenant chi quan ly du lieu POI nam trong pham vi duoc giao.
+            Nền CMS đã được tách 2 lớp quyền: admin hệ thống quản lý toàn bộ và tenant chỉ quản lý dữ liệu POI nằm trong phạm vi được giao.
         </p>
         <div class="d-flex gap-2 flex-wrap">
-            <a class="btn btn-primary" asp-controller="PoisAdmin" asp-action="Index">Quan ly POI</a>
+            <a class="btn btn-primary" asp-controller="PoisAdmin" asp-action="Index">Quản lý POI</a>
             <a class="btn btn-outline-secondary" href="/api/pois">GET /api/pois</a>
         </div>
     </div>
@@ -19,16 +19,16 @@
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h2 class="h5">Phan quyen san sang</h2>
-                <p class="mb-0">Role <code>SystemAdmin</code> xem va sua toan bo. Role <code>PoiTenant</code> dang nhap bang tai khoan rieng va chi thao tac tren POI thuoc tenant cua ho.</p>
+                <h2 class="h5">Phân quyền sẵn sàng</h2>
+                <p class="mb-0">Role <code>SystemAdmin</code> xem và sửa toàn bộ. Role <code>PoiTenant</code> đăng nhập bằng tài khoản riêng và chỉ thao tác trên POI thuộc tenant của họ.</p>
             </div>
         </div>
     </div>
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h2 class="h5">Bootstrap tai khoan</h2>
-                <p class="mb-0">Khoi dong app se migrate database, seed tenant demo, role CMS va 2 tai khoan mac dinh de tiep tuc mo rong cac module audio, dich vu va noi dung theo tenant.</p>
+                <h2 class="h5">Bootstrap tài khoản</h2>
+                <p class="mb-0">Khởi động app sẽ migrate database, seed tenant demo, role CMS và 2 tài khoản mặc định để tiếp tục mở rộng các module audio, dịch vụ và nội dung theo tenant.</p>
             </div>
         </div>
     </div>

@@ -9,11 +9,11 @@
         <h1 class="h3 mb-1">POI Management</h1>
         <p class="text-muted mb-0">
             @(Model.IsSystemAdmin
-                ? "Admin co the loc theo tenant va duyet POI cho doi tac."
-                : "Tenant dang ky POI moi va theo doi trang thai phe duyet trong pham vi cua minh.")
+                ? "Admin có thể lọc theo tenant và duyệt POI cho đối tác."
+                : "Tenant đăng ký POI mới và theo dõi trạng thái phê duyệt trong phạm vi của mình.")
         </p>
     </div>
-    <a class="btn btn-primary" asp-action="Create">@(Model.IsSystemAdmin ? "Tao POI" : "Dang ky POI")</a>
+    <a class="btn btn-primary" asp-action="Create">@(Model.IsSystemAdmin ? "Tạo POI" : "Đăng ký POI")</a>
 </div>
 
 @if (Model.IsSystemAdmin)
@@ -25,7 +25,7 @@
                 <select id="tenantId" name="tenantId" asp-items="Model.TenantOptions" class="form-select"></select>
             </div>
             <div class="col-md-auto">
-                <button type="submit" class="btn btn-outline-primary">Loc</button>
+                <button type="submit" class="btn btn-outline-primary">Lọc</button>
             </div>
         </div>
     </form>
@@ -38,7 +38,7 @@
                 <tr>
                     <th>Name</th>
                     <th>Tenant</th>
-                    <th>Phe duyet</th>
+                    <th>Phê duyệt</th>
                     <th>Category</th>
                     <th>Coordinates</th>
                     <th>Radius</th>

@@ -2,25 +2,25 @@
 
 @{
     var isSystemAdmin = ViewBag.IsSystemAdmin is bool value && value;
-    ViewData["Title"] = isSystemAdmin ? "Create POI" : "Register POI";
+    ViewData["Title"] = isSystemAdmin ? "Tạo POI" : "Đăng ký POI";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-        <h1 class="h3 mb-0">@(isSystemAdmin ? "Create POI" : "Register POI")</h1>
+        <h1 class="h3 mb-0">@(isSystemAdmin ? "Tạo POI" : "Đăng ký POI")</h1>
         @if (!isSystemAdmin)
         {
-            <p class="text-muted mb-0">POI moi se vao hang cho duyet truoc khi hien thi cho admin va API.</p>
+            <p class="text-muted mb-0">POI mới sẽ vào hàng chờ duyệt trước khi hiển thị cho admin và API.</p>
         }
     </div>
-    <a class="btn btn-outline-secondary" asp-action="Index">Back</a>
+    <a class="btn btn-outline-secondary" asp-action="Index">Quay lại</a>
 </div>
 
 <form asp-action="Create" method="post" class="card shadow-sm p-4">
     <partial name="_Form" model="Model" />
     <div class="mt-4 d-flex gap-2">
-        <button type="submit" class="btn btn-primary">@(isSystemAdmin ? "Save" : "Gui duyet")</button>
-        <a class="btn btn-outline-secondary" asp-action="Index">Cancel</a>
+        <button type="submit" class="btn btn-primary">@(isSystemAdmin ? "Lưu" : "Gửi duyệt")</button>
+        <a class="btn btn-outline-secondary" asp-action="Index">Hủy</a>
     </div>
 </form>
 
