@@ -157,7 +157,7 @@
 
             <VerticalStackLayout HorizontalOptions="End"
                                  VerticalOptions="End"
-                                 Margin="0,0,18,156"
+                                 Margin="0,0,18,146"
                                  Spacing="12"
                                  ZIndex="150">
                 <Border
@@ -174,6 +174,27 @@
                     </Border.GestureRecognizers>
                     <Label
                         Text="&#xe5d0;"
+                        FontFamily="MaterialIcons"
+                        FontSize="22"
+                        TextColor="{StaticResource Primary}"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center"/>
+                </Border>
+
+                <Border
+                    WidthRequest="52"
+                    HeightRequest="52"
+                    BackgroundColor="#F8FAFC"
+                    Stroke="#E0E6EE"
+                    StrokeThickness="1">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="26"/>
+                    </Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnFocusNearestPoiTapped"/>
+                    </Border.GestureRecognizers>
+                    <Label
+                        Text="&#xe55f;"
                         FontFamily="MaterialIcons"
                         FontSize="22"
                         TextColor="{StaticResource Primary}"
@@ -291,17 +312,37 @@
                     </HorizontalStackLayout>
                     </Grid>
 
-                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-                        <Label Text="0:00"
+                    <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="8">
+                        <HorizontalStackLayout Grid.Column="0"
+                                               Spacing="4"
+                                               VerticalOptions="Center">
+                            <Label
+                                x:Name="FollowUserStateLabel"
+                                Text="Theo dõi"
+                                FontSize="9"
+                                TextColor="#B3B3B3"
+                                VerticalTextAlignment="Center" />
+                            <Switch
+                                x:Name="FollowUserSwitch"
+                                Scale="0.75"
+                                IsToggled="False"
+                                Toggled="OnFollowUserToggled"
+                                OnColor="#3A8DFF"
+                                ThumbColor="White"
+                                VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+
+                        <Label Grid.Column="1"
+                               Text="0:00"
                                FontSize="10"
                                TextColor="#B3B3B3"
                                VerticalTextAlignment="Center" />
-                        <BoxView Grid.Column="1"
+                        <BoxView Grid.Column="2"
                                  HeightRequest="3"
                                  CornerRadius="2"
                                  Color="#3E3E3E"
                                  VerticalOptions="Center"/>
-                        <HorizontalStackLayout Grid.Column="2"
+                        <HorizontalStackLayout Grid.Column="3"
                                                Spacing="4"
                                                VerticalOptions="Center">
                             <Label

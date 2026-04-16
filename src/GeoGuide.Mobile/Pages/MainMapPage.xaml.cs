@@ -50,6 +50,7 @@ public partial class MainMapPage : ContentPage
     private bool _isLoadingPois;
     private bool _isMapFullScreen;
     private bool _isAutoNarrationEnabled = true;
+    private bool _isFollowUserEnabled;
     private DateTimeOffset _lastPoiRefreshUtc = DateTimeOffset.MinValue;
     private string _selectedCategoryKey = "all";
     private string _searchKeyword = string.Empty;
@@ -78,6 +79,7 @@ public partial class MainMapPage : ContentPage
         InitializeMap();
         BuildCategoryChips();
         UpdateAutoNarrationUiState();
+        UpdateFollowUserUiState();
     }
 
     protected override async void OnAppearing()
@@ -268,6 +270,16 @@ public partial class MainMapPage : ContentPage
         _allPois.AddRange(ranked);
         _nearestPoi = _geofenceEngineService.SelectNearest(_allPois);
         UpdateNearestPoiStatus();
+    }
+
+    private void CenterMapOnNearestPoi()
+    {
+        if (_nearestPoi == null)
+        {
+            return;
+        }
+
+        CenterMapOnLocation(_nearestPoi.Latitude, _nearestPoi.Longitude);
     }
 
     private void UpdateNearestPoiStatus()
@@ -626,6 +638,11 @@ public partial class MainMapPage : ContentPage
         {
             _currentLocation = location;
             UpdateUserLocationMarker(location.Latitude, location.Longitude);
+            if (_isFollowUserEnabled)
+            {
+                CenterMapOnLocation(location.Latitude, location.Longitude);
+            }
+
             RecalculatePoiDistances();
             ApplyFilters();
             await EvaluateAutoTriggerAsync();
@@ -908,6 +925,11 @@ public partial class MainMapPage : ContentPage
         EnterMapFullScreen();
     }
 
+    private void OnFocusNearestPoiTapped(object? sender, EventArgs e)
+    {
+        CenterMapOnNearestPoi();
+    }
+
     private void OnExitFullscreenTapped(object? sender, EventArgs e)
     {
         ExitMapFullScreen();
@@ -947,5 +969,26 @@ public partial class MainMapPage : ContentPage
         FullScreenOverlay.IsVisible = false;
 
         _isMapFullScreen = false;
+    }
+
+    private void OnFollowUserToggled(object? sender, ToggledEventArgs e)
+    {
+        _isFollowUserEnabled = e.Value;
+        UpdateFollowUserUiState();
+
+        if (_isFollowUserEnabled && _currentLocation != null)
+        {
+            CenterMapOnLocation(_currentLocation.Latitude, _currentLocation.Longitude);
+        }
+    }
+
+    private void UpdateFollowUserUiState()
+    {
+        FollowUserStateLabel.Text = _isFollowUserEnabled ? "Theo dõi: Bật" : "Theo dõi: Tắt";
+
+        if (FollowUserSwitch.IsToggled != _isFollowUserEnabled)
+        {
+            FollowUserSwitch.IsToggled = _isFollowUserEnabled;
+        }
     }
 }
