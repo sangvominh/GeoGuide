@@ -5,6 +5,8 @@ namespace MauiApp1.Services;
 
 public class PoiCacheService
 {
+    private const string LastSyncAtKey = "last_sync_at_utc";
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -38,6 +40,20 @@ public class PoiCacheService
         await using var stream = await FileSystem.Current.OpenAppPackageFileAsync("poi-fallback.json");
         return await JsonSerializer.DeserializeAsync<List<PointOfInterest>>(stream, JsonOptions, cancellationToken) ?? [];
     }
+
+    public async Task<DateTimeOffset?> GetLastSyncAtAsync(CancellationToken cancellationToken = default)
+    {
+        var value = await _databaseService.GetSyncStateValueAsync(LastSyncAtKey, cancellationToken);
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return DateTimeOffset.TryParse(value, out var parsed) ? parsed : null;
+    }
+
+    public Task SetLastSyncAtAsync(DateTimeOffset value, CancellationToken cancellationToken = default) =>
+        _databaseService.SetSyncStateValueAsync(LastSyncAtKey, value.ToString("O"), cancellationToken);
 
     private static LocalPoiRecord ToRecord(PointOfInterest poi)
     {

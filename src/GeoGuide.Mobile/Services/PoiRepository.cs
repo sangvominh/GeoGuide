@@ -32,13 +32,12 @@ public class PoiRepository
 
         try
         {
-            var apiPois = await _poiApiService.GetPoisAsync(cancellationToken);
-            if (apiPois.Count > 0)
+            var syncedPois = await SyncPoisAsync(cancellationToken);
+            if (syncedPois.Count > 0)
             {
-                await _poiCacheService.SaveAsync(apiPois, cancellationToken);
                 return new PoiLoadResult
                 {
-                    Pois = apiPois,
+                    Pois = syncedPois,
                     DataSource = PoiDataSource.Api
                 };
             }
@@ -62,6 +61,80 @@ public class PoiRepository
         {
             Pois = fallbackPois,
             DataSource = PoiDataSource.BundledFallback
+        };
+    }
+
+    private async Task<IReadOnlyList<PointOfInterest>> SyncPoisAsync(CancellationToken cancellationToken)
+    {
+        var lastSyncAt = await _poiCacheService.GetLastSyncAtAsync(cancellationToken);
+        if (!lastSyncAt.HasValue)
+        {
+            var bootstrap = await _poiApiService.GetSyncBootstrapAsync(cancellationToken);
+            var bootstrapPois = bootstrap.Pois
+                .Where(static poi => poi.IsActive && !poi.IsDeleted)
+                .Select(MapSyncPoi)
+                .OrderByDescending(static poi => poi.Priority)
+                .ThenBy(static poi => poi.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            await _poiCacheService.SaveAsync(bootstrapPois, cancellationToken);
+            await _poiCacheService.SetLastSyncAtAsync(bootstrap.ServerTime, cancellationToken);
+            return bootstrapPois;
+        }
+
+        var delta = await _poiApiService.GetSyncDeltaAsync(lastSyncAt.Value, cancellationToken);
+        var currentPois = await _poiCacheService.LoadCachedAsync(cancellationToken);
+        var poiMap = currentPois.ToDictionary(poi => poi.Id, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var item in delta.Pois)
+        {
+            var poiId = item.Id.ToString();
+            if (item.IsDeleted || !item.IsActive)
+            {
+                poiMap.Remove(poiId);
+                continue;
+            }
+
+            poiMap[poiId] = MapSyncPoi(item);
+        }
+
+        var merged = poiMap.Values
+            .OrderByDescending(static poi => poi.Priority)
+            .ThenBy(static poi => poi.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        await _poiCacheService.SaveAsync(merged, cancellationToken);
+        await _poiCacheService.SetLastSyncAtAsync(delta.ServerTime, cancellationToken);
+
+        return merged;
+    }
+
+    private static PointOfInterest MapSyncPoi(SyncPoiDto source)
+    {
+        var preferredContent = source.Contents
+            .OrderBy(static content => string.Equals(content.LanguageCode, "vi-VN", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+            .ThenBy(static content => string.IsNullOrWhiteSpace(content.TtsContent) ? 1 : 0)
+            .ThenBy(static content => string.IsNullOrWhiteSpace(content.AudioUrl) ? 1 : 0)
+            .FirstOrDefault();
+
+        return new PointOfInterest
+        {
+            Id = source.Id.ToString(),
+            Name = source.Name,
+            Description = source.Description,
+            Latitude = source.Latitude,
+            Longitude = source.Longitude,
+            TriggerRadiusMeters = source.TriggerRadiusMeters,
+            Priority = source.Priority,
+            CategoryKey = source.CategoryKey,
+            CategoryLabel = source.CategoryLabel,
+            ImageUrl = source.ImageUrl,
+            MapUrl = source.MapUrl,
+            AudioUrl = preferredContent?.AudioUrl ?? string.Empty,
+            TtsScript = preferredContent?.TtsContent ?? string.Empty,
+            LanguageCode = preferredContent?.LanguageCode ?? "vi-VN",
+            IsActive = source.IsActive && !source.IsDeleted,
+            UpdatedAt = source.UpdatedAt
         };
     }
 }

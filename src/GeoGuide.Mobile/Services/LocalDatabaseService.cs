@@ -27,6 +27,7 @@ public sealed class LocalDatabaseService
 
             _connection = new SQLiteAsyncConnection(dbPath, flags);
             await _connection.CreateTableAsync<LocalPoiRecord>();
+            await _connection.CreateTableAsync<LocalSyncStateRecord>();
         }
         finally
         {
@@ -50,5 +51,29 @@ public sealed class LocalDatabaseService
     {
         await InitializeAsync(cancellationToken);
         return await _connection!.Table<LocalPoiRecord>().ToListAsync();
+    }
+
+    public async Task<string?> GetSyncStateValueAsync(string key, CancellationToken cancellationToken = default)
+    {
+        await InitializeAsync(cancellationToken);
+
+        var record = await _connection!
+            .Table<LocalSyncStateRecord>()
+            .FirstOrDefaultAsync(row => row.Key == key);
+
+        return record?.Value;
+    }
+
+    public async Task SetSyncStateValueAsync(string key, string value, CancellationToken cancellationToken = default)
+    {
+        await InitializeAsync(cancellationToken);
+
+        var record = new LocalSyncStateRecord
+        {
+            Key = key,
+            Value = value
+        };
+
+        await _connection!.InsertOrReplaceAsync(record);
     }
 }
