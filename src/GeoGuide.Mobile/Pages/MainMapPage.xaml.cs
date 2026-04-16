@@ -20,6 +20,7 @@ public partial class MainMapPage : ContentPage
     private const string LanguageSelectedKey = "app_language_selected";
     private const double DefaultLatitude = 10.8231;
     private const double DefaultLongitude = 106.6297;
+    private const double MarkerTapThresholdMeters = 120;
     private static readonly TimeSpan PoiRefreshInterval = TimeSpan.FromMinutes(2);
     private static readonly TimeSpan AutoTriggerCooldown = TimeSpan.FromMinutes(5);
 
@@ -48,6 +49,7 @@ public partial class MainMapPage : ContentPage
     private bool _isLoadingPois;
     private bool _isMapFullScreen;
     private bool _isNarrationRunning;
+    private bool _isAutoNarrationEnabled = true;
     private DateTimeOffset _lastPoiRefreshUtc = DateTimeOffset.MinValue;
     private string _selectedCategoryKey = "all";
     private string _searchKeyword = string.Empty;
@@ -70,6 +72,7 @@ public partial class MainMapPage : ContentPage
 
         InitializeMap();
         BuildCategoryChips();
+        UpdateAutoNarrationUiState();
     }
 
     protected override async void OnAppearing()
@@ -109,6 +112,11 @@ public partial class MainMapPage : ContentPage
     {
         var map = MapControl.Map;
         map.Layers.Add(Mapsui.Tiling.OpenStreetMap.CreateTileLayer());
+        MapControl.MapTapped += async (_, e) =>
+        {
+            var (longitude, latitude) = ConvertWorldToLonLat(e.WorldPosition.X, e.WorldPosition.Y);
+            await HandleMapTappedAsync(longitude, latitude);
+        };
 
         _userLocationLayer = new MemoryLayer
         {
@@ -277,6 +285,8 @@ public partial class MainMapPage : ContentPage
 
     private void UpdateNearestPoiStatus()
     {
+        UpdateAutoNarrationUiState();
+
         if (_currentLocation == null)
         {
             NearestPoiLabel.Text = "Chưa có vị trí hiện tại. Cấp quyền để gợi ý địa điểm gần nhất.";
@@ -583,7 +593,7 @@ public partial class MainMapPage : ContentPage
 
     private async Task EvaluateAutoTriggerAsync()
     {
-        if (_currentLocation == null || _isNarrationRunning)
+        if (!_isAutoNarrationEnabled || _currentLocation == null || _isNarrationRunning)
         {
             return;
         }
@@ -620,6 +630,71 @@ public partial class MainMapPage : ContentPage
         }
 
         await EvaluateAutoTriggerAsync();
+    }
+
+    private void UpdateAutoNarrationUiState()
+    {
+        if (AutoNarrationSwitch.IsToggled != _isAutoNarrationEnabled)
+        {
+            AutoNarrationSwitch.IsToggled = _isAutoNarrationEnabled;
+        }
+
+        AutoNarrationStateLabel.Text = _isAutoNarrationEnabled ? "Tự động bật" : "Tự động tắt";
+        AutoNarrationStateLabel.TextColor = _isAutoNarrationEnabled
+            ? MauiColor.FromArgb("#1DB954")
+            : MauiColor.FromArgb("#B3B3B3");
+    }
+
+    private async Task HandleMapTappedAsync(double longitude, double latitude)
+    {
+        if (_allPois.Count == 0)
+        {
+            return;
+        }
+
+        var tappedCandidate = _allPois
+            .Select(poi => new
+            {
+                Poi = poi,
+                DistanceMeters = Location.CalculateDistance(
+                    latitude,
+                    longitude,
+                    poi.Latitude,
+                    poi.Longitude,
+                    DistanceUnits.Kilometers) * 1000d
+            })
+            .OrderBy(item => item.DistanceMeters)
+            .FirstOrDefault();
+
+        if (tappedCandidate == null || tappedCandidate.DistanceMeters > MarkerTapThresholdMeters)
+        {
+            return;
+        }
+
+        await ShowPoiPopupAsync(tappedCandidate.Poi);
+    }
+
+    private static (double Longitude, double Latitude) ConvertWorldToLonLat(double worldX, double worldY)
+    {
+        const double mercatorExtent = 20037508.34;
+        var longitude = worldX / mercatorExtent * 180d;
+        var latitude = worldY / mercatorExtent * 180d;
+        latitude = 180d / Math.PI * (2d * Math.Atan(Math.Exp(latitude * Math.PI / 180d)) - Math.PI / 2d);
+        return (longitude, latitude);
+    }
+
+    private async Task ShowPoiPopupAsync(PointOfInterest poi)
+    {
+        var action = await DisplayActionSheetAsync(
+            $"{poi.Name} • {poi.DistanceDisplay}",
+            "Đóng",
+            null,
+            "Phát thuyết minh");
+
+        if (action == "Phát thuyết minh")
+        {
+            await PlayNarrationAsync(poi, "map-tap", userInitiated: true);
+        }
     }
 
     private async Task FilterNearbyPoiAsync(string keyword)
@@ -744,6 +819,22 @@ public partial class MainMapPage : ContentPage
         await RefreshCurrentLocationAsync(requestIfMissing: true, recenterMap: true);
         await LoadPoisAsync(force: true);
         await EvaluateAutoTriggerAsync();
+    }
+
+    private async void OnAutoNarrationToggled(object? sender, ToggledEventArgs e)
+    {
+        _isAutoNarrationEnabled = e.Value;
+        UpdateAutoNarrationUiState();
+
+        NearbyStatusLabel.IsVisible = true;
+        NearbyStatusLabel.Text = _isAutoNarrationEnabled
+            ? "Đã bật tự động phát theo bán kính POI."
+            : "Đã tắt tự động phát. Bạn vẫn có thể bấm Play thủ công.";
+
+        if (_isAutoNarrationEnabled)
+        {
+            await EvaluateAutoTriggerAsync();
+        }
     }
 
     private void OnExpandMapTapped(object? sender, EventArgs e)

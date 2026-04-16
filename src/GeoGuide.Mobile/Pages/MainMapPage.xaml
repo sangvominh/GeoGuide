@@ -286,7 +286,7 @@
                     </HorizontalStackLayout>
                     </Grid>
 
-                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
                         <Label Text="0:00"
                                FontSize="10"
                                TextColor="#B3B3B3"
@@ -296,6 +296,25 @@
                                  CornerRadius="2"
                                  Color="#3E3E3E"
                                  VerticalOptions="Center"/>
+                        <HorizontalStackLayout Grid.Column="2"
+                                               Spacing="4"
+                                               VerticalOptions="Center">
+                            <Label
+                                x:Name="AutoNarrationStateLabel"
+                                Text="Tự động"
+                                FontSize="9"
+                                TextColor="#B3B3B3"
+                                VerticalTextAlignment="Center" />
+                            <Switch
+                                x:Name="AutoNarrationSwitch"
+                                Scale="0.75"
+                                IsToggled="True"
+                                Toggled="OnAutoNarrationToggled"
+                                OnColor="#1DB954"
+                                ThumbColor="White"
+                                HorizontalOptions="End"
+                                VerticalOptions="Center" />
+                        </HorizontalStackLayout>
                     </Grid>
                 </VerticalStackLayout>
             </Border>
