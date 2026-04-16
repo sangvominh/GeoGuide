@@ -29,3 +29,4 @@ packages/
 # --- Local temporary build folders ---
 .tmp/
 .artifacts/
+GeoGuide.wiki/
