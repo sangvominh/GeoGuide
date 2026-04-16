@@ -28,24 +28,35 @@ public class AnalyticsV1Controller(ApplicationDbContext dbContext) : ControllerB
             ? (int)Math.Round(await query.AverageAsync(log => log.DurationSeconds))
             : 0;
 
-        var topPois = await query
-            .Join(
-                dbContext.Pois.IgnoreQueryFilters(),
-                log => log.PoiId,
-                poi => poi.Id,
-                (log, poi) => new { log, poi })
-            .GroupBy(row => new { row.poi.Id, row.poi.Name })
-            .Select(group => new TopPoiAnalyticsDto
+        var topPoiStats = await query
+            .GroupBy(log => log.PoiId)
+            .Select(group => new
             {
-                PoiId = group.Key.Id,
-                Name = group.Key.Name,
+                PoiId = group.Key,
                 ListenCount = group.Count(),
-                AverageDurationSeconds = (int)Math.Round(group.Average(x => x.log.DurationSeconds))
+                AverageDurationSeconds = (int)Math.Round(group.Average(x => x.DurationSeconds))
+            })
+            .OrderByDescending(row => row.ListenCount)
+            .Take(10)
+            .ToListAsync();
+
+        var poiLookup = await dbContext.Pois
+            .IgnoreQueryFilters()
+            .Where(poi => topPoiStats.Select(row => row.PoiId).Contains(poi.Id))
+            .Select(poi => new { poi.Id, poi.Name })
+            .ToDictionaryAsync(poi => poi.Id, poi => poi.Name);
+
+        var topPois = topPoiStats
+            .Select(row => new TopPoiAnalyticsDto
+            {
+                PoiId = row.PoiId,
+                Name = poiLookup.TryGetValue(row.PoiId, out var name) ? name : "Unknown POI",
+                ListenCount = row.ListenCount,
+                AverageDurationSeconds = row.AverageDurationSeconds
             })
             .OrderByDescending(row => row.ListenCount)
             .ThenBy(row => row.Name)
-            .Take(10)
-            .ToListAsync();
+            .ToList();
 
         var response = new AnalyticsDashboardDto
         {
@@ -65,27 +76,40 @@ public class AnalyticsV1Controller(ApplicationDbContext dbContext) : ControllerB
     {
         var (start, end) = NormalizeRange(startDate, endDate);
 
-        var heatmap = await dbContext.PlaybackLogs
+        var heatmapStats = await dbContext.PlaybackLogs
             .Where(log => log.PlayedAt >= start && log.PlayedAt <= end)
-            .Join(
-                dbContext.Pois.IgnoreQueryFilters(),
-                log => log.PoiId,
-                poi => poi.Id,
-                (log, poi) => new { poi.Latitude, poi.Longitude })
-            .GroupBy(row => new
+            .GroupBy(log => log.PoiId)
+            .Select(group => new
             {
-                Lat = Math.Round(row.Latitude, 4),
-                Lng = Math.Round(row.Longitude, 4)
-            })
-            .Select(group => new HeatmapPointDto
-            {
-                Lat = group.Key.Lat,
-                Lng = group.Key.Lng,
+                PoiId = group.Key,
                 Weight = group.Count()
             })
             .OrderByDescending(row => row.Weight)
             .Take(10000)
             .ToListAsync();
+
+        var poiLookup = await dbContext.Pois
+            .IgnoreQueryFilters()
+            .Where(poi => heatmapStats.Select(row => row.PoiId).Contains(poi.Id))
+            .Select(poi => new { poi.Id, poi.Latitude, poi.Longitude })
+            .ToDictionaryAsync(poi => poi.Id);
+
+        var heatmap = heatmapStats
+            .Where(row => poiLookup.ContainsKey(row.PoiId))
+            .GroupBy(row => new
+            {
+                Lat = Math.Round(poiLookup[row.PoiId].Latitude, 4),
+                Lng = Math.Round(poiLookup[row.PoiId].Longitude, 4)
+            })
+            .Select(group => new HeatmapPointDto
+            {
+                Lat = group.Key.Lat,
+                Lng = group.Key.Lng,
+                Weight = group.Sum(x => x.Weight)
+            })
+            .OrderByDescending(row => row.Weight)
+            .Take(10000)
+            .ToList();
 
         return Ok(heatmap);
     }
