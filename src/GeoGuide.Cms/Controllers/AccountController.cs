@@ -37,7 +37,7 @@ public class AccountController(SignInManager<ApplicationUser> signInManager) : C
 
         if (!result.Succeeded)
         {
-            ModelState.AddModelError(string.Empty, "Thong tin dang nhap khong hop le.");
+            ModelState.AddModelError(string.Empty, "Thông tin đăng nhập không hợp lệ.");
             return View(model);
         }
 

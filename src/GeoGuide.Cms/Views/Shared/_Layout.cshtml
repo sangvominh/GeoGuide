@@ -46,12 +46,12 @@
                             </span>
                             <form asp-controller="Account" asp-action="Logout" method="post" class="mb-0">
                                 @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-outline-light btn-sm">Dang xuat</button>
+                                <button type="submit" class="btn btn-outline-light btn-sm">Đăng xuất</button>
                             </form>
                         }
                         else
                         {
-                            <a class="btn btn-outline-light btn-sm" asp-controller="Account" asp-action="Login">Dang nhap</a>
+                            <a class="btn btn-outline-light btn-sm" asp-controller="Account" asp-action="Login">Đăng nhập</a>
                         }
                     </div>
                 </div>

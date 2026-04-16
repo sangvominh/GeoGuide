@@ -10,6 +10,8 @@ public class Poi
 
     public PoiTenant? Tenant { get; set; }
 
+    public PoiApprovalStatus ApprovalStatus { get; set; } = PoiApprovalStatus.PendingApproval;
+
     [Required, StringLength(200)]
     public string Name { get; set; } = string.Empty;
 

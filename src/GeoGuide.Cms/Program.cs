@@ -8,7 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? builder.Configuration["POSTGRES_CONNECTION"]
-    ?? "Host=localhost;Port=5432;Database=geoguide_cms;Username=postgres;Password=postgres";
+    ?? "Host=localhost;Port=5432;Database=geoguide_cms;Username=postgres;Password=1234";
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));

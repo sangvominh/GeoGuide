@@ -7,6 +7,16 @@ public class CmsBootstrapOptions
     public BootstrapUserOptions Admin { get; set; } = new();
 
     public BootstrapTenantOptions Tenant { get; set; } = new();
+
+    public BootstrapTenantOptions VinhKhanhTenant { get; set; } = new()
+    {
+        Email = "tenant-vinhkhanh@geoguide.local",
+        Password = "ChangeThis_VinhKhanh123!",
+        DisplayName = "Vinh Khanh Tenant Manager",
+        TenantId = Models.PoiTenant.VinhKhanhTenantId,
+        TenantName = "Vinh Khanh Food Street",
+        TenantSlug = "vinh-khanh-food-street"
+    };
 }
 
 public class BootstrapUserOptions

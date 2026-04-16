@@ -31,7 +31,8 @@ public static class DatabaseInitializer
             }
         }
 
-        await EnsureTenantUserAsync(userManager, options);
+        await EnsureTenantUserAsync(userManager, options.Tenant);
+        await EnsureTenantUserAsync(userManager, options.VinhKhanhTenant);
         await EnsureAdminUserAsync(userManager, options);
     }
 
@@ -61,29 +62,30 @@ public static class DatabaseInitializer
         }
     }
 
-    private static async Task EnsureTenantUserAsync(UserManager<ApplicationUser> userManager, CmsBootstrapOptions options)
+    private static async Task EnsureTenantUserAsync(UserManager<ApplicationUser> userManager, BootstrapTenantOptions tenantOptions)
     {
-        var tenantUser = await userManager.FindByEmailAsync(options.Tenant.Email);
+        var tenantUser = await userManager.FindByEmailAsync(tenantOptions.Email);
         if (tenantUser is null)
         {
             tenantUser = new ApplicationUser
             {
-                UserName = options.Tenant.Email,
-                Email = options.Tenant.Email,
-                DisplayName = options.Tenant.DisplayName,
+                UserName = tenantOptions.Email,
+                Email = tenantOptions.Email,
+                DisplayName = tenantOptions.DisplayName,
                 EmailConfirmed = true,
-                TenantId = options.Tenant.TenantId
+                TenantId = tenantOptions.TenantId
             };
 
-            var result = await userManager.CreateAsync(tenantUser, options.Tenant.Password);
+            var result = await userManager.CreateAsync(tenantUser, tenantOptions.Password);
             if (!result.Succeeded)
             {
                 throw new InvalidOperationException($"Unable to seed tenant user: {string.Join(", ", result.Errors.Select(error => error.Description))}");
             }
         }
-        else if (tenantUser.TenantId != options.Tenant.TenantId)
+        else if (tenantUser.TenantId != tenantOptions.TenantId)
         {
-            tenantUser.TenantId = options.Tenant.TenantId;
+            tenantUser.TenantId = tenantOptions.TenantId;
+            tenantUser.DisplayName = tenantOptions.DisplayName;
             await userManager.UpdateAsync(tenantUser);
         }
 
