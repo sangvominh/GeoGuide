@@ -1,3 +1,4 @@
+using CommunityToolkit.Maui.Core;
 using Mapsui;
 using Mapsui.Extensions;
 using Mapsui.Features;
@@ -53,6 +54,7 @@ public partial class MainMapPage : ContentPage
     private DateTimeOffset _lastPoiRefreshUtc = DateTimeOffset.MinValue;
     private string _selectedCategoryKey = "all";
     private string _searchKeyword = string.Empty;
+    private TaskCompletionSource<bool>? _audioPlaybackCompletionSource;
 
     public MainMapPage()
     {
@@ -583,7 +585,7 @@ public partial class MainMapPage : ContentPage
 
         try
         {
-            await _narrationService.PlayAsync(poi, triggerType);
+            await _narrationService.PlayAsync(poi, triggerType, PlayAudioAsync);
             _lastPlaybackByPoiId[poi.Id] = DateTimeOffset.UtcNow;
             NearbyStatusLabel.Text = $"Đã phát xong: {poi.Name}";
             UpdateMiniPlayerLabels(poi.Name, $"Đã phát xong. Sẵn sàng cho lần kích hoạt tiếp theo quanh {poi.Name}");
@@ -591,8 +593,10 @@ public partial class MainMapPage : ContentPage
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Narration error: {ex.Message}");
-            NearbyStatusLabel.Text = "Không thể phát thuyết minh lúc này.";
-            UpdateMiniPlayerLabels(poi.Name, "Chưa thể phát thuyết minh lúc này");
+            NearbyStatusLabel.Text = ex is InvalidOperationException
+                ? ex.Message
+                : "Không thể phát thuyết minh lúc này.";
+            UpdateMiniPlayerLabels(poi.Name, NearbyStatusLabel.Text);
         }
         finally
         {
@@ -697,6 +701,52 @@ public partial class MainMapPage : ContentPage
     {
         MiniPlayerPoiLabel.Text = title;
         MiniPlayerStatusLabel.Text = status;
+    }
+
+    private Task PlayAudioAsync(Uri audioUri, CancellationToken cancellationToken)
+    {
+        var completionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _audioPlaybackCompletionSource = completionSource;
+
+        return MainThread.InvokeOnMainThreadAsync(async () =>
+        {
+            try
+            {
+                NarrationMediaElement.Stop();
+                NarrationMediaElement.Source = audioUri;
+                NarrationMediaElement.MetadataTitle = _selectedPoiForPlayback?.Name ?? "GeoGuide";
+                NarrationMediaElement.MetadataArtist = "GeoGuide";
+                NarrationMediaElement.Play();
+
+                using var registration = cancellationToken.Register(() =>
+                {
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        NarrationMediaElement.Stop();
+                        _audioPlaybackCompletionSource?.TrySetCanceled(cancellationToken);
+                    });
+                });
+
+                await completionSource.Task;
+            }
+            finally
+            {
+                if (ReferenceEquals(_audioPlaybackCompletionSource, completionSource))
+                {
+                    _audioPlaybackCompletionSource = null;
+                }
+            }
+        });
+    }
+
+    private void OnNarrationMediaEnded(object? sender, EventArgs e)
+    {
+        _audioPlaybackCompletionSource?.TrySetResult(true);
+    }
+
+    private void OnNarrationMediaFailed(object? sender, MediaFailedEventArgs e)
+    {
+        _audioPlaybackCompletionSource?.TrySetException(new InvalidOperationException($"Không phát được audio từ backend: {e.ErrorMessage}"));
     }
 
     private async Task FilterNearbyPoiAsync(string keyword)

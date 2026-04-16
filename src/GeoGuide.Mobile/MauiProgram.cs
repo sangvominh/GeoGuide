@@ -1,3 +1,4 @@
+using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
 using MauiApp1.Services;
 using SkiaSharp.Views.Maui.Controls.Hosting;
@@ -11,6 +12,7 @@ namespace MauiApp1
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
+                .UseMauiCommunityToolkitMediaElement(isAndroidForegroundServiceEnabled: false)
                 .UseSkiaSharp()
                 .ConfigureFonts(fonts =>
                 {

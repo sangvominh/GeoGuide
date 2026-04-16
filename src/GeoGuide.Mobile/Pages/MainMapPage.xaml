@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:mapsui="clr-namespace:Mapsui.UI.Maui;assembly=Mapsui.UI.Maui"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="MauiApp1.Pages.MainMapPage"
              Shell.NavBarIsVisible="False"
              Shell.TabBarIsVisible="False"
@@ -525,6 +526,17 @@
                 </Border>
             </Grid>
         </Grid>
+
+        <toolkit:MediaElement
+            x:Name="NarrationMediaElement"
+            IsVisible="False"
+            HeightRequest="1"
+            WidthRequest="1"
+            Opacity="0"
+            ShouldAutoPlay="False"
+            ShouldShowPlaybackControls="False"
+            MediaEnded="OnNarrationMediaEnded"
+            MediaFailed="OnNarrationMediaFailed" />
     </Grid>
 
 </ContentPage>
