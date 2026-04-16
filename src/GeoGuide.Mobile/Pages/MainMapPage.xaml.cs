@@ -67,9 +67,10 @@ public partial class MainMapPage : ContentPage
         _locationService = services.GetRequiredService<LocationService>();
         _poiRepository = services.GetRequiredService<PoiRepository>();
         _narrationService = services.GetRequiredService<NarrationService>();
+        _locationService.LocationUpdated += OnLocationUpdated;
 
         _locationTimer = Dispatcher.CreateTimer();
-        _locationTimer.Interval = TimeSpan.FromSeconds(20);
+        _locationTimer.Interval = TimeSpan.FromSeconds(30);
         _locationTimer.Tick += async (_, _) => await PollLocationAsync();
 
         InitializeMap();
@@ -87,6 +88,10 @@ public partial class MainMapPage : ContentPage
             await InitializeAsync();
         }
 
+        await _locationService.StartTrackingAsync(
+            interval: TimeSpan.FromSeconds(8),
+            accuracy: GeolocationAccuracy.Best);
+
         if (!_locationTimer.IsRunning)
         {
             _locationTimer.Start();
@@ -101,6 +106,8 @@ public partial class MainMapPage : ContentPage
         {
             _locationTimer.Stop();
         }
+
+        _ = _locationService.StopTrackingAsync();
     }
 
     private async Task InitializeAsync()
@@ -151,7 +158,7 @@ public partial class MainMapPage : ContentPage
             var permission = await _locationService.CheckLocationPermissionAsync();
             if (permission != PermissionStatus.Granted && requestIfMissing)
             {
-                permission = await _locationService.RequestLocationPermissionAsync();
+                permission = await _locationService.RequestBackgroundLocationPermissionAsync();
             }
 
             if (permission != PermissionStatus.Granted)
@@ -633,7 +640,11 @@ public partial class MainMapPage : ContentPage
 
     private async Task PollLocationAsync()
     {
-        await RefreshCurrentLocationAsync(requestIfMissing: false, recenterMap: false);
+        if (_currentLocation == null)
+        {
+            await RefreshCurrentLocationAsync(requestIfMissing: false, recenterMap: false);
+        }
+
         RecalculatePoiDistances();
         ApplyFilters();
 
@@ -643,6 +654,18 @@ public partial class MainMapPage : ContentPage
         }
 
         await EvaluateAutoTriggerAsync();
+    }
+
+    private void OnLocationUpdated(object? sender, Location location)
+    {
+        MainThread.BeginInvokeOnMainThread(async () =>
+        {
+            _currentLocation = location;
+            UpdateUserLocationMarker(location.Latitude, location.Longitude);
+            RecalculatePoiDistances();
+            ApplyFilters();
+            await EvaluateAutoTriggerAsync();
+        });
     }
 
     private void UpdateAutoNarrationUiState()
@@ -837,7 +860,7 @@ public partial class MainMapPage : ContentPage
                 return;
             }
 
-            status = await _locationService.RequestLocationPermissionAsync();
+            status = await _locationService.RequestBackgroundLocationPermissionAsync();
         }
 
         if (status == PermissionStatus.Granted)

@@ -166,7 +166,7 @@ namespace MauiApp1.Pages
 
                 if (currentStatus != PermissionStatus.Granted)
                 {
-                    var requestStatus = await _locationService.RequestLocationPermissionAsync();
+                    var requestStatus = await _locationService.RequestBackgroundLocationPermissionAsync();
                     if (requestStatus != PermissionStatus.Granted)
                     {
                         await DisplayAlertAsync(

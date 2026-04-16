@@ -6,6 +6,11 @@ namespace MauiApp1.Services
     public class LocationService
     {
         private CancellationTokenSource? _cancelTokenSource;
+        private Task? _trackingTask;
+        private CancellationTokenSource? _trackingCancellationTokenSource;
+
+        public event EventHandler<Location>? LocationUpdated;
+        public bool IsTracking { get; private set; }
 
         /// <summary>
         /// Checks if location permission is already granted.
@@ -33,6 +38,30 @@ namespace MauiApp1.Services
 
             status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
             return status;
+        }
+
+        public async Task<PermissionStatus> RequestBackgroundLocationPermissionAsync()
+        {
+            var whenInUseStatus = await RequestLocationPermissionAsync();
+            if (whenInUseStatus != PermissionStatus.Granted)
+            {
+                return whenInUseStatus;
+            }
+
+            try
+            {
+                var alwaysStatus = await Permissions.CheckStatusAsync<Permissions.LocationAlways>();
+                if (alwaysStatus == PermissionStatus.Granted)
+                {
+                    return alwaysStatus;
+                }
+
+                return await Permissions.RequestAsync<Permissions.LocationAlways>();
+            }
+            catch
+            {
+                return whenInUseStatus;
+            }
         }
 
         /// <summary>
@@ -98,6 +127,90 @@ namespace MauiApp1.Services
         {
             if (_cancelTokenSource != null && !_cancelTokenSource.IsCancellationRequested)
                 _cancelTokenSource.Cancel();
+        }
+
+        public async Task StartTrackingAsync(
+            TimeSpan? interval = null,
+            GeolocationAccuracy accuracy = GeolocationAccuracy.Best,
+            CancellationToken cancellationToken = default)
+        {
+            if (IsTracking)
+            {
+                return;
+            }
+
+            var status = await CheckLocationPermissionAsync();
+            if (status != PermissionStatus.Granted)
+            {
+                return;
+            }
+
+            IsTracking = true;
+            var effectiveInterval = interval ?? TimeSpan.FromSeconds(8);
+            _trackingCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var trackingToken = _trackingCancellationTokenSource.Token;
+
+            _trackingTask = Task.Run(async () =>
+            {
+                while (!trackingToken.IsCancellationRequested)
+                {
+                    try
+                    {
+                        var request = new GeolocationRequest(accuracy, TimeSpan.FromSeconds(8));
+                        var location = await Geolocation.Default.GetLocationAsync(request, trackingToken);
+                        if (location != null)
+                        {
+                            LocationUpdated?.Invoke(this, location);
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
+                    catch
+                    {
+                    }
+
+                    try
+                    {
+                        await Task.Delay(effectiveInterval, trackingToken);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
+                }
+            }, trackingToken);
+        }
+
+        public async Task StopTrackingAsync()
+        {
+            if (!IsTracking)
+            {
+                return;
+            }
+
+            IsTracking = false;
+
+            if (_trackingCancellationTokenSource != null && !_trackingCancellationTokenSource.IsCancellationRequested)
+            {
+                _trackingCancellationTokenSource.Cancel();
+            }
+
+            if (_trackingTask != null)
+            {
+                try
+                {
+                    await _trackingTask;
+                }
+                catch
+                {
+                }
+            }
+
+            _trackingTask = null;
+            _trackingCancellationTokenSource?.Dispose();
+            _trackingCancellationTokenSource = null;
         }
     }
 }
