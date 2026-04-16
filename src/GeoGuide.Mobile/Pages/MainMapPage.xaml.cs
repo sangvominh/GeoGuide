@@ -49,7 +49,6 @@ public partial class MainMapPage : ContentPage
     private bool _isInitialized;
     private bool _isLoadingPois;
     private bool _isMapFullScreen;
-    private bool _isNarrationRunning;
     private bool _isAutoNarrationEnabled = true;
     private DateTimeOffset _lastPoiRefreshUtc = DateTimeOffset.MinValue;
     private string _selectedCategoryKey = "all";
@@ -69,6 +68,7 @@ public partial class MainMapPage : ContentPage
         _geofenceEngineService = services.GetRequiredService<GeofenceEngineService>();
         _triggerGuardService = services.GetRequiredService<TriggerGuardService>();
         _narrationService = services.GetRequiredService<NarrationService>();
+        _narrationService.PlaybackChanged += OnNarrationPlaybackChanged;
         _locationService.LocationUpdated += OnLocationUpdated;
 
         _locationTimer = Dispatcher.CreateTimer();
@@ -555,28 +555,20 @@ public partial class MainMapPage : ContentPage
 
     private async Task PlayNarrationAsync(PointOfInterest poi, string triggerType, bool userInitiated)
     {
-        if (_isNarrationRunning)
-        {
-            return;
-        }
-
         _selectedPoiForPlayback = poi;
-        _isNarrationRunning = true;
         NearbyStatusLabel.IsVisible = true;
         NearbyStatusLabel.Text = userInitiated
-            ? $"Đang phát thuyết minh: {poi.Name}"
-            : $"Đang tự động phát theo vị trí: {poi.Name}";
+            ? $"Đã xếp hàng phát thủ công: {poi.Name}"
+            : $"Đã xếp hàng phát tự động: {poi.Name}";
         UpdateMiniPlayerLabels(
             poi.Name,
             userInitiated
-            ? "Đang phát thủ công từ mini player"
-            : "Đang phát tự động theo vị trí hiện tại");
+            ? "Đã thêm vào hàng đợi từ mini player"
+            : "Đã thêm vào hàng đợi tự động theo vị trí");
 
         try
         {
-            await _narrationService.PlayAsync(poi, triggerType, PlayAudioAsync);
-            NearbyStatusLabel.Text = $"Đã phát xong: {poi.Name}";
-            UpdateMiniPlayerLabels(poi.Name, $"Đã phát xong. Sẵn sàng cho lần kích hoạt tiếp theo quanh {poi.Name}");
+            await _narrationService.EnqueueAsync(poi, triggerType, userInitiated, PlayAudioAsync);
         }
         catch (Exception ex)
         {
@@ -586,15 +578,11 @@ public partial class MainMapPage : ContentPage
                 : "Không thể phát thuyết minh lúc này.";
             UpdateMiniPlayerLabels(poi.Name, NearbyStatusLabel.Text);
         }
-        finally
-        {
-            _isNarrationRunning = false;
-        }
     }
 
     private async Task EvaluateAutoTriggerAsync()
     {
-        if (!_isAutoNarrationEnabled || _currentLocation == null || _isNarrationRunning)
+        if (!_isAutoNarrationEnabled || _currentLocation == null)
         {
             return;
         }
@@ -899,6 +887,20 @@ public partial class MainMapPage : ContentPage
         {
             await EvaluateAutoTriggerAsync();
         }
+    }
+
+    private void OnNarrationPlaybackChanged(object? sender, NarrationPlaybackEventArgs e)
+    {
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            NearbyStatusLabel.IsVisible = true;
+            NearbyStatusLabel.Text = e.Message;
+
+            if (_selectedPoiForPlayback?.Id == e.PoiId || _selectedPoiForPlayback == null)
+            {
+                UpdateMiniPlayerLabels(e.PoiName, e.Message);
+            }
+        });
     }
 
     private void OnExpandMapTapped(object? sender, EventArgs e)
