@@ -36,7 +36,7 @@ This is a one-day delivery plan. Every stream must optimize for a stable demo, n
 
 ### Allowed Scope
 
-- `MauiApp1/`
+- `src/GeoGuide.Mobile/`
 - mobile-side service abstractions
 - mobile local cache
 - mobile UI and navigation
@@ -84,7 +84,7 @@ This is a one-day delivery plan. Every stream must optimize for a stable demo, n
 
 ### Forbidden Scope
 
-- `MauiApp1/`
+- `src/GeoGuide.Mobile/`
 - mobile-only logic
 
 ### Required Deliverables
@@ -195,7 +195,7 @@ This is a one-day delivery plan. Every stream must optimize for a stable demo, n
 
 To avoid overlap:
 
-- `MauiApp1/` is owned by Mobile
+- `src/GeoGuide.Mobile/` is owned by Mobile
 - server/API/CMS folders are owned by CMS
 - `docs/` is owned by Analysis
 - shared contract docs are proposed by any stream but finalized through Integration if conflicts appear

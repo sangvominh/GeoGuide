@@ -357,7 +357,7 @@ MVP được coi là đạt khi có thể chứng minh một luồng hoàn chỉ
 
 Chi tiết tiêu chí nghiệm thu được ghi tại:
 
-- `docs/mvp-acceptance-criteria.md`
+- `docs/product/acceptance-criteria.md`
 
 ---
 
@@ -380,8 +380,8 @@ Các hạng mục chưa hoàn thành nhưng nằm trong vision của đồ án:
 
 ## 11. TÀI LIỆU LIÊN QUAN
 
-- [MVP Architecture](/C:/dev/personal/sgu-coursework-csharp/docs/mvp-architecture.md)
-- [MVP ERD](/C:/dev/personal/sgu-coursework-csharp/docs/mvp-erd.md)
-- [MVP Workflow](/C:/dev/personal/sgu-coursework-csharp/docs/mvp-workflow.md)
-- [MVP Demo Script](/C:/dev/personal/sgu-coursework-csharp/docs/mvp-demo-script.md)
-- [MVP Acceptance Criteria](/C:/dev/personal/sgu-coursework-csharp/docs/mvp-acceptance-criteria.md)
+- [System Architecture](/C:/dev/personal/sgu-coursework-csharp/docs/architecture/system-architecture.md)
+- [System ERD](/C:/dev/personal/sgu-coursework-csharp/docs/architecture/system-erd.md)
+- [System Workflow](/C:/dev/personal/sgu-coursework-csharp/docs/architecture/system-workflow.md)
+- [Demo Script](/C:/dev/personal/sgu-coursework-csharp/docs/demo/demo-script.md)
+- [Acceptance Criteria](/C:/dev/personal/sgu-coursework-csharp/docs/product/acceptance-criteria.md)

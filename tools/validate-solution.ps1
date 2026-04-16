@@ -4,7 +4,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$projectPath = Join-Path $repoRoot "MauiApp1\MauiApp1.csproj"
+$projectPath = Join-Path $repoRoot "src\GeoGuide.Mobile\GeoGuide.Mobile.csproj"
 $windowsTarget = "net10.0-windows10.0.19041.0"
 
 function Invoke-Step {
@@ -46,13 +46,13 @@ try {
         Invoke-CheckedCommand -FilePath "git" -Arguments @("status", "--short", "--branch")
     }
 
-    Invoke-Step -Name "Restore MAUI project" -Action {
-        Invoke-CheckedCommand -FilePath "dotnet" -Arguments @("restore", $projectPath)
-    }
+        Invoke-Step -Name "Restore mobile project" -Action {
+            Invoke-CheckedCommand -FilePath "dotnet" -Arguments @("restore", $projectPath)
+        }
 
-    Invoke-Step -Name "Build Windows target" -Action {
-        Invoke-CheckedCommand -FilePath "dotnet" -Arguments @("build", $projectPath, "-f", $windowsTarget, "--no-restore")
-    }
+        Invoke-Step -Name "Build mobile Windows target" -Action {
+            Invoke-CheckedCommand -FilePath "dotnet" -Arguments @("build", $projectPath, "-f", $windowsTarget, "--no-restore")
+        }
 }
 finally {
     Pop-Location

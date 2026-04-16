@@ -1,4 +1,4 @@
-# GeoGuide CMS Backend
+# GeoGuide CMS
 
 ASP.NET Core MVC app cung cap:
 
@@ -20,7 +20,7 @@ ASP.NET Core MVC app cung cap:
 3. Chay app:
 
 ```powershell
-dotnet run --project CmsBackend/GeoGuide.Cms
+dotnet run --project src/GeoGuide.Cms
 ```
 
 App tu dong migrate schema va seed 4 POI demo khi khoi dong.

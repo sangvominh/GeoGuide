@@ -76,7 +76,7 @@ Playback log contract:
 
 Owns:
 
-- `MauiApp1/`
+- `src/GeoGuide.Mobile/`
 - local cache and mobile service abstractions
 - map, location, geofence-by-distance, playback flow
 
