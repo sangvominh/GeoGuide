@@ -55,14 +55,5 @@ public class Poi
     [Url]
     public string MapUrl { get; set; } = string.Empty;
 
-    [Url]
-    public string AudioUrl { get; set; } = string.Empty;
-
-    [Required]
-    public string TtsScript { get; set; } = string.Empty;
-
-    [Required, StringLength(20)]
-    public string LanguageCode { get; set; } = "vi-VN";
-
     public bool IsActive { get; set; } = true;
 }

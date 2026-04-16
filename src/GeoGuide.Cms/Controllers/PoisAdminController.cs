@@ -117,9 +117,6 @@ public class PoisAdminController(ApplicationDbContext dbContext, CmsAccessServic
         existingPoi.CategoryLabel = poi.CategoryLabel;
         existingPoi.ImageUrl = poi.ImageUrl;
         existingPoi.MapUrl = poi.MapUrl;
-        existingPoi.AudioUrl = poi.AudioUrl;
-        existingPoi.TtsScript = poi.TtsScript;
-        existingPoi.LanguageCode = poi.LanguageCode;
         existingPoi.TenantId = poi.TenantId;
         existingPoi.IsActive = scope.IsSystemAdmin && poi.IsActive;
         existingPoi.ApprovalStatus = scope.IsSystemAdmin ? existingPoi.ApprovalStatus : PoiApprovalStatus.PendingApproval;
@@ -272,7 +269,7 @@ public class PoisAdminController(ApplicationDbContext dbContext, CmsAccessServic
         tenants.Insert(0, new SelectListItem
         {
             Value = string.Empty,
-            Text = "Tat ca tenant",
+            Text = "Tất cả tenant",
             Selected = !selectedTenantId.HasValue
         });
 

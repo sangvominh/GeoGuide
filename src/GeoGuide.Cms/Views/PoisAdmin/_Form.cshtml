@@ -74,16 +74,6 @@
         <input asp-for="MapUrl" class="form-control" />
         <span asp-validation-for="MapUrl" class="text-danger"></span>
     </div>
-    <div class="col-md-4">
-        <label asp-for="AudioUrl" class="form-label"></label>
-        <input asp-for="AudioUrl" class="form-control" />
-        <span asp-validation-for="AudioUrl" class="text-danger"></span>
-    </div>
-    <div class="col-md-6">
-        <label asp-for="LanguageCode" class="form-label"></label>
-        <input asp-for="LanguageCode" class="form-control" />
-        <span asp-validation-for="LanguageCode" class="text-danger"></span>
-    </div>
     <div class="col-md-6 d-flex align-items-end">
         @if (isSystemAdmin)
         {
@@ -101,8 +91,8 @@
         }
     </div>
     <div class="col-12">
-        <label asp-for="TtsScript" class="form-label"></label>
-        <textarea asp-for="TtsScript" class="form-control" rows="4"></textarea>
-        <span asp-validation-for="TtsScript" class="text-danger"></span>
+        <div class="alert alert-info mb-0">
+            Nội dung âm thanh và đa ngôn ngữ được quản lý tại mục <strong>POI Contents</strong>.
+        </div>
     </div>
 </div>
