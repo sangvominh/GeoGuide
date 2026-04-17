@@ -4,6 +4,8 @@ public class AnalyticsDashboardViewModel
 {
     public DateTimeOffset StartDate { get; init; }
     public DateTimeOffset EndDate { get; init; }
+    public string StartDateInput { get; init; } = string.Empty;
+    public string EndDateInput { get; init; } = string.Empty;
 
     public int TotalUsers { get; init; }
     public int TotalListens { get; init; }
