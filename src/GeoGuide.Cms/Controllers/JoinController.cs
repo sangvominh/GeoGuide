@@ -6,7 +6,7 @@ namespace GeoGuide.Cms.Controllers;
 
 [AllowAnonymous]
 [Route("join")]
-public class JoinController : Controller
+public class JoinController(IWebHostEnvironment environment) : Controller
 {
     [HttpGet("")]
     public IActionResult Index(string session, string? mode = null)
@@ -27,7 +27,7 @@ public class JoinController : Controller
             AccessMode = normalizedMode,
             JoinUrl = $"{Request.Scheme}://{Request.Host}/join?session={Uri.EscapeDataString(normalizedSession)}&mode={normalizedMode}",
             DeepLinkUrl = BuildDeepLink(normalizedSession, normalizedMode),
-            AndroidApkUrl = ResolveAndroidApkUrl()
+            AndroidApkUrl = ResolveAndroidApkUrl(environment)
         };
 
         return View(vm);
@@ -38,9 +38,15 @@ public class JoinController : Controller
         return $"geoguide://join?session={Uri.EscapeDataString(sessionToken)}&mode={accessMode}";
     }
 
-    private static string ResolveAndroidApkUrl()
+    private static string ResolveAndroidApkUrl(IWebHostEnvironment environment)
     {
         var configured = Environment.GetEnvironmentVariable("GEOGUIDE_ANDROID_APK_URL");
-        return string.IsNullOrWhiteSpace(configured) ? "/downloads/GeoGuide.Mobile.apk" : configured.Trim();
+        if (!string.IsNullOrWhiteSpace(configured))
+        {
+            return configured.Trim();
+        }
+
+        var localApkPath = Path.Combine(environment.WebRootPath, "downloads", "GeoGuide.Mobile.apk");
+        return System.IO.File.Exists(localApkPath) ? "/downloads/GeoGuide.Mobile.apk" : string.Empty;
     }
 }

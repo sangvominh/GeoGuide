@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GeoGuide.Cms.Controllers;
 
 [Authorize]
-public class QrSessionsAdminController(ApplicationDbContext dbContext) : Controller
+public class QrSessionsAdminController(ApplicationDbContext dbContext, IWebHostEnvironment environment) : Controller
 {
     public async Task<IActionResult> Index(string? sessionToken = null, string? accessMode = null, string? publicBaseUrl = null)
     {
@@ -69,7 +69,7 @@ public class QrSessionsAdminController(ApplicationDbContext dbContext) : Control
             PublicBaseUrl = resolvedPublicBaseUrl,
             JoinUrl = joinUrl,
             DeepLinkUrl = deepLinkUrl,
-            AndroidApkUrl = ResolveAndroidApkUrl(),
+            AndroidApkUrl = ResolveAndroidApkUrl(environment),
             QrImageUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=280x280&data={WebUtility.UrlEncode(joinUrl)}",
             Devices = devices
         };
@@ -96,9 +96,15 @@ public class QrSessionsAdminController(ApplicationDbContext dbContext) : Control
         return $"geoguide://join?session={Uri.EscapeDataString(sessionToken)}&mode={accessMode}";
     }
 
-    private static string ResolveAndroidApkUrl()
+    private static string ResolveAndroidApkUrl(IWebHostEnvironment environment)
     {
         var configured = Environment.GetEnvironmentVariable("GEOGUIDE_ANDROID_APK_URL");
-        return string.IsNullOrWhiteSpace(configured) ? "/downloads/GeoGuide.Mobile.apk" : configured.Trim();
+        if (!string.IsNullOrWhiteSpace(configured))
+        {
+            return configured.Trim();
+        }
+
+        var localApkPath = Path.Combine(environment.WebRootPath, "downloads", "GeoGuide.Mobile.apk");
+        return System.IO.File.Exists(localApkPath) ? "/downloads/GeoGuide.Mobile.apk" : string.Empty;
     }
 }
