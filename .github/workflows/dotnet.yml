@@ -1,0 +1,23 @@
+name: Build Backend CMS
+
+on:
+  push:
+    paths:
+      - 'CmsBackend/**' # Chỉ chạy khi có thay đổi trong folder này
+  pull_request:
+    paths:
+      - 'CmsBackend/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Restore dependencies
+        run: dotnet restore CmsBackend/GeoGuide.Cms/GeoGuide.Cms.csproj
+      - name: Build
+        run: dotnet build CmsBackend/GeoGuide.Cms/GeoGuide.Cms.csproj --no-restore
