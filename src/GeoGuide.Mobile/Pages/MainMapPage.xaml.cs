@@ -32,6 +32,7 @@ public partial class MainMapPage : ContentPage
     private readonly OfflineAnalyticsLogService _offlineAnalyticsLogService;
     private readonly NarrationService _narrationService;
     private readonly PoiApiService _poiApiService;
+    private readonly ApiBaseUrlService _apiBaseUrlService;
     private readonly DeviceIdentityService _deviceIdentityService;
     private readonly DeepLinkActivationService _deepLinkActivationService;
     private readonly IServiceProvider _services;
@@ -81,6 +82,7 @@ public partial class MainMapPage : ContentPage
         _offlineAnalyticsLogService = services.GetRequiredService<OfflineAnalyticsLogService>();
         _narrationService = services.GetRequiredService<NarrationService>();
         _poiApiService = services.GetRequiredService<PoiApiService>();
+        _apiBaseUrlService = services.GetRequiredService<ApiBaseUrlService>();
         _deviceIdentityService = services.GetRequiredService<DeviceIdentityService>();
         _deepLinkActivationService = services.GetRequiredService<DeepLinkActivationService>();
         _narrationService.PlaybackChanged += OnNarrationPlaybackChanged;
@@ -1146,6 +1148,7 @@ public partial class MainMapPage : ContentPage
 
     private async Task HandleJoinPayloadAsync(string payload, bool showAlert)
     {
+        _apiBaseUrlService.TryUpdateFromPayload(payload);
         var success = _accessModeService.TryActivateFromQrPayload(payload, out var message);
         _ = _offlineAnalyticsLogService.LogQrScannedAsync(payload);
 

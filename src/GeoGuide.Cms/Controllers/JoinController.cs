@@ -26,16 +26,16 @@ public class JoinController(IWebHostEnvironment environment) : Controller
             SessionToken = normalizedSession,
             AccessMode = normalizedMode,
             JoinUrl = $"{Request.Scheme}://{Request.Host}/join?session={Uri.EscapeDataString(normalizedSession)}&mode={normalizedMode}",
-            DeepLinkUrl = BuildDeepLink(normalizedSession, normalizedMode),
+            DeepLinkUrl = BuildDeepLink(normalizedSession, normalizedMode, $"{Request.Scheme}://{Request.Host}"),
             AndroidApkUrl = ResolveAndroidApkUrl(environment)
         };
 
         return View(vm);
     }
 
-    private static string BuildDeepLink(string sessionToken, string accessMode)
+    private static string BuildDeepLink(string sessionToken, string accessMode, string apiBaseUrl)
     {
-        return $"geoguide://join?session={Uri.EscapeDataString(sessionToken)}&mode={accessMode}";
+        return $"geoguide://join?session={Uri.EscapeDataString(sessionToken)}&mode={accessMode}&apiBaseUrl={Uri.EscapeDataString(apiBaseUrl)}";
     }
 
     private static string ResolveAndroidApkUrl(IWebHostEnvironment environment)

@@ -13,23 +13,25 @@ public class PoiApiService
 
     private readonly HttpClient _httpClient;
     private readonly PoiApiOptions _options;
+    private readonly ApiBaseUrlService _apiBaseUrlService;
 
-    public PoiApiService(HttpClient httpClient, PoiApiOptions options)
+    public PoiApiService(HttpClient httpClient, PoiApiOptions options, ApiBaseUrlService apiBaseUrlService)
     {
         _httpClient = httpClient;
         _options = options;
+        _apiBaseUrlService = apiBaseUrlService;
     }
 
     public async Task<SyncPayload> GetSyncBootstrapAsync(CancellationToken cancellationToken = default)
     {
-        var payload = await _httpClient.GetFromJsonAsync<SyncPayload>("api/v1/sync/bootstrap", JsonOptions, cancellationToken);
+        var payload = await _httpClient.GetFromJsonAsync<SyncPayload>(BuildUri("api/v1/sync/bootstrap"), JsonOptions, cancellationToken);
         return payload ?? new SyncPayload();
     }
 
     public async Task<SyncPayload> GetSyncDeltaAsync(DateTimeOffset lastSyncAt, CancellationToken cancellationToken = default)
     {
         var query = Uri.EscapeDataString(lastSyncAt.ToString("O"));
-        var payload = await _httpClient.GetFromJsonAsync<SyncPayload>($"api/v1/sync/delta?lastSyncAt={query}", JsonOptions, cancellationToken);
+        var payload = await _httpClient.GetFromJsonAsync<SyncPayload>(BuildUri($"api/v1/sync/delta?lastSyncAt={query}"), JsonOptions, cancellationToken);
         return payload ?? new SyncPayload();
     }
 
@@ -52,13 +54,13 @@ public class PoiApiService
             return;
         }
 
-        using var response = await _httpClient.PostAsJsonAsync("api/v1/logs/playback", entry, JsonOptions, cancellationToken);
+        using var response = await _httpClient.PostAsJsonAsync(BuildUri("api/v1/logs/playback"), entry, JsonOptions, cancellationToken);
         response.EnsureSuccessStatusCode();
     }
 
     public async Task<SessionJoinResponse> JoinSessionAsync(SessionJoinRequest request, CancellationToken cancellationToken = default)
     {
-        using var response = await _httpClient.PostAsJsonAsync("api/v1/sessions/join", request, JsonOptions, cancellationToken);
+        using var response = await _httpClient.PostAsJsonAsync(BuildUri("api/v1/sessions/join"), request, JsonOptions, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         var payload = await response.Content.ReadFromJsonAsync<SessionJoinResponse>(JsonOptions, cancellationToken);
@@ -101,5 +103,10 @@ public class PoiApiService
             IsActive = source.IsActive && !source.IsDeleted,
             UpdatedAt = source.UpdatedAt
         };
+    }
+
+    private Uri BuildUri(string relativePath)
+    {
+        return new Uri(new Uri(_apiBaseUrlService.GetBaseUrl(), UriKind.Absolute), relativePath);
     }
 }

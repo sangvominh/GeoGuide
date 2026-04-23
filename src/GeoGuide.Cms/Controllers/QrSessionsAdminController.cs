@@ -10,10 +10,12 @@ namespace GeoGuide.Cms.Controllers;
 [Authorize]
 public class QrSessionsAdminController(ApplicationDbContext dbContext, IWebHostEnvironment environment) : Controller
 {
+    private const string DefaultSessionToken = "geoguide-public";
+
     public async Task<IActionResult> Index(string? sessionToken = null, string? accessMode = null, string? publicBaseUrl = null)
     {
         var normalizedSessionToken = string.IsNullOrWhiteSpace(sessionToken)
-            ? $"demo-{DateTime.UtcNow:yyyyMMdd-HHmmss}"
+            ? ResolveDefaultSessionToken()
             : sessionToken.Trim();
 
         var normalizedAccessMode = string.Equals(accessMode, "trial", StringComparison.OrdinalIgnoreCase)
@@ -21,7 +23,7 @@ public class QrSessionsAdminController(ApplicationDbContext dbContext, IWebHostE
             : "full";
         var resolvedPublicBaseUrl = ResolvePublicBaseUrl(publicBaseUrl);
         var joinUrl = $"{resolvedPublicBaseUrl}/join?session={Uri.EscapeDataString(normalizedSessionToken)}&mode={normalizedAccessMode}";
-        var deepLinkUrl = BuildDeepLink(normalizedSessionToken, normalizedAccessMode);
+        var deepLinkUrl = BuildDeepLink(normalizedSessionToken, normalizedAccessMode, resolvedPublicBaseUrl);
 
         var joins = await dbContext.DeviceSessionJoins
             .Where(row => row.SessionToken == normalizedSessionToken)
@@ -91,9 +93,15 @@ public class QrSessionsAdminController(ApplicationDbContext dbContext, IWebHostE
         return $"{Request.Scheme}://{Request.Host}";
     }
 
-    private static string BuildDeepLink(string sessionToken, string accessMode)
+    private static string ResolveDefaultSessionToken()
     {
-        return $"geoguide://join?session={Uri.EscapeDataString(sessionToken)}&mode={accessMode}";
+        var configured = Environment.GetEnvironmentVariable("GEOGUIDE_DEFAULT_SESSION_TOKEN");
+        return string.IsNullOrWhiteSpace(configured) ? DefaultSessionToken : configured.Trim();
+    }
+
+    private static string BuildDeepLink(string sessionToken, string accessMode, string apiBaseUrl)
+    {
+        return $"geoguide://join?session={Uri.EscapeDataString(sessionToken)}&mode={accessMode}&apiBaseUrl={Uri.EscapeDataString(apiBaseUrl)}";
     }
 
     private static string ResolveAndroidApkUrl(IWebHostEnvironment environment)
