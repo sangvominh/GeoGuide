@@ -33,6 +33,7 @@ public partial class MainMapPage : ContentPage
     private readonly NarrationService _narrationService;
     private readonly PoiApiService _poiApiService;
     private readonly DeviceIdentityService _deviceIdentityService;
+    private readonly DeepLinkActivationService _deepLinkActivationService;
     private readonly IServiceProvider _services;
     private readonly List<PointOfInterest> _allPois = [];
     private readonly List<(string Key, string Label)> _categoryFilters =
@@ -81,6 +82,7 @@ public partial class MainMapPage : ContentPage
         _narrationService = services.GetRequiredService<NarrationService>();
         _poiApiService = services.GetRequiredService<PoiApiService>();
         _deviceIdentityService = services.GetRequiredService<DeviceIdentityService>();
+        _deepLinkActivationService = services.GetRequiredService<DeepLinkActivationService>();
         _narrationService.PlaybackChanged += OnNarrationPlaybackChanged;
         _locationService.LocationUpdated += OnLocationUpdated;
 
@@ -105,6 +107,15 @@ public partial class MainMapPage : ContentPage
             await InitializeAsync();
         }
 
+        _deepLinkActivationService.LinkReceived -= OnDeepLinkReceived;
+        _deepLinkActivationService.LinkReceived += OnDeepLinkReceived;
+
+        var pendingUri = _deepLinkActivationService.ConsumePendingUri();
+        if (pendingUri != null)
+        {
+            await HandleJoinPayloadAsync(pendingUri.ToString(), showAlert: true);
+        }
+
         await EnsureCurrentSessionJoinedAsync();
 
         await _locationService.StartTrackingAsync(
@@ -125,6 +136,8 @@ public partial class MainMapPage : ContentPage
         {
             _locationTimer.Stop();
         }
+
+        _deepLinkActivationService.LinkReceived -= OnDeepLinkReceived;
 
         _ = _locationService.StopTrackingAsync();
     }
@@ -1085,16 +1098,12 @@ public partial class MainMapPage : ContentPage
             return;
         }
 
-        var success = _accessModeService.TryActivateFromQrPayload(payload, out var message);
-        _ = _offlineAnalyticsLogService.LogQrScannedAsync(payload);
-        if (success)
-        {
-            var joinMessage = await JoinCurrentSessionAsync();
-            message = $"{message}{Environment.NewLine}{joinMessage}";
-        }
+        await HandleJoinPayloadAsync(payload, showAlert: true);
+    }
 
-        await DisplayAlertAsync(success ? "Kích hoạt thành công" : "Kích hoạt thất bại", message, "OK");
-        UpdateAccessModeUiState();
+    private async void OnDeepLinkReceived(object? sender, Uri uri)
+    {
+        await HandleJoinPayloadAsync(uri.ToString(), showAlert: true);
     }
 
     private async Task EnsureCurrentSessionJoinedAsync()
@@ -1132,6 +1141,24 @@ public partial class MainMapPage : ContentPage
         catch
         {
             return $"Đã lưu session cục bộ nhưng chưa đồng bộ được với máy chủ: {state.SessionToken}.";
+        }
+    }
+
+    private async Task HandleJoinPayloadAsync(string payload, bool showAlert)
+    {
+        var success = _accessModeService.TryActivateFromQrPayload(payload, out var message);
+        _ = _offlineAnalyticsLogService.LogQrScannedAsync(payload);
+
+        if (success)
+        {
+            var joinMessage = await JoinCurrentSessionAsync();
+            message = $"{message}{Environment.NewLine}{joinMessage}";
+            UpdateAccessModeUiState();
+        }
+
+        if (showAlert)
+        {
+            await DisplayAlertAsync(success ? "Kích hoạt thành công" : "Kích hoạt thất bại", message, "OK");
         }
     }
 

@@ -10,7 +10,7 @@ namespace GeoGuide.Cms.Controllers;
 [Authorize]
 public class QrSessionsAdminController(ApplicationDbContext dbContext) : Controller
 {
-    public async Task<IActionResult> Index(string? sessionToken = null, string? accessMode = null)
+    public async Task<IActionResult> Index(string? sessionToken = null, string? accessMode = null, string? publicBaseUrl = null)
     {
         var normalizedSessionToken = string.IsNullOrWhiteSpace(sessionToken)
             ? $"demo-{DateTime.UtcNow:yyyyMMdd-HHmmss}"
@@ -19,8 +19,9 @@ public class QrSessionsAdminController(ApplicationDbContext dbContext) : Control
         var normalizedAccessMode = string.Equals(accessMode, "trial", StringComparison.OrdinalIgnoreCase)
             ? "trial"
             : "full";
-
-        var payload = $"GEOGUIDE:JOIN:{normalizedSessionToken}:{normalizedAccessMode.ToUpperInvariant()}";
+        var resolvedPublicBaseUrl = ResolvePublicBaseUrl(publicBaseUrl);
+        var joinUrl = $"{resolvedPublicBaseUrl}/join?session={Uri.EscapeDataString(normalizedSessionToken)}&mode={normalizedAccessMode}";
+        var deepLinkUrl = BuildDeepLink(normalizedSessionToken, normalizedAccessMode);
 
         var joins = await dbContext.DeviceSessionJoins
             .Where(row => row.SessionToken == normalizedSessionToken)
@@ -65,11 +66,39 @@ public class QrSessionsAdminController(ApplicationDbContext dbContext) : Control
         {
             SessionToken = normalizedSessionToken,
             AccessMode = normalizedAccessMode,
-            PayloadText = payload,
-            QrImageUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=280x280&data={WebUtility.UrlEncode(payload)}",
+            PublicBaseUrl = resolvedPublicBaseUrl,
+            JoinUrl = joinUrl,
+            DeepLinkUrl = deepLinkUrl,
+            AndroidApkUrl = ResolveAndroidApkUrl(),
+            QrImageUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=280x280&data={WebUtility.UrlEncode(joinUrl)}",
             Devices = devices
         };
 
         return View(vm);
+    }
+
+    private string ResolvePublicBaseUrl(string? publicBaseUrl)
+    {
+        var configured = string.IsNullOrWhiteSpace(publicBaseUrl)
+            ? Environment.GetEnvironmentVariable("GEOGUIDE_PUBLIC_BASE_URL")
+            : publicBaseUrl;
+
+        if (!string.IsNullOrWhiteSpace(configured))
+        {
+            return configured.Trim().TrimEnd('/');
+        }
+
+        return $"{Request.Scheme}://{Request.Host}";
+    }
+
+    private static string BuildDeepLink(string sessionToken, string accessMode)
+    {
+        return $"geoguide://join?session={Uri.EscapeDataString(sessionToken)}&mode={accessMode}";
+    }
+
+    private static string ResolveAndroidApkUrl()
+    {
+        var configured = Environment.GetEnvironmentVariable("GEOGUIDE_ANDROID_APK_URL");
+        return string.IsNullOrWhiteSpace(configured) ? "/downloads/GeoGuide.Mobile.apk" : configured.Trim();
     }
 }

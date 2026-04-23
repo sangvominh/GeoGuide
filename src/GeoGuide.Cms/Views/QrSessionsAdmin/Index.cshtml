@@ -6,7 +6,7 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
         <h1 class="h3 mb-1">QR Session</h1>
-        <p class="text-muted mb-0">Tạo một session QR để nhiều thiết bị mobile cùng tham gia.</p>
+        <p class="text-muted mb-0">Tạo một session QR để thiết bị mới quét bằng camera mặc định rồi vào ứng dụng.</p>
     </div>
     <form method="get" class="d-flex gap-2 align-items-end">
         <div>
@@ -28,6 +28,10 @@
                 }
             </select>
         </div>
+        <div>
+            <label class="form-label small mb-1">Public Base URL</label>
+            <input class="form-control form-control-sm" type="text" name="publicBaseUrl" value="@Model.PublicBaseUrl" placeholder="http://192.168.1.10:5005" />
+        </div>
         <button class="btn btn-primary btn-sm" type="submit">Tạo QR</button>
     </form>
 </div>
@@ -36,16 +40,16 @@
     <div class="col-lg-5">
         <div class="card shadow-sm h-100">
             <div class="card-header bg-white">
-                <h2 class="h6 mb-0">Mã QR cho mobile</h2>
+                <h2 class="h6 mb-0">Mã QR công khai</h2>
             </div>
             <div class="card-body text-center">
                 <img src="@Model.QrImageUrl" alt="QR Session" class="img-fluid rounded border" style="max-width:280px;" />
                 <div class="mt-3">
-                    <div class="text-muted small">Payload</div>
-                    <code class="d-block">@Model.PayloadText</code>
+                    <div class="text-muted small">Join URL</div>
+                    <code class="d-block">@Model.JoinUrl</code>
                 </div>
                 <div class="mt-2 text-muted small">
-                    Thiết bị mobile quét mã này sẽ join vào session <strong>@Model.SessionToken</strong>.
+                    Người dùng mới quét mã này bằng camera mặc định sẽ vào landing page, sau đó mở app hoặc tải APK.
                 </div>
             </div>
         </div>
@@ -58,12 +62,15 @@
             <div class="card-body">
                 <div class="mb-2"><strong>Session:</strong> <code>@Model.SessionToken</code></div>
                 <div class="mb-2"><strong>Access mode:</strong> @Model.AccessMode</div>
+                <div class="mb-2"><strong>Deep link:</strong> <code>@Model.DeepLinkUrl</code></div>
+                <div class="mb-2"><strong>APK Android:</strong> <code>@Model.AndroidApkUrl</code></div>
                 <div class="mb-3">
+                    <a class="btn btn-outline-secondary btn-sm" href="@Model.JoinUrl" target="_blank">Mở landing page</a>
                     <a class="btn btn-outline-secondary btn-sm" href="/AnalyticsAdmin?sessionToken=@Model.SessionToken">Mở analytics theo session</a>
                     <a class="btn btn-outline-secondary btn-sm" href="/api/v1/analytics/sessions/@Model.SessionToken/devices">JSON devices</a>
                 </div>
                 <div class="text-muted small">
-                    Trang này dùng dịch vụ tạo ảnh QR bên ngoài để hiển thị nhanh trong CMS. Payload QR vẫn là chuỗi chuẩn nội bộ của GeoGuide.
+                    QR hiện trỏ tới landing page công khai. Landing page sẽ thử mở app bằng deep link <code>geoguide://join?... </code>, nếu máy chưa có app thì cho tải APK Android.
                 </div>
             </div>
         </div>
