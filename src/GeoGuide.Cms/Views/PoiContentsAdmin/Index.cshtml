@@ -1,17 +1,17 @@
 @model GeoGuide.Cms.Models.PoiContentsAdminIndexViewModel
 
 @{
-    ViewData["Title"] = "POI Contents";
+    ViewData["Title"] = "Nội dung phát của POI";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-        <h1 class="h3 mb-1">Noi dung POI</h1>
-        <p class="text-muted mb-0">Quan ly audio/TTS da ngon ngu cho <strong>@Model.Poi.Name</strong>.</p>
+        <h1 class="h3 mb-1">Nội dung phát của POI</h1>
+        <p class="text-muted mb-0">Quản lý file audio và nội dung TTS đa ngôn ngữ cho <strong>@Model.Poi.Name</strong>.</p>
     </div>
     <div class="d-flex gap-2">
-        <a class="btn btn-outline-secondary" asp-controller="PoisAdmin" asp-action="Edit" asp-route-id="@Model.Poi.Id">Quay lai POI</a>
-        <a class="btn btn-primary" asp-action="Create" asp-route-poiId="@Model.Poi.Id">Them noi dung</a>
+        <a class="btn btn-outline-secondary" asp-controller="PoisAdmin" asp-action="Edit" asp-route-id="@Model.Poi.Id">Quay lại POI</a>
+        <a class="btn btn-primary" asp-action="Create" asp-route-poiId="@Model.Poi.Id">Thêm nội dung phát</a>
     </div>
 </div>
 
@@ -20,11 +20,11 @@
         <table class="table table-striped align-middle mb-0">
             <thead>
                 <tr>
-                    <th>Language</th>
-                    <th>Type</th>
-                    <th>AudioUrl</th>
+                    <th>Ngôn ngữ</th>
+                    <th>Loại nội dung</th>
+                    <th>File audio</th>
                     <th>TTS</th>
-                    <th>Updated</th>
+                    <th>Cập nhật lúc</th>
                     <th></th>
                 </tr>
             </thead>
@@ -43,8 +43,8 @@
                         <td class="small">@content.TtsContent</td>
                         <td>@content.UpdatedAt.ToUniversalTime().ToString("u")</td>
                         <td class="text-end">
-                            <a class="btn btn-sm btn-outline-primary" asp-action="Edit" asp-route-id="@content.Id">Edit</a>
-                            <a class="btn btn-sm btn-outline-danger" asp-action="Delete" asp-route-id="@content.Id">Delete</a>
+                            <a class="btn btn-sm btn-outline-primary" asp-action="Edit" asp-route-id="@content.Id">Sửa</a>
+                            <a class="btn btn-sm btn-outline-danger" asp-action="Delete" asp-route-id="@content.Id">Xóa</a>
                         </td>
                     </tr>
                 }

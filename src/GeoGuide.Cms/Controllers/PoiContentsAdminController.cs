@@ -188,12 +188,12 @@ public class PoiContentsAdminController(
             && string.IsNullOrWhiteSpace(content.AudioUrl)
             && content.UploadFile is null)
         {
-            modelState.AddModelError(nameof(PoiAudio.AudioUrl), "UploadFile or AudioUrl is required for AudioFile content.");
+            modelState.AddModelError(nameof(PoiAudio.AudioUrl), "Khi chọn File audio, bạn phải nhập đường dẫn audio hoặc tải tệp lên.");
         }
 
         if (content.ContentType == PoiContentType.TtsScript && string.IsNullOrWhiteSpace(content.TtsContent))
         {
-            modelState.AddModelError(nameof(PoiAudio.TtsContent), "TtsContent is required for TtsScript content.");
+            modelState.AddModelError(nameof(PoiAudio.TtsContent), "Khi chọn TTS, bạn phải nhập nội dung văn bản để đọc.");
         }
     }
 
