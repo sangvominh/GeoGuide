@@ -9,14 +9,23 @@ namespace GeoGuide.Cms.Controllers;
 [Authorize]
 public class AnalyticsAdminController(ApplicationDbContext dbContext) : Controller
 {
-    public async Task<IActionResult> Index(DateTimeOffset? startDate = null, DateTimeOffset? endDate = null)
+    public async Task<IActionResult> Index(
+        DateTimeOffset? startDate = null,
+        DateTimeOffset? endDate = null,
+        string? sessionToken = null)
     {
         var range = NormalizeRange(startDate, endDate);
+        var normalizedSessionToken = NormalizeSessionToken(sessionToken);
 
         var query = dbContext.PlaybackLogs
             .Where(log => log.PlayedAt >= range.StartUtc && log.PlayedAt < range.EndExclusiveUtc);
 
-        var totalUsers = await query
+        if (!string.IsNullOrWhiteSpace(normalizedSessionToken))
+        {
+            query = query.Where(log => log.SessionToken == normalizedSessionToken);
+        }
+
+        var totalDevices = await query
             .Select(log => log.DeviceId)
             .Distinct()
             .CountAsync();
@@ -91,17 +100,21 @@ public class AnalyticsAdminController(ApplicationDbContext dbContext) : Controll
             .Take(200)
             .ToList();
 
+        var sessionDevices = await BuildSessionDevicesAsync(normalizedSessionToken);
+
         var vm = new AnalyticsDashboardViewModel
         {
             StartDate = range.StartUtc,
             EndDate = range.EndExclusiveUtc.AddTicks(-1),
             StartDateInput = range.StartDateInput,
             EndDateInput = range.EndDateInput,
-            TotalUsers = totalUsers,
+            SessionTokenInput = normalizedSessionToken ?? string.Empty,
+            TotalDevices = totalDevices,
             TotalListens = totalListens,
             AverageDurationSeconds = averageDurationSeconds,
             TopPois = topPois,
-            HeatmapPoints = heatmap
+            HeatmapPoints = heatmap,
+            SessionDevices = sessionDevices
         };
 
         return View(vm);
@@ -137,5 +150,57 @@ public class AnalyticsAdminController(ApplicationDbContext dbContext) : Controll
         public required DateTimeOffset EndExclusiveUtc { get; init; }
         public required string StartDateInput { get; init; }
         public required string EndDateInput { get; init; }
+    }
+
+    private static string? NormalizeSessionToken(string? sessionToken)
+    {
+        return string.IsNullOrWhiteSpace(sessionToken) ? null : sessionToken.Trim();
+    }
+
+    private async Task<IReadOnlyList<AnalyticsSessionDeviceRow>> BuildSessionDevicesAsync(string? sessionToken)
+    {
+        if (string.IsNullOrWhiteSpace(sessionToken))
+        {
+            return [];
+        }
+
+        var joins = await dbContext.DeviceSessionJoins
+            .Where(row => row.SessionToken == sessionToken)
+            .OrderBy(row => row.JoinedAt)
+            .ToListAsync();
+
+        var logs = await dbContext.PlaybackLogs
+            .Where(row => row.SessionToken == sessionToken)
+            .OrderByDescending(row => row.PlayedAt)
+            .ToListAsync();
+
+        var poiLookup = await dbContext.Pois
+            .IgnoreQueryFilters()
+            .Where(poi => logs.Select(log => log.PoiId).Distinct().Contains(poi.Id))
+            .ToDictionaryAsync(poi => poi.Id, poi => poi.Name);
+
+        return joins
+            .Select(join =>
+            {
+                var deviceLogs = logs.Where(log => log.DeviceId == join.DeviceId).ToList();
+                var lastPoiName = deviceLogs.Count == 0
+                    ? string.Empty
+                    : poiLookup.TryGetValue(deviceLogs[0].PoiId, out var poiName)
+                        ? poiName
+                        : string.Empty;
+
+                return new AnalyticsSessionDeviceRow
+                {
+                    DeviceId = join.DeviceId,
+                    ClientType = join.ClientType,
+                    AccessMode = join.AccessMode,
+                    JoinedAt = join.JoinedAt,
+                    LastSeenAt = join.LastSeenAt,
+                    ListenCount = deviceLogs.Count,
+                    TotalDurationSeconds = deviceLogs.Sum(log => log.DurationSeconds),
+                    LastPoiName = lastPoiName
+                };
+            })
+            .ToList();
     }
 }

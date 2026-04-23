@@ -31,6 +31,9 @@ public partial class MainMapPage : ContentPage
     private readonly TtsSettingsService _ttsSettingsService;
     private readonly OfflineAnalyticsLogService _offlineAnalyticsLogService;
     private readonly NarrationService _narrationService;
+    private readonly PoiApiService _poiApiService;
+    private readonly DeviceIdentityService _deviceIdentityService;
+    private readonly IServiceProvider _services;
     private readonly List<PointOfInterest> _allPois = [];
     private readonly List<(string Key, string Label)> _categoryFilters =
     [
@@ -66,6 +69,7 @@ public partial class MainMapPage : ContentPage
 
         var services = Application.Current?.Handler?.MauiContext?.Services
             ?? throw new InvalidOperationException("Service provider is not available.");
+        _services = services;
 
         _locationService = services.GetRequiredService<LocationService>();
         _poiRepository = services.GetRequiredService<PoiRepository>();
@@ -75,6 +79,8 @@ public partial class MainMapPage : ContentPage
         _ttsSettingsService = services.GetRequiredService<TtsSettingsService>();
         _offlineAnalyticsLogService = services.GetRequiredService<OfflineAnalyticsLogService>();
         _narrationService = services.GetRequiredService<NarrationService>();
+        _poiApiService = services.GetRequiredService<PoiApiService>();
+        _deviceIdentityService = services.GetRequiredService<DeviceIdentityService>();
         _narrationService.PlaybackChanged += OnNarrationPlaybackChanged;
         _locationService.LocationUpdated += OnLocationUpdated;
 
@@ -98,6 +104,8 @@ public partial class MainMapPage : ContentPage
             _isInitialized = true;
             await InitializeAsync();
         }
+
+        await EnsureCurrentSessionJoinedAsync();
 
         await _locationService.StartTrackingAsync(
             interval: TimeSpan.FromSeconds(8),
@@ -689,7 +697,10 @@ public partial class MainMapPage : ContentPage
     private void UpdateAccessModeUiState()
     {
         var state = GetAccessState();
-        AccessModeLabel.Text = state.IsFullAccess ? "FULL ACCESS" : "TRIAL MODE";
+        var sessionSuffix = string.IsNullOrWhiteSpace(state.SessionToken)
+            ? string.Empty
+            : $" • {state.SessionToken}";
+        AccessModeLabel.Text = (state.IsFullAccess ? "FULL ACCESS" : "TRIAL MODE") + sessionSuffix;
         AccessModeLabel.TextColor = state.IsFullAccess
             ? MauiColor.FromArgb("#1E824C")
             : MauiColor.FromArgb("#B84A00");
@@ -1054,13 +1065,20 @@ public partial class MainMapPage : ContentPage
 
     private async void OnQrActivateTapped(object? sender, EventArgs e)
     {
-        var payload = await DisplayPromptAsync(
+        string? payload;
+#if ANDROID || IOS
+        var scannerPage = _services.GetRequiredService<QrScannerPage>();
+        await Navigation.PushModalAsync(scannerPage);
+        payload = await scannerPage.WaitForResultAsync();
+#else
+        payload = await DisplayPromptAsync(
             "Kích hoạt bằng QR",
-            "Nhập payload QR (demo: GEOGUIDE:TRIAL:DEMO hoặc GEOGUIDE:FULL:DEMO)",
+            "Nhập payload QR (demo: GEOGUIDE:JOIN:demo-20260424:FULL)",
             "Kích hoạt",
             "Hủy",
             maxLength: 300,
-            initialValue: "GEOGUIDE:TRIAL:DEMO");
+            initialValue: "GEOGUIDE:JOIN:demo-20260424:FULL");
+#endif
 
         if (string.IsNullOrWhiteSpace(payload))
         {
@@ -1069,8 +1087,52 @@ public partial class MainMapPage : ContentPage
 
         var success = _accessModeService.TryActivateFromQrPayload(payload, out var message);
         _ = _offlineAnalyticsLogService.LogQrScannedAsync(payload);
+        if (success)
+        {
+            var joinMessage = await JoinCurrentSessionAsync();
+            message = $"{message}{Environment.NewLine}{joinMessage}";
+        }
+
         await DisplayAlertAsync(success ? "Kích hoạt thành công" : "Kích hoạt thất bại", message, "OK");
         UpdateAccessModeUiState();
+    }
+
+    private async Task EnsureCurrentSessionJoinedAsync()
+    {
+        var state = _accessModeService.GetState();
+        if (string.IsNullOrWhiteSpace(state.SessionToken))
+        {
+            return;
+        }
+
+        await JoinCurrentSessionAsync();
+    }
+
+    private async Task<string> JoinCurrentSessionAsync()
+    {
+        var state = _accessModeService.GetState();
+        if (string.IsNullOrWhiteSpace(state.SessionToken))
+        {
+            return "Thiết bị chưa có session để đồng bộ.";
+        }
+
+        try
+        {
+            var response = await _poiApiService.JoinSessionAsync(new SessionJoinRequest
+            {
+                SessionToken = state.SessionToken,
+                DeviceId = _deviceIdentityService.GetOrCreateDeviceId(),
+                ClientType = "mobile",
+                AccessMode = state.IsFullAccess ? "full" : "trial",
+                JoinedAt = DateTimeOffset.UtcNow
+            });
+
+            return $"Đã đồng bộ thiết bị vào session {response.SessionToken}.";
+        }
+        catch
+        {
+            return $"Đã lưu session cục bộ nhưng chưa đồng bộ được với máy chủ: {state.SessionToken}.";
+        }
     }
 
     private void OnNarrationPlaybackChanged(object? sender, NarrationPlaybackEventArgs e)

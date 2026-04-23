@@ -21,4 +21,10 @@ public class PlaybackLog
 
     [Required, StringLength(200)]
     public string DeviceId { get; set; } = string.Empty;
+
+    [StringLength(120)]
+    public string? SessionToken { get; set; }
+
+    [StringLength(20)]
+    public string? ClientType { get; set; }
 }

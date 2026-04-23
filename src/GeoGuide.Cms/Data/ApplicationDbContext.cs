@@ -9,6 +9,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Poi> Pois => Set<Poi>();
     public DbSet<PoiAudio> PoiAudios => Set<PoiAudio>();
     public DbSet<PlaybackLog> PlaybackLogs => Set<PlaybackLog>();
+    public DbSet<DeviceSessionJoin> DeviceSessionJoins => Set<DeviceSessionJoin>();
     public DbSet<PoiTenant> PoiTenants => Set<PoiTenant>();
     public DbSet<Tour> Tours => Set<Tour>();
     public DbSet<TourPoiMapping> TourPoiMappings => Set<TourPoiMapping>();
@@ -134,11 +135,33 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.Property(p => p.TriggerType).HasColumnName("trigger_type").HasMaxLength(20);
             entity.Property(p => p.DurationSeconds).HasColumnName("duration_seconds");
             entity.Property(p => p.DeviceId).HasColumnName("device_id").HasMaxLength(200);
+            entity.Property(p => p.SessionToken).HasColumnName("session_token").HasMaxLength(120);
+            entity.Property(p => p.ClientType).HasColumnName("client_type").HasMaxLength(20);
+
+            entity.HasIndex(p => p.SessionToken);
+            entity.HasIndex(p => new { p.SessionToken, p.DeviceId });
 
             entity.HasOne(p => p.Poi)
                 .WithMany()
                 .HasForeignKey(p => p.PoiId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<DeviceSessionJoin>(entity =>
+        {
+            entity.ToTable("device_session_joins");
+            entity.HasKey(p => p.Id);
+
+            entity.Property(p => p.Id).HasColumnName("id");
+            entity.Property(p => p.SessionToken).HasColumnName("session_token").HasMaxLength(120);
+            entity.Property(p => p.DeviceId).HasColumnName("device_id").HasMaxLength(200);
+            entity.Property(p => p.ClientType).HasColumnName("client_type").HasMaxLength(20);
+            entity.Property(p => p.AccessMode).HasColumnName("access_mode").HasMaxLength(20);
+            entity.Property(p => p.JoinedAt).HasColumnName("joined_at");
+            entity.Property(p => p.LastSeenAt).HasColumnName("last_seen_at");
+
+            entity.HasIndex(p => p.SessionToken);
+            entity.HasIndex(p => new { p.SessionToken, p.DeviceId }).IsUnique();
         });
 
         modelBuilder.Entity<Tour>(entity =>

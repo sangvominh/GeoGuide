@@ -2,6 +2,7 @@ using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
 using MauiApp1.Services;
 using SkiaSharp.Views.Maui.Controls.Hosting;
+using ZXing.Net.Maui.Controls;
 
 namespace MauiApp1
 {
@@ -14,6 +15,7 @@ namespace MauiApp1
                 .UseMauiApp<App>()
                 .UseMauiCommunityToolkitMediaElement(isAndroidForegroundServiceEnabled: false)
                 .UseSkiaSharp()
+                .UseBarcodeReader()
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -61,12 +63,14 @@ namespace MauiApp1
             builder.Services.AddSingleton<TriggerGuardService>();
             builder.Services.AddSingleton<TtsSettingsService>();
             builder.Services.AddSingleton<AccessModeService>();
+            builder.Services.AddSingleton<DeviceIdentityService>();
             builder.Services.AddSingleton<OfflineAnalyticsLogService>();
             builder.Services.AddSingleton<NarrationService>();
             builder.Services.AddSingleton<StartupWarmupService>();
 
             builder.Services.AddTransient<Pages.SplashPermissionPage>();
             builder.Services.AddTransient<Pages.MainMapPage>();
+            builder.Services.AddTransient<Pages.QrScannerPage>();
 
 #if DEBUG
     		builder.Logging.AddDebug();

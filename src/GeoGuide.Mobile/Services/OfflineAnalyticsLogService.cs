@@ -2,17 +2,24 @@ namespace MauiApp1.Services;
 
 public sealed class OfflineAnalyticsLogService
 {
-    private const string DeviceIdPreferenceKey = "mobile_device_id";
     private const int SyncStatusPending = 0;
     private const int SyncStatusSynced = 1;
     private const int SyncStatusSkipped = 2;
     private readonly LocalDatabaseService _localDatabaseService;
     private readonly PoiApiService _poiApiService;
+    private readonly DeviceIdentityService _deviceIdentityService;
+    private readonly AccessModeService _accessModeService;
 
-    public OfflineAnalyticsLogService(LocalDatabaseService localDatabaseService, PoiApiService poiApiService)
+    public OfflineAnalyticsLogService(
+        LocalDatabaseService localDatabaseService,
+        PoiApiService poiApiService,
+        DeviceIdentityService deviceIdentityService,
+        AccessModeService accessModeService)
     {
         _localDatabaseService = localDatabaseService;
         _poiApiService = poiApiService;
+        _deviceIdentityService = deviceIdentityService;
+        _accessModeService = accessModeService;
     }
 
     public Task LogPositionUpdateAsync(double latitude, double longitude, CancellationToken cancellationToken = default)
@@ -95,7 +102,9 @@ public sealed class OfflineAnalyticsLogService
                 PlayedAt = DateTimeOffset.TryParse(log.TimestampUtcIso, out var playedAt) ? playedAt : DateTimeOffset.UtcNow,
                 TriggerType = "manual",
                 DurationSeconds = Math.Max(1, log.DurationSeconds),
-                DeviceId = string.IsNullOrWhiteSpace(log.DeviceId) ? GetOrCreateDeviceId() : log.DeviceId
+                DeviceId = string.IsNullOrWhiteSpace(log.DeviceId) ? _deviceIdentityService.GetOrCreateDeviceId() : log.DeviceId,
+                SessionToken = string.IsNullOrWhiteSpace(log.SessionToken) ? _accessModeService.GetState().SessionToken : log.SessionToken,
+                ClientType = string.IsNullOrWhiteSpace(log.ClientType) ? "mobile" : log.ClientType
             };
 
             try
@@ -124,29 +133,18 @@ public sealed class OfflineAnalyticsLogService
         var record = new LocalOfflineLogRecord
         {
             Id = Guid.NewGuid().ToString("N"),
-            DeviceId = GetOrCreateDeviceId(),
+            DeviceId = _deviceIdentityService.GetOrCreateDeviceId(),
             PoiId = poiId,
             EventType = (int)eventType,
             Latitude = latitude,
             Longitude = longitude,
             DurationSeconds = Math.Max(0, durationSeconds),
+            SessionToken = _accessModeService.GetState().SessionToken,
+            ClientType = "mobile",
             TimestampUtcIso = DateTimeOffset.UtcNow.ToString("O"),
             SyncStatus = SyncStatusPending
         };
 
         await _localDatabaseService.InsertOfflineLogAsync(record, cancellationToken);
-    }
-
-    private static string GetOrCreateDeviceId()
-    {
-        var existing = Preferences.Default.Get(DeviceIdPreferenceKey, string.Empty);
-        if (!string.IsNullOrWhiteSpace(existing))
-        {
-            return existing;
-        }
-
-        var created = Guid.NewGuid().ToString("N");
-        Preferences.Default.Set(DeviceIdPreferenceKey, created);
-        return created;
     }
 }

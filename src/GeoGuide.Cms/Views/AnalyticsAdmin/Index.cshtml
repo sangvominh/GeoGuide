@@ -10,6 +10,10 @@
     </div>
     <form method="get" class="d-flex gap-2 align-items-end">
         <div>
+            <label class="form-label small mb-1">Session</label>
+            <input class="form-control form-control-sm" type="text" name="sessionToken" value="@Model.SessionTokenInput" placeholder="demo-20260424" />
+        </div>
+        <div>
             <label class="form-label small mb-1">Từ ngày</label>
             <input class="form-control form-control-sm" type="date" name="startDate" value="@Model.StartDateInput" />
         </div>
@@ -26,7 +30,7 @@
         <div class="card shadow-sm h-100">
             <div class="card-body">
                 <div class="text-muted small">Thiết bị duy nhất</div>
-                <div class="display-6 fw-bold">@Model.TotalUsers</div>
+                <div class="display-6 fw-bold">@Model.TotalDevices</div>
             </div>
         </div>
     </div>
@@ -88,7 +92,7 @@
         <div class="card shadow-sm">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <h2 class="h6 mb-0">Heatmap (top cụm)</h2>
-                <a class="btn btn-outline-secondary btn-sm" href="/api/v1/analytics/heatmap?startDate=@Model.StartDate.ToString("O")&endDate=@Model.EndDate.ToString("O")">JSON API</a>
+                <a class="btn btn-outline-secondary btn-sm" href="/api/v1/analytics/heatmap?startDate=@Model.StartDate.ToString("O")&endDate=@Model.EndDate.ToString("O")&sessionToken=@Model.SessionTokenInput">JSON API</a>
             </div>
             <div class="table-responsive" style="max-height:360px;">
                 <table class="table table-sm align-middle mb-0">
@@ -119,5 +123,57 @@
                 </table>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mt-3">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h2 class="h6 mb-0">Thiết bị trong session</h2>
+        @if (!string.IsNullOrWhiteSpace(Model.SessionTokenInput))
+        {
+            <a class="btn btn-outline-secondary btn-sm" href="/api/v1/analytics/sessions/@Model.SessionTokenInput/devices">JSON API</a>
+        }
+    </div>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+            <tr>
+                <th>Thiết bị</th>
+                <th>Loại client</th>
+                <th>Quyền</th>
+                <th>Tham gia</th>
+                <th>Lần cuối</th>
+                <th class="text-end">Lượt nghe</th>
+                <th class="text-end">Tổng giây</th>
+                <th>POI gần nhất</th>
+            </tr>
+            </thead>
+            <tbody>
+            @if (string.IsNullOrWhiteSpace(Model.SessionTokenInput))
+            {
+                <tr><td colspan="8" class="text-muted">Nhập session token để xem danh sách thiết bị trong phiên.</td></tr>
+            }
+            else if (Model.SessionDevices.Count == 0)
+            {
+                <tr><td colspan="8" class="text-muted">Session này chưa có thiết bị tham gia.</td></tr>
+            }
+            else
+            {
+                @foreach (var row in Model.SessionDevices)
+                {
+                    <tr>
+                        <td class="font-monospace">@row.DeviceId</td>
+                        <td>@row.ClientType</td>
+                        <td>@row.AccessMode</td>
+                        <td>@row.JoinedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</td>
+                        <td>@row.LastSeenAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</td>
+                        <td class="text-end">@row.ListenCount</td>
+                        <td class="text-end">@row.TotalDurationSeconds</td>
+                        <td>@(string.IsNullOrWhiteSpace(row.LastPoiName) ? "-" : row.LastPoiName)</td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
     </div>
 </div>

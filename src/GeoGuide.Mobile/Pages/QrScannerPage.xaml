@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:zxing="clr-namespace:ZXing.Net.Maui.Controls;assembly=ZXing.Net.MAUI.Controls"
+             x:Class="MauiApp1.Pages.QrScannerPage"
+             Title="Quét QR"
+             BackgroundColor="#121212">
+
+    <Grid RowDefinitions="Auto,*,Auto" Padding="16,24,16,24">
+        <VerticalStackLayout Spacing="4">
+            <Label Text="Quét mã QR"
+                   FontSize="22"
+                   FontAttributes="Bold"
+                   TextColor="White" />
+            <Label Text="Quét QR session từ CMS để thiết bị tham gia phiên dùng chung."
+                   FontSize="13"
+                   TextColor="#D0D0D0" />
+        </VerticalStackLayout>
+
+        <Border Grid.Row="1"
+                Margin="0,18,0,18"
+                StrokeThickness="0"
+                BackgroundColor="#1E1E1E">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="22" />
+            </Border.StrokeShape>
+            <Grid>
+                <zxing:CameraBarcodeReaderView x:Name="ScannerView" />
+                <VerticalStackLayout VerticalOptions="End"
+                                     Padding="16"
+                                     Spacing="8">
+                    <Label x:Name="ScannerStatusLabel"
+                           Text="Đưa mã QR vào giữa khung hình."
+                           FontSize="13"
+                           TextColor="White" />
+                </VerticalStackLayout>
+            </Grid>
+        </Border>
+
+        <Button Grid.Row="2"
+                Text="Hủy"
+                Clicked="OnCancelTapped"
+                BackgroundColor="#2D2D2D"
+                TextColor="White"
+                CornerRadius="14" />
+    </Grid>
+
+</ContentPage>

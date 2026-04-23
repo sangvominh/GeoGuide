@@ -27,6 +27,12 @@ public sealed class LocalOfflineLogRecord
     [Column("duration_seconds")]
     public int DurationSeconds { get; set; }
 
+    [Column("session_token")]
+    public string? SessionToken { get; set; }
+
+    [Column("client_type")]
+    public string? ClientType { get; set; }
+
     [Column("timestamp_utc")]
     public string TimestampUtcIso { get; set; } = string.Empty;
 

@@ -10,14 +10,23 @@ namespace GeoGuide.Cms.Controllers.Api.V1;
 public class AnalyticsV1Controller(ApplicationDbContext dbContext) : ControllerBase
 {
     [HttpGet("dashboard")]
-    public async Task<IActionResult> Dashboard([FromQuery] DateTimeOffset? startDate = null, [FromQuery] DateTimeOffset? endDate = null)
+    public async Task<IActionResult> Dashboard(
+        [FromQuery] DateTimeOffset? startDate = null,
+        [FromQuery] DateTimeOffset? endDate = null,
+        [FromQuery] string? sessionToken = null)
     {
         var range = NormalizeRange(startDate, endDate);
+        var normalizedSessionToken = NormalizeSessionToken(sessionToken);
 
         var query = dbContext.PlaybackLogs
             .Where(log => log.PlayedAt >= range.StartUtc && log.PlayedAt < range.EndExclusiveUtc);
 
-        var totalUsers = await query
+        if (!string.IsNullOrWhiteSpace(normalizedSessionToken))
+        {
+            query = query.Where(log => log.SessionToken == normalizedSessionToken);
+        }
+
+        var totalDevices = await query
             .Select(log => log.DeviceId)
             .Distinct()
             .CountAsync();
@@ -58,26 +67,41 @@ public class AnalyticsV1Controller(ApplicationDbContext dbContext) : ControllerB
             .ThenBy(row => row.Name)
             .ToList();
 
+        var sessionDevices = await BuildSessionDevicesAsync(normalizedSessionToken);
+
         var response = new AnalyticsDashboardDto
         {
             StartDate = range.StartUtc,
             EndDate = range.EndExclusiveUtc.AddTicks(-1),
-            TotalUsers = totalUsers,
+            SessionToken = normalizedSessionToken ?? string.Empty,
+            TotalDevices = totalDevices,
             TotalListens = totalListens,
             AverageDurationSeconds = averageDurationSeconds,
-            TopPois = topPois
+            TopPois = topPois,
+            Devices = sessionDevices
         };
 
         return Ok(response);
     }
 
     [HttpGet("heatmap")]
-    public async Task<IActionResult> Heatmap([FromQuery] DateTimeOffset? startDate = null, [FromQuery] DateTimeOffset? endDate = null)
+    public async Task<IActionResult> Heatmap(
+        [FromQuery] DateTimeOffset? startDate = null,
+        [FromQuery] DateTimeOffset? endDate = null,
+        [FromQuery] string? sessionToken = null)
     {
         var range = NormalizeRange(startDate, endDate);
+        var normalizedSessionToken = NormalizeSessionToken(sessionToken);
 
-        var heatmapStats = await dbContext.PlaybackLogs
-            .Where(log => log.PlayedAt >= range.StartUtc && log.PlayedAt < range.EndExclusiveUtc)
+        var query = dbContext.PlaybackLogs
+            .Where(log => log.PlayedAt >= range.StartUtc && log.PlayedAt < range.EndExclusiveUtc);
+
+        if (!string.IsNullOrWhiteSpace(normalizedSessionToken))
+        {
+            query = query.Where(log => log.SessionToken == normalizedSessionToken);
+        }
+
+        var heatmapStats = await query
             .GroupBy(log => log.PoiId)
             .Select(group => new
             {
@@ -114,6 +138,19 @@ public class AnalyticsV1Controller(ApplicationDbContext dbContext) : ControllerB
         return Ok(heatmap);
     }
 
+    [HttpGet("sessions/{sessionToken}/devices")]
+    public async Task<IActionResult> SessionDevices([FromRoute] string sessionToken)
+    {
+        var normalizedSessionToken = NormalizeSessionToken(sessionToken);
+        if (string.IsNullOrWhiteSpace(normalizedSessionToken))
+        {
+            return BadRequest();
+        }
+
+        var devices = await BuildSessionDevicesAsync(normalizedSessionToken);
+        return Ok(devices);
+    }
+
     private static AnalyticsRange NormalizeRange(DateTimeOffset? startDate, DateTimeOffset? endDate)
     {
         var localToday = DateTime.Today;
@@ -140,5 +177,57 @@ public class AnalyticsV1Controller(ApplicationDbContext dbContext) : ControllerB
     {
         public required DateTimeOffset StartUtc { get; init; }
         public required DateTimeOffset EndExclusiveUtc { get; init; }
+    }
+
+    private static string? NormalizeSessionToken(string? sessionToken)
+    {
+        return string.IsNullOrWhiteSpace(sessionToken) ? null : sessionToken.Trim();
+    }
+
+    private async Task<IReadOnlyList<SessionDeviceDto>> BuildSessionDevicesAsync(string? sessionToken)
+    {
+        if (string.IsNullOrWhiteSpace(sessionToken))
+        {
+            return [];
+        }
+
+        var joins = await dbContext.DeviceSessionJoins
+            .Where(row => row.SessionToken == sessionToken)
+            .OrderBy(row => row.JoinedAt)
+            .ToListAsync();
+
+        var logs = await dbContext.PlaybackLogs
+            .Where(row => row.SessionToken == sessionToken)
+            .OrderByDescending(row => row.PlayedAt)
+            .ToListAsync();
+
+        var poiLookup = await dbContext.Pois
+            .IgnoreQueryFilters()
+            .Where(poi => logs.Select(log => log.PoiId).Distinct().Contains(poi.Id))
+            .ToDictionaryAsync(poi => poi.Id, poi => poi.Name);
+
+        return joins
+            .Select(join =>
+            {
+                var deviceLogs = logs.Where(log => log.DeviceId == join.DeviceId).ToList();
+                var lastPoiName = deviceLogs.Count == 0
+                    ? string.Empty
+                    : poiLookup.TryGetValue(deviceLogs[0].PoiId, out var poiName)
+                        ? poiName
+                        : string.Empty;
+
+                return new SessionDeviceDto
+                {
+                    DeviceId = join.DeviceId,
+                    ClientType = join.ClientType,
+                    AccessMode = join.AccessMode,
+                    JoinedAt = join.JoinedAt,
+                    LastSeenAt = join.LastSeenAt,
+                    ListenCount = deviceLogs.Count,
+                    TotalDurationSeconds = deviceLogs.Sum(log => log.DurationSeconds),
+                    LastPoiName = lastPoiName
+                };
+            })
+            .ToList();
     }
 }

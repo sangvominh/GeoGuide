@@ -56,6 +56,23 @@ public class PoiApiService
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task<SessionJoinResponse> JoinSessionAsync(SessionJoinRequest request, CancellationToken cancellationToken = default)
+    {
+        using var response = await _httpClient.PostAsJsonAsync("api/v1/sessions/join", request, JsonOptions, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var payload = await response.Content.ReadFromJsonAsync<SessionJoinResponse>(JsonOptions, cancellationToken);
+        return payload ?? new SessionJoinResponse
+        {
+            SessionToken = request.SessionToken,
+            DeviceId = request.DeviceId,
+            ClientType = request.ClientType,
+            AccessMode = request.AccessMode,
+            JoinedAt = request.JoinedAt,
+            ServerTime = DateTimeOffset.UtcNow
+        };
+    }
+
     private static PointOfInterest MapToPoi(SyncPoiDto source)
     {
         var preferredContent = source.Contents

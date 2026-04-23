@@ -29,6 +29,8 @@ public sealed class LocalDatabaseService
             await _connection.CreateTableAsync<LocalPoiRecord>();
             await _connection.CreateTableAsync<LocalSyncStateRecord>();
             await _connection.CreateTableAsync<LocalOfflineLogRecord>();
+            await EnsureOfflineLogColumnAsync("session_token", "TEXT");
+            await EnsureOfflineLogColumnAsync("client_type", "TEXT");
         }
         finally
         {
@@ -111,5 +113,21 @@ public sealed class LocalDatabaseService
 
         record.SyncStatus = status;
         await _connection.UpdateAsync(record);
+    }
+
+    private async Task EnsureOfflineLogColumnAsync(string columnName, string columnType)
+    {
+        var columns = await _connection!.QueryAsync<TableInfoRow>("PRAGMA table_info('offline_logs')");
+        if (columns.Any(row => string.Equals(row.Name, columnName, StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        await _connection.ExecuteAsync($"ALTER TABLE offline_logs ADD COLUMN {columnName} {columnType}");
+    }
+
+    private sealed class TableInfoRow
+    {
+        public string Name { get; set; } = string.Empty;
     }
 }

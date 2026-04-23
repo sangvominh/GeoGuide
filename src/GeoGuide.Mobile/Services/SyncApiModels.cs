@@ -35,3 +35,22 @@ public sealed class SyncPoiContentDto
     public string? TtsContent { get; init; }
     public DateTimeOffset UpdatedAt { get; init; }
 }
+
+public sealed class SessionJoinRequest
+{
+    public string SessionToken { get; init; } = string.Empty;
+    public string DeviceId { get; init; } = string.Empty;
+    public string ClientType { get; init; } = "mobile";
+    public string AccessMode { get; init; } = "trial";
+    public DateTimeOffset JoinedAt { get; init; }
+}
+
+public sealed class SessionJoinResponse
+{
+    public string SessionToken { get; init; } = string.Empty;
+    public string DeviceId { get; init; } = string.Empty;
+    public string ClientType { get; init; } = string.Empty;
+    public string AccessMode { get; init; } = string.Empty;
+    public DateTimeOffset JoinedAt { get; init; }
+    public DateTimeOffset ServerTime { get; init; }
+}
