@@ -10,4 +10,10 @@ public class SessionDeviceDto
     public int ListenCount { get; init; }
     public int TotalDurationSeconds { get; init; }
     public string LastPoiName { get; init; } = string.Empty;
+    public int BehaviorEventCount { get; init; }
+    public int StopCount { get; init; }
+    public int LongestStopSeconds { get; init; }
+    public string RouteSummary { get; init; } = string.Empty;
+    public double? LastKnownLatitude { get; init; }
+    public double? LastKnownLongitude { get; init; }
 }

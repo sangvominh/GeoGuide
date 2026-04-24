@@ -9,6 +9,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Poi> Pois => Set<Poi>();
     public DbSet<PoiAudio> PoiAudios => Set<PoiAudio>();
     public DbSet<PlaybackLog> PlaybackLogs => Set<PlaybackLog>();
+    public DbSet<BehaviorEvent> BehaviorEvents => Set<BehaviorEvent>();
     public DbSet<DeviceSessionJoin> DeviceSessionJoins => Set<DeviceSessionJoin>();
     public DbSet<PoiTenant> PoiTenants => Set<PoiTenant>();
     public DbSet<Tour> Tours => Set<Tour>();
@@ -145,6 +146,32 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .WithMany()
                 .HasForeignKey(p => p.PoiId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<BehaviorEvent>(entity =>
+        {
+            entity.ToTable("behavior_events");
+            entity.HasKey(p => p.Id);
+
+            entity.Property(p => p.Id).HasColumnName("id");
+            entity.Property(p => p.DeviceId).HasColumnName("device_id").HasMaxLength(200);
+            entity.Property(p => p.PoiId).HasColumnName("poi_id");
+            entity.Property(p => p.EventType).HasColumnName("event_type").HasMaxLength(30);
+            entity.Property(p => p.Latitude).HasColumnName("latitude");
+            entity.Property(p => p.Longitude).HasColumnName("longitude");
+            entity.Property(p => p.DurationSeconds).HasColumnName("duration_seconds");
+            entity.Property(p => p.OccurredAt).HasColumnName("occurred_at");
+            entity.Property(p => p.SessionToken).HasColumnName("session_token").HasMaxLength(120);
+            entity.Property(p => p.ClientType).HasColumnName("client_type").HasMaxLength(20);
+
+            entity.HasIndex(p => p.SessionToken);
+            entity.HasIndex(p => new { p.SessionToken, p.DeviceId, p.OccurredAt });
+            entity.HasIndex(p => new { p.DeviceId, p.OccurredAt });
+
+            entity.HasOne(p => p.Poi)
+                .WithMany()
+                .HasForeignKey(p => p.PoiId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<DeviceSessionJoin>(entity =>

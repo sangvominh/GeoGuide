@@ -58,6 +58,12 @@ public class PoiApiService
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task PostBehaviorEventAsync(BehaviorEventEntry entry, CancellationToken cancellationToken = default)
+    {
+        using var response = await _httpClient.PostAsJsonAsync(BuildUri("api/v1/logs/behavior"), entry, JsonOptions, cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+
     public async Task<SessionJoinResponse> JoinSessionAsync(SessionJoinRequest request, CancellationToken cancellationToken = default)
     {
         using var response = await _httpClient.PostAsJsonAsync(BuildUri("api/v1/sessions/join"), request, JsonOptions, cancellationToken);

@@ -1,12 +1,65 @@
 @model GeoGuide.Cms.Models.AnalyticsDashboardViewModel
+@using System.Text.Json
 @{
     ViewData["Title"] = "Analytics";
+
+    var heatPoints = Model.HeatmapPoints.ToList();
+    var maxWeight = heatPoints.Count == 0 ? 1 : heatPoints.Max(point => point.Weight);
+    var heatJson = JsonSerializer.Serialize(heatPoints.Select(point => new
+    {
+        lat = point.Lat,
+        lng = point.Lng,
+        weight = point.Weight
+    }));
 }
+
+<style>
+    .heatmap-map-shell {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 1rem;
+        background: #0f172a;
+    }
+
+    #analytics-heatmap {
+        height: 360px;
+        width: 100%;
+    }
+
+    .heatmap-map-shell .leaflet-container {
+        background: #0f172a;
+    }
+
+    .heatmap-legend {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+
+    .heatmap-legend-bar {
+        flex: 1;
+        height: 0.6rem;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #1d4ed8 0%, #38bdf8 28%, #facc15 62%, #ef4444 100%);
+    }
+
+    .heatmap-hotspot {
+        border-left: 4px solid #f97316;
+        background: #fff7ed;
+    }
+
+    .leaflet-popup-content-wrapper {
+        border-radius: 0.75rem;
+    }
+</style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
         <h1 class="h3 mb-1">Analytics Dashboard</h1>
-        <p class="text-muted mb-0">Thống kê nghe thuyết minh và dữ liệu heatmap theo POI.</p>
+        <p class="text-muted mb-0">Thống kê nghe, hành trình di chuyển, điểm dừng và dữ liệu heatmap theo thiết bị.</p>
     </div>
     <form method="get" class="d-flex gap-2 align-items-end">
         <div>
@@ -26,7 +79,7 @@
 </div>
 
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card shadow-sm h-100">
             <div class="card-body">
                 <div class="text-muted small">Thiết bị duy nhất</div>
@@ -34,7 +87,15 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Lượt vào session</div>
+                <div class="display-6 fw-bold">@Model.TotalSessionJoins</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
         <div class="card shadow-sm h-100">
             <div class="card-body">
                 <div class="text-muted small">Tổng lượt nghe</div>
@@ -42,6 +103,17 @@
             </div>
         </div>
     </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Sự kiện hành vi</div>
+                <div class="display-6 fw-bold">@Model.TotalBehaviorEvents</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
     <div class="col-md-4">
         <div class="card shadow-sm h-100">
             <div class="card-body">
@@ -50,10 +122,26 @@
             </div>
         </div>
     </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Tổng điểm dừng lâu</div>
+                <div class="display-6 fw-bold">@Model.TotalStops</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Dừng trung bình (giây)</div>
+                <div class="display-6 fw-bold">@Model.AverageStopDurationSeconds</div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="row g-3">
-    <div class="col-lg-7">
+    <div class="col-lg-6">
         <div class="card shadow-sm">
             <div class="card-header bg-white">
                 <h2 class="h6 mb-0">Top POI được nghe nhiều nhất</h2>
@@ -88,39 +176,90 @@
             </div>
         </div>
     </div>
-    <div class="col-lg-5">
-        <div class="card shadow-sm">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h2 class="h6 mb-0">Heatmap (top cụm)</h2>
-                <a class="btn btn-outline-secondary btn-sm" href="/api/v1/analytics/heatmap?startDate=@Model.StartDate.ToString("O")&endDate=@Model.EndDate.ToString("O")&sessionToken=@Model.SessionTokenInput">JSON API</a>
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h2 class="h6 mb-0">Top POI có khách dừng lâu</h2>
             </div>
-            <div class="table-responsive" style="max-height:360px;">
+            <div class="table-responsive">
                 <table class="table table-sm align-middle mb-0">
                     <thead class="table-light">
                     <tr>
-                        <th>Lat</th>
-                        <th>Lng</th>
-                        <th class="text-end">Weight</th>
+                        <th>POI</th>
+                        <th class="text-end">Lượt dừng</th>
+                        <th class="text-end">TB dừng</th>
                     </tr>
                     </thead>
                     <tbody>
-                    @if (Model.HeatmapPoints.Count == 0)
+                    @if (Model.TopVisitedPois.Count == 0)
                     {
-                        <tr><td colspan="3" class="text-muted">Chưa có dữ liệu.</td></tr>
+                        <tr><td colspan="3" class="text-muted">Chưa có dữ liệu dừng đủ dài để phân tích.</td></tr>
                     }
                     else
                     {
-                        @foreach (var point in Model.HeatmapPoints)
+                        @foreach (var row in Model.TopVisitedPois)
                         {
                             <tr>
-                                <td>@point.Lat</td>
-                                <td>@point.Lng</td>
-                                <td class="text-end fw-semibold">@point.Weight</td>
+                                <td>@row.Name</td>
+                                <td class="text-end">@row.VisitCount</td>
+                                <td class="text-end">@row.AverageDwellSeconds</td>
                             </tr>
                         }
                     }
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h2 class="h6 mb-0">Heatmap hành vi theo vị trí</h2>
+                <a class="btn btn-outline-secondary btn-sm" href="/api/v1/analytics/heatmap?startDate=@Model.StartDate.ToString("O")&endDate=@Model.EndDate.ToString("O")&sessionToken=@Model.SessionTokenInput">JSON API</a>
+            </div>
+            <div class="card-body">
+                @if (heatPoints.Count == 0)
+                {
+                    <div class="text-muted">Chưa có dữ liệu.</div>
+                }
+                else
+                {
+                    <div class="heatmap-map-shell mb-3">
+                        <div id="analytics-heatmap" aria-label="Bản đồ nhiệt lượt nghe theo cụm vị trí"></div>
+                    </div>
+
+                    <div class="heatmap-legend mb-3">
+                        <span>Thấp</span>
+                        <div class="heatmap-legend-bar"></div>
+                        <span>Cao</span>
+                    </div>
+
+                    <div class="small text-muted mb-3">
+                        Heatmap ưu tiên vị trí thực của thiết bị. Nếu chưa có log vị trí, hệ thống mới fallback về tọa độ POI đã nghe.
+                    </div>
+
+                    <div class="list-group list-group-flush">
+                        @for (var i = 0; i < heatPoints.Take(5).Count(); i++)
+                        {
+                            var point = heatPoints[i];
+                            <div class="list-group-item px-0 heatmap-hotspot">
+                                <div class="d-flex justify-content-between align-items-start px-3 py-2">
+                                    <div>
+                                        <div class="fw-semibold">Hotspot @(i + 1)</div>
+                                        <div class="text-muted small">Lat @point.Lat, Lng @point.Lng</div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="fw-bold">@point.Weight</div>
+                                        <div class="text-muted small">lượt ghi nhận</div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
             </div>
         </div>
     </div>
@@ -143,19 +282,23 @@
                 <th>Quyền</th>
                 <th>Tham gia</th>
                 <th>Lần cuối</th>
+                <th class="text-end">Sự kiện</th>
                 <th class="text-end">Lượt nghe</th>
+                <th class="text-end">Điểm dừng</th>
+                <th class="text-end">Dừng lâu nhất</th>
                 <th class="text-end">Tổng giây</th>
                 <th>POI gần nhất</th>
+                <th>Hành trình</th>
             </tr>
             </thead>
             <tbody>
             @if (string.IsNullOrWhiteSpace(Model.SessionTokenInput))
             {
-                <tr><td colspan="8" class="text-muted">Nhập session token để xem danh sách thiết bị trong phiên.</td></tr>
+                <tr><td colspan="12" class="text-muted">Nhập session token để xem danh sách thiết bị trong phiên.</td></tr>
             }
             else if (Model.SessionDevices.Count == 0)
             {
-                <tr><td colspan="8" class="text-muted">Session này chưa có thiết bị tham gia.</td></tr>
+                <tr><td colspan="12" class="text-muted">Session này chưa có thiết bị tham gia.</td></tr>
             }
             else
             {
@@ -167,9 +310,13 @@
                         <td>@row.AccessMode</td>
                         <td>@row.JoinedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</td>
                         <td>@row.LastSeenAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</td>
+                        <td class="text-end">@row.BehaviorEventCount</td>
                         <td class="text-end">@row.ListenCount</td>
+                        <td class="text-end">@row.StopCount</td>
+                        <td class="text-end">@row.LongestStopSeconds</td>
                         <td class="text-end">@row.TotalDurationSeconds</td>
                         <td>@(string.IsNullOrWhiteSpace(row.LastPoiName) ? "-" : row.LastPoiName)</td>
+                        <td class="small">@row.RouteSummary</td>
                     </tr>
                 }
             }
@@ -177,3 +324,71 @@
         </table>
     </div>
 </div>
+
+@section Scripts {
+    @if (heatPoints.Count > 0)
+    {
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+        <script>
+            (function () {
+                const points = @Html.Raw(heatJson);
+                const mapElement = document.getElementById("analytics-heatmap");
+                if (!mapElement || !Array.isArray(points) || points.length === 0 || typeof L === "undefined") {
+                    return;
+                }
+
+                const map = L.map(mapElement, {
+                    zoomControl: true,
+                    scrollWheelZoom: false
+                });
+
+                L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                    maxZoom: 19,
+                    attribution: "&copy; OpenStreetMap contributors"
+                }).addTo(map);
+
+                const maxWeight = Math.max(...points.map(point => point.weight), 1);
+                const bounds = [];
+
+                function colorFor(weight) {
+                    const ratio = weight / maxWeight;
+                    if (ratio >= 0.8) return "#ef4444";
+                    if (ratio >= 0.55) return "#f97316";
+                    if (ratio >= 0.3) return "#facc15";
+                    return "#38bdf8";
+                }
+
+                points.forEach(point => {
+                    const ratio = point.weight / maxWeight;
+                    const radius = 18 + (ratio * 34);
+                    const fillColor = colorFor(point.weight);
+                    const marker = L.circleMarker([point.lat, point.lng], {
+                        radius: 6 + (ratio * 10),
+                        color: "#ffffff",
+                        weight: 1,
+                        fillColor: fillColor,
+                        fillOpacity: 0.85
+                    }).addTo(map);
+
+                    L.circle([point.lat, point.lng], {
+                        radius: 30 + (ratio * 90),
+                        color: fillColor,
+                        weight: 0,
+                        fillColor: fillColor,
+                        fillOpacity: 0.18
+                    }).addTo(map);
+
+                    marker.bindPopup(`<strong>Hotspot</strong><br/>Lat: ${point.lat}<br/>Lng: ${point.lng}<br/>Weight: ${point.weight}`);
+                    bounds.push([point.lat, point.lng]);
+                });
+
+                if (bounds.length === 1) {
+                    map.setView(bounds[0], 15);
+                } else {
+                    map.fitBounds(bounds, { padding: [24, 24] });
+                }
+            })();
+        </script>
+    }
+}
