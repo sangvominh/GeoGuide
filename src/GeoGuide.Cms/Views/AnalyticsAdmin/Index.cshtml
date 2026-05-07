@@ -1,0 +1,123 @@
+@model GeoGuide.Cms.Models.AnalyticsDashboardViewModel
+@{
+    ViewData["Title"] = "Analytics";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h3 mb-1">Analytics Dashboard</h1>
+        <p class="text-muted mb-0">Thống kê nghe thuyết minh và dữ liệu heatmap theo POI.</p>
+    </div>
+    <form method="get" class="d-flex gap-2 align-items-end">
+        <div>
+            <label class="form-label small mb-1">Từ ngày</label>
+            <input class="form-control form-control-sm" type="date" name="startDate" value="@Model.StartDateInput" />
+        </div>
+        <div>
+            <label class="form-label small mb-1">Đến ngày</label>
+            <input class="form-control form-control-sm" type="date" name="endDate" value="@Model.EndDateInput" />
+        </div>
+        <button class="btn btn-primary btn-sm" type="submit">Lọc</button>
+    </form>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Thiết bị duy nhất</div>
+                <div class="display-6 fw-bold">@Model.TotalUsers</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Tổng lượt nghe</div>
+                <div class="display-6 fw-bold">@Model.TotalListens</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Thời lượng trung bình (giây)</div>
+                <div class="display-6 fw-bold">@Model.AverageDurationSeconds</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h2 class="h6 mb-0">Top POI được nghe nhiều nhất</h2>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th>POI</th>
+                        <th class="text-end">Lượt nghe</th>
+                        <th class="text-end">TB thời lượng</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @if (Model.TopPois.Count == 0)
+                    {
+                        <tr><td colspan="3" class="text-muted">Chưa có dữ liệu trong khoảng thời gian đã chọn.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var row in Model.TopPois)
+                        {
+                            <tr>
+                                <td>@row.Name</td>
+                                <td class="text-end">@row.ListenCount</td>
+                                <td class="text-end">@row.AverageDurationSeconds</td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h2 class="h6 mb-0">Heatmap (top cụm)</h2>
+                <a class="btn btn-outline-secondary btn-sm" href="/api/v1/analytics/heatmap?startDate=@Model.StartDate.ToString("O")&endDate=@Model.EndDate.ToString("O")">JSON API</a>
+            </div>
+            <div class="table-responsive" style="max-height:360px;">
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th>Lat</th>
+                        <th>Lng</th>
+                        <th class="text-end">Weight</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @if (Model.HeatmapPoints.Count == 0)
+                    {
+                        <tr><td colspan="3" class="text-muted">Chưa có dữ liệu.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var point in Model.HeatmapPoints)
+                        {
+                            <tr>
+                                <td>@point.Lat</td>
+                                <td>@point.Lng</td>
+                                <td class="text-end fw-semibold">@point.Weight</td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

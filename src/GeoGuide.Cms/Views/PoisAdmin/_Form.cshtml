@@ -1,0 +1,98 @@
+@model GeoGuide.Cms.Models.Poi
+
+@{
+    var isSystemAdmin = ViewBag.IsSystemAdmin is bool value && value;
+}
+
+<div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <label asp-for="TenantId" class="form-label">Tenant</label>
+        <select asp-for="TenantId" asp-items="ViewBag.TenantOptions" class="form-select" disabled="@(!isSystemAdmin)">
+            <option value="">Chọn tenant</option>
+        </select>
+        @if (ViewBag.IsSystemAdmin is bool canChooseTenant && !canChooseTenant)
+        {
+            <input asp-for="TenantId" type="hidden" />
+            <div class="form-text">Tài khoản tenant chỉ quản lý dữ liệu trong phạm vi đã được gán.</div>
+        }
+        <span asp-validation-for="TenantId" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="CategoryKey" class="form-label"></label>
+        <input asp-for="CategoryKey" class="form-control" />
+        <span asp-validation-for="CategoryKey" class="text-danger"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="CategoryLabel" class="form-label"></label>
+        <input asp-for="CategoryLabel" class="form-control" />
+        <span asp-validation-for="CategoryLabel" class="text-danger"></span>
+    </div>
+    <div class="col-12">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Latitude" class="form-label"></label>
+        <input asp-for="Latitude" class="form-control" />
+        <span asp-validation-for="Latitude" class="text-danger"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Longitude" class="form-label"></label>
+        <input asp-for="Longitude" class="form-control" />
+        <span asp-validation-for="Longitude" class="text-danger"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="TriggerRadiusMeters" class="form-label"></label>
+        <input asp-for="TriggerRadiusMeters" class="form-control" />
+        <span asp-validation-for="TriggerRadiusMeters" class="text-danger"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="CooldownMinutes" class="form-label"></label>
+        <input asp-for="CooldownMinutes" class="form-control" />
+        <span asp-validation-for="CooldownMinutes" class="text-danger"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Priority" class="form-label"></label>
+        <input asp-for="Priority" class="form-control" />
+        <span asp-validation-for="Priority" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="ImageUrl" class="form-label"></label>
+        <input asp-for="ImageUrl" class="form-control" />
+        <span asp-validation-for="ImageUrl" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="MapUrl" class="form-label"></label>
+        <input asp-for="MapUrl" class="form-control" />
+        <span asp-validation-for="MapUrl" class="text-danger"></span>
+    </div>
+    <div class="col-md-6 d-flex align-items-end">
+        @if (isSystemAdmin)
+        {
+            <div class="form-check mb-2">
+                <input asp-for="IsActive" class="form-check-input" />
+                <label asp-for="IsActive" class="form-check-label"></label>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-warning mb-0 py-2">
+                POI tenant tạo mới sẽ mặc định ở trạng thái chờ duyệt và chưa được kích hoạt.
+            </div>
+            <input asp-for="IsActive" type="hidden" />
+        }
+    </div>
+    <div class="col-12">
+        <div class="alert alert-info mb-0">
+            Nội dung âm thanh và đa ngôn ngữ được quản lý tại mục <strong>POI Contents</strong>.
+        </div>
+    </div>
+</div>

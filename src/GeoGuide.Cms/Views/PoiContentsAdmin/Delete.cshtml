@@ -1,0 +1,17 @@
+@model GeoGuide.Cms.Models.PoiAudio
+
+@{
+    ViewData["Title"] = "Xóa nội dung phát";
+}
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h1 class="h4 mb-3">Xóa nội dung phát</h1>
+        <p>Bạn có chắc chắn muốn xóa nội dung <strong>@Model.LanguageCode - @Model.ContentType</strong> không?</p>
+        <form asp-action="Delete" method="post" class="d-flex gap-2">
+            <input asp-for="Id" type="hidden" />
+            <button type="submit" class="btn btn-danger">Xóa</button>
+            <a class="btn btn-outline-secondary" asp-action="Index" asp-route-poiId="@Model.PoiId">Hủy</a>
+        </form>
+    </div>
+</div>

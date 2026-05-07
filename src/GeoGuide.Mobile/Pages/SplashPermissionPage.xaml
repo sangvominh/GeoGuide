@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MauiApp1.Pages.SplashPermissionPage"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{StaticResource Surface}">
+
+    <Grid>
+        <Grid.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#0D2340" Offset="0.0" />
+                <GradientStop Color="#11497A" Offset="0.45" />
+                <GradientStop Color="#16212B" Offset="1.0" />
+            </LinearGradientBrush>
+        </Grid.Background>
+
+        <BoxView Opacity="0.18" Rotation="-14" Margin="-80,120,120,-40" HorizontalOptions="Fill" VerticalOptions="Fill">
+            <BoxView.Background>
+                <RadialGradientBrush Center="0.5,0.4" Radius="0.9">
+                    <GradientStop Color="#FF9B5E" Offset="0.0" />
+                    <GradientStop Color="#00FF9B5E" Offset="1.0" />
+                </RadialGradientBrush>
+            </BoxView.Background>
+        </BoxView>
+
+        <BoxView Opacity="0.28" Margin="-140,-220,80,180" HorizontalOptions="Fill" VerticalOptions="Fill">
+            <BoxView.Background>
+                <RadialGradientBrush Center="0.5,0.5" Radius="1.0">
+                    <GradientStop Color="#5CAFFF" Offset="0.0" />
+                    <GradientStop Color="#005CAFFF" Offset="1.0" />
+                </RadialGradientBrush>
+            </BoxView.Background>
+        </BoxView>
+
+        <Grid RowDefinitions="Auto,*,Auto"
+              Padding="24,32,24,36">
+
+            <Label Grid.Row="0"
+                   Text="THUYET MINH DIA DIEM TU DONG"
+                   FontSize="11"
+                   FontAttributes="Bold"
+                   TextColor="#B8D8FF"
+                   CharacterSpacing="3"
+                   HorizontalTextAlignment="Center"
+                   Opacity="0.9" />
+
+            <VerticalStackLayout Grid.Row="1"
+                                 VerticalOptions="Center"
+                                 HorizontalOptions="Center"
+                                 Spacing="20"
+                                 MaximumWidthRequest="420">
+
+                <Grid HeightRequest="132"
+                      WidthRequest="132"
+                      HorizontalOptions="Center">
+                    <Border Stroke="#52FFFFFF"
+                            StrokeThickness="2"
+                            BackgroundColor="#10FFFFFF"
+                            WidthRequest="132"
+                            HeightRequest="132"
+                            HorizontalOptions="Center"
+                            VerticalOptions="Center">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="66" />
+                        </Border.StrokeShape>
+                    </Border>
+
+                    <Border Stroke="#45FF9B5E"
+                            StrokeThickness="1"
+                            BackgroundColor="Transparent"
+                            WidthRequest="106"
+                            HeightRequest="106"
+                            HorizontalOptions="Center"
+                            VerticalOptions="Center">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="53" />
+                        </Border.StrokeShape>
+                    </Border>
+
+                    <Border BackgroundColor="#1FFFFFFF"
+                            StrokeThickness="0"
+                            WidthRequest="84"
+                            HeightRequest="84"
+                            Padding="0"
+                            HorizontalOptions="Center"
+                            VerticalOptions="Center">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="42" />
+                        </Border.StrokeShape>
+
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Grid.Column="0"
+                                   Text="&#xe55f;"
+                                   FontFamily="MaterialIcons"
+                                   FontSize="44"
+                                   TextColor="White"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center" />
+
+                            <VerticalStackLayout Grid.Column="1"
+                                                 Margin="0,20,16,0"
+                                                 Spacing="4"
+                                                 VerticalOptions="Start">
+                                <BoxView WidthRequest="6" HeightRequest="14" CornerRadius="3" Color="#FF9B5E" />
+                                <BoxView WidthRequest="6" HeightRequest="24" CornerRadius="3" Color="#FFB27C" />
+                                <BoxView WidthRequest="6" HeightRequest="18" CornerRadius="3" Color="#FF9B5E" />
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <VerticalStackLayout Spacing="8">
+                    <Label x:Name="AppTitle"
+                           Text="GeoGuide"
+                           FontSize="38"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           HorizontalTextAlignment="Center" />
+
+                    <Label Text="Ban do dan duong va thuyet minh theo vi tri"
+                           FontSize="16"
+                           TextColor="#CCE1FF"
+                           HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+
+                <Border x:Name="ReturningUserPanel"
+                        IsVisible="False"
+                        BackgroundColor="#16FFFFFF"
+                        Padding="18,14"
+                        Stroke="#20FFFFFF"
+                        StrokeThickness="1"
+                        HorizontalOptions="Fill">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="20" />
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="6">
+                        <Label x:Name="ReturningTitle"
+                               Text="Co gi moi"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               TextColor="White" />
+                        <Label x:Name="ReturningMessage"
+                               Text="Noi dung cap nhat se xuat hien tai day."
+                               FontSize="13"
+                               TextColor="#D6E7FF" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border x:Name="LanguageSelectionPanel"
+                        BackgroundColor="#16FFFFFF"
+                        Padding="18,16"
+                        Stroke="#20FFFFFF"
+                        StrokeThickness="1"
+                        HorizontalOptions="Fill">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="20" />
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="14">
+                        <Label x:Name="LanguageSelectorTitle"
+                               Text="Chon ngon ngu"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="White" />
+                        <Grid ColumnDefinitions="*,*"
+                              ColumnSpacing="10">
+                            <Button x:Name="EnglishOptionButton"
+                                    Grid.Column="0"
+                                    Text="English"
+                                    Clicked="OnLanguageOptionClicked"
+                                    CommandParameter="en-US" />
+                            <Button x:Name="VietnameseOptionButton"
+                                    Grid.Column="1"
+                                    Text="Tieng Viet"
+                                    Clicked="OnLanguageOptionClicked"
+                                    CommandParameter="vi-VN" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border x:Name="SkeletonPanel"
+                        IsVisible="False"
+                        Opacity="0"
+                        BackgroundColor="#12FFFFFF"
+                        Padding="18,16"
+                        Stroke="#20FFFFFF"
+                        StrokeThickness="1"
+                        HorizontalOptions="Fill">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="20" />
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="10">
+                        <BoxView HeightRequest="12"
+                                 WidthRequest="160"
+                                 Color="#30FFFFFF"
+                                 HorizontalOptions="Start" />
+                        <BoxView HeightRequest="10"
+                                 WidthRequest="250"
+                                 Color="#24FFFFFF"
+                                 HorizontalOptions="Start" />
+                        <BoxView HeightRequest="10"
+                                 WidthRequest="210"
+                                 Color="#24FFFFFF"
+                                 HorizontalOptions="Start" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <VerticalStackLayout Spacing="10"
+                                     HorizontalOptions="Fill">
+                    <Grid HeightRequest="8"
+                          HorizontalOptions="Fill">
+                        <Border BackgroundColor="#24FFFFFF"
+                                StrokeThickness="0">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="4" />
+                            </Border.StrokeShape>
+                        </Border>
+                        <Border BackgroundColor="#F78A44"
+                                WidthRequest="220"
+                                HorizontalOptions="Start"
+                                StrokeThickness="0">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="4" />
+                            </Border.StrokeShape>
+                        </Border>
+                    </Grid>
+
+                    <Label x:Name="ProgressLabel"
+                           Text=""
+                           FontSize="12"
+                           TextColor="#D6E7FF"
+                           HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+
+                <Button x:Name="ContinueButton"
+                        Text="Bat dau"
+                        IsEnabled="False"
+                        FontSize="16"
+                        FontAttributes="Bold"
+                        BackgroundColor="#F78A44"
+                        TextColor="White"
+                        HorizontalOptions="Fill"
+                        Margin="0,4,0,0"
+                        Clicked="OnContinueClicked" />
+
+                <HorizontalStackLayout x:Name="NavigationLoadingPanel"
+                                       IsVisible="False"
+                                       HorizontalOptions="Center"
+                                       Spacing="8">
+                    <ActivityIndicator x:Name="NavigationLoadingIndicator"
+                                       IsRunning="False"
+                                       Color="#FFD6BC" />
+                    <Label x:Name="NavigationLoadingLabel"
+                           Text="Dang mo ban do..."
+                           FontSize="13"
+                           TextColor="#D6E7FF" />
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+
+            <Label Grid.Row="2"
+                   x:Name="FooterLabel"
+                   Text="DANG TAI DU LIEU POI VA KHOI DONG DINH VI"
+                   FontSize="11"
+                   FontAttributes="Bold"
+                   TextColor="#A6C3E7"
+                   HorizontalTextAlignment="Center"
+                   CharacterSpacing="2" />
+        </Grid>
+    </Grid>
+
+</ContentPage>

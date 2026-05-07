@@ -1,0 +1,45 @@
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="p-4 p-md-5 mb-4 bg-light rounded-3">
+    <div class="container-fluid py-3">
+        <h1 class="display-6 fw-bold">GeoGuide CMS</h1>
+        <p class="col-md-9 fs-5">
+            Nền CMS đã được tách 2 lớp quyền: admin hệ thống quản lý toàn bộ và tenant chỉ quản lý dữ liệu POI nằm trong phạm vi được giao.
+        </p>
+        <div class="d-flex gap-2 flex-wrap">
+            <a class="btn btn-primary" asp-controller="PoisAdmin" asp-action="Index">Quản lý POI</a>
+            <a class="btn btn-outline-secondary" asp-controller="ToursAdmin" asp-action="Index">Quản lý Tour</a>
+            <a class="btn btn-outline-secondary" asp-controller="AnalyticsAdmin" asp-action="Index">Analytics</a>
+            <a class="btn btn-outline-secondary" href="/api/v1/pois">GET /api/v1/pois</a>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h5">Phân quyền sẵn sàng</h2>
+                <p class="mb-0">Role <code>SystemAdmin</code> xem và sửa toàn bộ. Role <code>PoiTenant</code> đăng nhập bằng tài khoản riêng và chỉ thao tác trên POI thuộc tenant của họ.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h5">Bootstrap tài khoản</h2>
+                <p class="mb-0">Khởi động app sẽ migrate database, seed tenant demo, role CMS và 2 tài khoản mặc định để tiếp tục mở rộng các module audio, dịch vụ và nội dung theo tenant.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h5">Phase 1 baseline</h2>
+                <p class="mb-0">CMS đang được mở rộng theo hướng schema nền, tour management, media đa ngôn ngữ và API v1 để mobile có dữ liệu ổn định hơn.</p>
+            </div>
+        </div>
+    </div>
+</div>
