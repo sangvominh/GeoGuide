@@ -1,4 +1,6 @@
 using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using GeoGuide.Cms.Data;
 using GeoGuide.Cms.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -90,7 +92,57 @@ public class QrSessionsAdminController(ApplicationDbContext dbContext, IWebHostE
             return configured.Trim().TrimEnd('/');
         }
 
+        if (IsLoopbackHost(Request.Host.Host) && TryResolveLanBaseUrl(out var lanBaseUrl))
+        {
+            return lanBaseUrl;
+        }
+
         return $"{Request.Scheme}://{Request.Host}";
+    }
+
+    private string BuildBaseUrl(IPAddress ipAddress)
+    {
+        var port = Request.Host.Port is null ? string.Empty : $":{Request.Host.Port}";
+        return $"{Request.Scheme}://{ipAddress}{port}";
+    }
+
+    private bool TryResolveLanBaseUrl(out string baseUrl)
+    {
+        foreach (var networkInterface in NetworkInterface.GetAllNetworkInterfaces())
+        {
+            if (networkInterface.OperationalStatus != OperationalStatus.Up ||
+                networkInterface.NetworkInterfaceType == NetworkInterfaceType.Loopback ||
+                networkInterface.NetworkInterfaceType == NetworkInterfaceType.Tunnel)
+            {
+                continue;
+            }
+
+            var ipAddress = networkInterface
+                .GetIPProperties()
+                .UnicastAddresses
+                .Select(address => address.Address)
+                .FirstOrDefault(address =>
+                    address.AddressFamily == AddressFamily.InterNetwork &&
+                    !IPAddress.IsLoopback(address));
+
+            if (ipAddress is null)
+            {
+                continue;
+            }
+
+            baseUrl = BuildBaseUrl(ipAddress);
+            return true;
+        }
+
+        baseUrl = string.Empty;
+        return false;
+    }
+
+    private static bool IsLoopbackHost(string host)
+    {
+        return string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(host, "127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(host, "::1", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string ResolveDefaultSessionToken()
