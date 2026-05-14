@@ -8,6 +8,8 @@ public class PoiContentDto
 
     public string ContentType { get; init; } = string.Empty;
 
+    public bool IsFallback { get; init; }
+
     public string? AudioUrl { get; init; }
 
     public string? TtsContent { get; init; }
