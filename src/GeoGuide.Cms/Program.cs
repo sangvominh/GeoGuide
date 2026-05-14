@@ -32,6 +32,8 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CmsAccessService>();
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient<IAiAdvisorService, AiAdvisorService>();
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
