@@ -67,6 +67,7 @@ namespace MauiApp1
 
             builder.Services.AddTransient<Pages.SplashPermissionPage>();
             builder.Services.AddTransient<Pages.MainMapPage>();
+            builder.Services.AddTransient<Pages.DemoStatusPage>();
 
 #if DEBUG
     		builder.Logging.AddDebug();

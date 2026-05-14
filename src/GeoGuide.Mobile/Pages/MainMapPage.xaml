@@ -19,7 +19,7 @@
             Padding="20,14,20,12"
             ZIndex="50">
             <VerticalStackLayout Spacing="12">
-                <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
+                <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="12">
                     <VerticalStackLayout Grid.Column="0"
                                          Spacing="0"
                                          VerticalOptions="Center">
@@ -75,6 +75,28 @@
                             <RoundRectangle CornerRadius="21"/>
                         </Border.StrokeShape>
                         <Label
+                            Text="&#xe868;"
+                            FontFamily="MaterialIcons"
+                            FontSize="20"
+                            TextColor="{StaticResource Outline}"
+                            HorizontalOptions="Center"
+                            VerticalOptions="Center">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnDemoStatusTapped"/>
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </Border>
+
+                    <Border Grid.Column="3"
+                            BackgroundColor="#F3F5F8"
+                            WidthRequest="42"
+                            HeightRequest="42"
+                            StrokeThickness="0"
+                            VerticalOptions="Center">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="21"/>
+                        </Border.StrokeShape>
+                        <Label
                             Text="&#xe4f7;"
                             FontFamily="MaterialIcons"
                             FontSize="20"
@@ -87,7 +109,7 @@
                         </Label>
                     </Border>
 
-                    <Border Grid.Column="3"
+                    <Border Grid.Column="4"
                             BackgroundColor="#F3F5F8"
                             WidthRequest="42"
                             HeightRequest="42"

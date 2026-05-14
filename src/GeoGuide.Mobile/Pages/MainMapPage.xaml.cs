@@ -836,6 +836,11 @@ public partial class MainMapPage : ContentPage
         await FilterNearbyPoiAsync(SearchEntry.Text ?? string.Empty);
     }
 
+    private async void OnDemoStatusTapped(object? sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync(AppShell.DemoStatusNavigationRoute);
+    }
+
     private async void OnSettingsTapped(object? sender, EventArgs e)
     {
         var action = await DisplayActionSheetAsync("Cài đặt", "Đóng", null, "Ngôn ngữ ứng dụng", "Giọng đọc TTS", "Vị trí");

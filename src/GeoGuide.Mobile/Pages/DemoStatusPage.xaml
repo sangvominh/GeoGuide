@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MauiApp1.Pages.DemoStatusPage"
+             Title="Reference Demo Status">
+    <ScrollView Padding="20">
+        <VerticalStackLayout Spacing="15">
+            <Label Text="Debug / Demo Status" FontSize="22" FontAttributes="Bold" />
+
+            <Grid ColumnDefinitions="160, *" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="10" ColumnSpacing="10">
+                <Label Grid.Row="0" Grid.Column="0" Text="API Base URL:" FontAttributes="Bold" />
+                <Label Grid.Row="0" Grid.Column="1" x:Name="ApiUrlLabel" />
+
+                <Label Grid.Row="1" Grid.Column="0" Text="Selected Language:" FontAttributes="Bold" />
+                <Label Grid.Row="1" Grid.Column="1" x:Name="LanguageLabel" />
+
+                <Label Grid.Row="2" Grid.Column="0" Text="Startup Sync Status:" FontAttributes="Bold" />
+                <Label Grid.Row="2" Grid.Column="1" x:Name="SyncResultLabel" />
+
+                <Label Grid.Row="3" Grid.Column="0" Text="Local POI Count:" FontAttributes="Bold" />
+                <Label Grid.Row="3" Grid.Column="1" x:Name="PoiCountLabel" />
+
+                <Label Grid.Row="4" Grid.Column="0" Text="Last Nearby/Hotset:" FontAttributes="Bold" />
+                <Label Grid.Row="4" Grid.Column="1" x:Name="HotsetResultLabel" />
+
+                <Label Grid.Row="5" Grid.Column="0" Text="On-Demand Localize:" FontAttributes="Bold" />
+                <Label Grid.Row="5" Grid.Column="1" x:Name="LocalizationStatusLabel" />
+
+                <Label Grid.Row="6" Grid.Column="0" Text="Narration Fallback:" FontAttributes="Bold" />
+                <Label Grid.Row="6" Grid.Column="1" x:Name="FallbackModeLabel" />
+
+                <Label Grid.Row="7" Grid.Column="0" Text="Offline Log Queue:" FontAttributes="Bold" />
+                <Label Grid.Row="7" Grid.Column="1" x:Name="QueueCountLabel" />
+            </Grid>
+
+            <BoxView HeightRequest="1" Color="Gray" Margin="0,10" />
+
+            <Label Text="Actions" FontSize="18" FontAttributes="Bold" />
+            <Button Text="Refresh POIs" Clicked="OnRefreshPoisClicked" />
+            <Button Text="Prepare Hotset" Clicked="OnPrepareHotsetClicked" />
+            <Button Text="Test Narration (Random POI)" Clicked="OnTestNarrationClicked" />
+
+            <Label x:Name="ActionStatusLabel" TextColor="Green" Margin="0,10,0,0" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
