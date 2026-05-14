@@ -1,0 +1,234 @@
+@model GeoGuide.Cms.Models.ReferenceConsoleIndexViewModel
+
+@{
+    ViewData["Title"] = "Reference Workflow Console";
+}
+
+<style>
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.05);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --accent-glow: rgba(59, 130, 246, 0.5);
+    }
+    
+    body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+        color: #f8fafc;
+        min-height: 100vh;
+    }
+
+    /* Override standard bootstrap container text color */
+    .container {
+        color: #f8fafc;
+    }
+
+    h1.display-4 {
+        font-weight: 800;
+        background: -webkit-linear-gradient(45deg, #38bdf8, #818cf8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    .glass-panel {
+        background: var(--glass-bg);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--glass-border);
+        border-radius: 1.5rem;
+        padding: 2rem;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        height: 100%;
+    }
+
+    .glass-panel:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 40px var(--accent-glow);
+    }
+
+    .glass-panel h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        border-bottom: 1px solid var(--glass-border);
+        padding-bottom: 0.75rem;
+    }
+
+    .form-control, .form-select {
+        background: rgba(0,0,0,0.2) !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+        color: #fff !important;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #38bdf8 !important;
+        box-shadow: 0 0 0 0.25rem rgba(56, 189, 248, 0.25) !important;
+    }
+    .form-label {
+        color: #cbd5e1;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+
+    .btn-gradient {
+        background: linear-gradient(45deg, #3b82f6, #6366f1);
+        border: none;
+        color: white;
+        font-weight: 600;
+        padding: 0.5rem 1.5rem;
+        border-radius: 0.5rem;
+        transition: opacity 0.2s;
+    }
+    .btn-gradient:hover {
+        opacity: 0.9;
+        color: white;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        background: rgba(16, 185, 129, 0.2);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .status-box {
+        background: rgba(0,0,0,0.25);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-top: 1.5rem;
+    }
+    .status-box pre {
+        margin: 0;
+        color: #a7f3d0;
+        font-size: 0.85rem;
+        white-space: pre-wrap;
+    }
+    
+    /* Footer and Nav text overrides for dark mode blending */
+    .navbar-brand, .nav-link, .footer, .text-muted {
+        color: rgba(255,255,255,0.8) !important;
+    }
+</style>
+
+<div class="pt-4 pb-5">
+    <h1 class="display-4">Reference Workflow Console</h1>
+    <p class="text-center text-muted mb-5">Explore underlying API flows and offline capabilities</p>
+
+    <div class="row g-4">
+        <!-- Localization Panel -->
+        <div class="col-lg-4 col-md-6">
+            <div class="glass-panel">
+                <h2>🌐 Localization</h2>
+                <form asp-action="WarmupLocalization" method="post">
+                    <div class="mb-3">
+                        <label asp-for="Localization.LanguageCode" class="form-label"></label>
+                        <input asp-for="Localization.LanguageCode" class="form-control" />
+                    </div>
+                    <button type="submit" class="btn btn-gradient w-100 mb-3">Trigger Warmup</button>
+                </form>
+
+                @if (!string.IsNullOrEmpty(Model.Localization.ResultMessage))
+                {
+                    <div class="alert alert-info py-2 px-3 small border-0 bg-info bg-opacity-10 text-info">
+                        @Model.Localization.ResultMessage
+                    </div>
+                }
+
+                @if (Model.Localization.WarmupStatus != null)
+                {
+                    <div class="status-box">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-white-50 small">Last Task Status:</span>
+                            <span class="status-badge">@Model.Localization.WarmupStatus.Status</span>
+                        </div>
+                        <div class="text-white-50 small mb-1">Generated: @Model.Localization.WarmupStatus.GeneratedCount / @Model.Localization.WarmupStatus.RequestedCount</div>
+                        <div class="text-white-50 small mb-1">Skipped: @Model.Localization.WarmupStatus.SkippedCount</div>
+                        <div class="text-white-50 small">Scope: @Model.Localization.WarmupStatus.Scope</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Audio/TTS Panel -->
+        <div class="col-lg-4 col-md-6">
+            <div class="glass-panel">
+                <h2>🎙️ Audio / TTS</h2>
+                <form asp-action="GenerateAudio" method="post">
+                    <div class="mb-3">
+                        <label asp-for="Audio.LanguageCode" class="form-label"></label>
+                        <input asp-for="Audio.LanguageCode" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Audio.TextToSpeak" class="form-label"></label>
+                        <textarea asp-for="Audio.TextToSpeak" class="form-control" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-gradient w-100 mb-3">Generate Demo Audio</button>
+                </form>
+
+                @if (!string.IsNullOrEmpty(Model.Audio.ResultMessage))
+                {
+                    <div class="alert alert-success py-2 px-3 small border-0 bg-success bg-opacity-10 text-success">
+                        @Model.Audio.ResultMessage
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.Audio.AudioUrl))
+                {
+                    <div class="status-box">
+                        <div class="text-white-50 small mb-2">Generated Asset:</div>
+                        <audio controls class="w-100 mb-2" style="height: 36px; border-radius: 4px;">
+                            <source src="@Model.Audio.AudioUrl" type="audio/wav">
+                        </audio>
+                        <div class="text-white-50 small">Provider: @Model.Audio.Provider</div>
+                        <div class="text-white-50 small">URL: <a href="@Model.Audio.AudioUrl" target="_blank" class="text-info text-decoration-none">@Model.Audio.AudioUrl</a></div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Maps Offline Panel -->
+        <div class="col-lg-4 col-md-12">
+            <div class="glass-panel">
+                <h2>🗺️ Maps Offline</h2>
+                
+                <div class="status-box mt-0 mb-4">
+                    <h6 class="text-white mb-3">Manifest Status</h6>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-white-50 small">Map Packs:</span>
+                        <span class="text-white font-monospace">@Model.Maps.PackCount</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-white-50 small">Map Styles:</span>
+                        <span class="text-white font-monospace">@Model.Maps.StyleCount</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-white-50 small">Font Stacks:</span>
+                        <span class="text-white font-monospace">@Model.Maps.FontStackCount</span>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.Maps.ResultMessage))
+                {
+                    <div class="alert @(Model.Maps.PackCount == 0 ? "alert-warning bg-warning text-warning" : "alert-info bg-info text-info") bg-opacity-10 py-2 px-3 small border-0 mb-3">
+                        @Model.Maps.ResultMessage
+                    </div>
+                }
+
+                <div class="mt-4">
+                    <label class="form-label text-white-50">Placement Instructions</label>
+                    <div class="status-box mt-0" style="background: rgba(0,0,0,0.4)">
+                        <pre>@Model.Maps.AssetPlacementInstructions</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
