@@ -2,43 +2,126 @@
     ViewData["Title"] = "Dashboard";
 }
 
-<div class="p-4 p-md-5 mb-4 bg-light rounded-3">
+<div class="p-4 p-md-5 mb-4 bg-light rounded-3 shadow-sm border-0" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
     <div class="container-fluid py-3">
-        <h1 class="display-6 fw-bold">GeoGuide CMS</h1>
-        <p class="col-md-9 fs-5">
+        <h1 class="display-6 fw-bold text-dark">GeoGuide CMS</h1>
+        <p class="col-md-9 fs-5 text-muted">
             Nền CMS đã được tách 2 lớp quyền: admin hệ thống quản lý toàn bộ và tenant chỉ quản lý dữ liệu POI nằm trong phạm vi được giao.
         </p>
-        <div class="d-flex gap-2 flex-wrap">
-            <a class="btn btn-primary" asp-controller="PoisAdmin" asp-action="Index">Quản lý POI</a>
-            <a class="btn btn-outline-secondary" asp-controller="ToursAdmin" asp-action="Index">Quản lý Tour</a>
-            <a class="btn btn-outline-secondary" asp-controller="AnalyticsAdmin" asp-action="Index">Analytics</a>
-            <a class="btn btn-outline-secondary" href="/api/v1/pois">GET /api/v1/pois</a>
+        <div class="d-flex gap-2 flex-wrap mt-4">
+            <a class="btn btn-primary px-4 shadow-sm" asp-controller="PoisAdmin" asp-action="Index">Quản lý POI</a>
+            <a class="btn btn-outline-secondary px-4 shadow-sm" asp-controller="ToursAdmin" asp-action="Index">Quản lý Tour</a>
+            <a class="btn btn-outline-secondary px-4 shadow-sm" asp-controller="AnalyticsAdmin" asp-action="Index">Analytics</a>
+            <a class="btn btn-outline-info px-4 shadow-sm" href="/api/v1/pois">GET /api/v1/pois</a>
+            <a class="btn btn-dark px-4 shadow-sm" href="/system-presentation-standalone.html" target="_blank">
+                <i class="bi bi-display me-2"></i> Reference Presentation
+            </a>
         </div>
     </div>
 </div>
 
-<div class="row g-3">
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100">
+<div class="row g-4 mt-2">
+    <!-- Admin/Owner/RBAC -->
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100" style="transition: transform 0.2s; cursor: pointer;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
             <div class="card-body">
-                <h2 class="h5">Phân quyền sẵn sàng</h2>
-                <p class="mb-0">Role <code>SystemAdmin</code> xem và sửa toàn bộ. Role <code>PoiTenant</code> đăng nhập bằng tài khoản riêng và chỉ thao tác trên POI thuộc tenant của họ.</p>
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-primary bg-opacity-10 text-primary p-2 rounded-circle me-3">
+                        <i class="bi bi-shield-lock-fill fs-4"></i>
+                    </div>
+                    <h2 class="h5 mb-0 fw-bold">Admin/Owner/RBAC</h2>
+                </div>
+                <p class="text-muted mb-0">Role <code>SystemAdmin</code> và <code>PoiTenant</code>. Multi-tenant CMS với schema nền vững chắc.</p>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100">
+    
+    <!-- Content API -->
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100" style="transition: transform 0.2s; cursor: pointer;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
             <div class="card-body">
-                <h2 class="h5">Bootstrap tài khoản</h2>
-                <p class="mb-0">Khởi động app sẽ migrate database, seed tenant demo, role CMS và 2 tài khoản mặc định để tiếp tục mở rộng các module audio, dịch vụ và nội dung theo tenant.</p>
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-success bg-opacity-10 text-success p-2 rounded-circle me-3">
+                        <i class="bi bi-file-earmark-text-fill fs-4"></i>
+                    </div>
+                    <h2 class="h5 mb-0 fw-bold">Content API</h2>
+                </div>
+                <p class="text-muted mb-0">RESTful API <code>/api/v1/pois</code>. Cung cấp dữ liệu POI, Tours cho mobile với định dạng chuẩn.</p>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100">
+    
+    <!-- Audio/TTS -->
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100" style="transition: transform 0.2s; cursor: pointer;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
             <div class="card-body">
-                <h2 class="h5">Phase 1 baseline</h2>
-                <p class="mb-0">CMS đang được mở rộng theo hướng schema nền, tour management, media đa ngôn ngữ và API v1 để mobile có dữ liệu ổn định hơn.</p>
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-info bg-opacity-10 text-info p-2 rounded-circle me-3">
+                        <i class="bi bi-volume-up-fill fs-4"></i>
+                    </div>
+                    <h2 class="h5 mb-0 fw-bold">Audio/TTS</h2>
+                </div>
+                <p class="text-muted mb-0">Hỗ trợ sinh audio từ text qua TTS, tự động phát theo bán kính GPS (trigger radius).</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Localization -->
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100" style="transition: transform 0.2s; cursor: pointer;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-warning bg-opacity-10 text-warning p-2 rounded-circle me-3">
+                        <i class="bi bi-translate fs-4"></i>
+                    </div>
+                    <h2 class="h5 mb-0 fw-bold">Localization</h2>
+                </div>
+                <p class="text-muted mb-0">Hỗ trợ đa ngôn ngữ cho dữ liệu POI và Tour. Cho phép khách du lịch trải nghiệm nội dung theo ngôn ngữ bản địa.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maps Offline -->
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100" style="transition: transform 0.2s; cursor: pointer;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-danger bg-opacity-10 text-danger p-2 rounded-circle me-3">
+                        <i class="bi bi-map-fill fs-4"></i>
+                    </div>
+                    <h2 class="h5 mb-0 fw-bold">Maps Offline</h2>
+                </div>
+                <p class="text-muted mb-0">Bản đồ tải trước, hoạt động không cần kết nối mạng. GPS kích hoạt nội dung khi offline.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Advisor -->
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100" style="transition: transform 0.2s; cursor: pointer;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-secondary bg-opacity-10 text-secondary p-2 rounded-circle me-3">
+                        <i class="bi bi-robot fs-4"></i>
+                    </div>
+                    <h2 class="h5 mb-0 fw-bold">AI Advisor</h2>
+                </div>
+                <p class="text-muted mb-0">Tích hợp AI tạo nội dung thông minh. Cải thiện mô tả POI và gợi ý lịch trình linh hoạt.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mobile Offline -->
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100" style="transition: transform 0.2s; cursor: pointer;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-dark bg-opacity-10 text-dark p-2 rounded-circle me-3">
+                        <i class="bi bi-phone-vibrate-fill fs-4"></i>
+                    </div>
+                    <h2 class="h5 mb-0 fw-bold">Mobile Offline</h2>
+                </div>
+                <p class="text-muted mb-0">Ứng dụng .NET MAUI lưu trữ POI cục bộ. Hoạt động liên tục trong điều kiện mạng yếu hoặc mất mạng.</p>
             </div>
         </div>
     </div>
