@@ -55,6 +55,7 @@ app.UseAuthorization();
 
 app.UseStaticFiles();
 app.MapStaticAssets();
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 app.MapControllerRoute(
     name: "default",
