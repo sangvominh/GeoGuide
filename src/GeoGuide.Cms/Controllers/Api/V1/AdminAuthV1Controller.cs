@@ -6,6 +6,7 @@ using GeoGuide.Cms.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace GeoGuide.Cms.Controllers.Api.V1;
 
@@ -58,6 +59,12 @@ public class AdminAuthV1Controller(
     [Authorize(Roles = CmsRoles.SystemAdmin)]
     public async Task<IActionResult> RegisterOwner([FromBody] RegisterOwnerRequestDto dto)
     {
+        var slugExists = await dbContext.PoiTenants.AnyAsync(t => t.Slug == dto.TenantSlug);
+        if (slugExists)
+        {
+            return Conflict(new { Message = "Tenant slug already exists." });
+        }
+
         var tenant = new PoiTenant
         {
             Id = Guid.NewGuid(),
