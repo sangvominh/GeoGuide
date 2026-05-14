@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using GeoGuide.Cms.Models;
+using GeoGuide.Cms.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,6 +11,11 @@ public class HomeController : Controller
 {
     public IActionResult Index()
     {
+        if (User.IsInRole(CmsRoles.PoiTenant) && !User.IsInRole(CmsRoles.SystemAdmin))
+        {
+            return RedirectToAction("Index", "OwnerPortal");
+        }
+
         return View();
     }
 

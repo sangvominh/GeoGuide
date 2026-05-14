@@ -1,170 +1,124 @@
 @{
-    ViewData["Title"] = "Control Center";
+    ViewData["Title"] = "Admin Dashboard";
 }
 
-<div class="p-4 p-md-5 mb-4 text-white rounded-3 shadow-sm border-0" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
-    <div class="container-fluid py-3">
-        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
-            <div>
-                <p class="text-uppercase fw-semibold text-white-50 mb-2" style="letter-spacing:.08em;">System Overview</p>
-                <h1 class="display-5 fw-bold text-white">GeoGuide Reference Control Center</h1>
-                <p class="col-md-10 fs-5">
-                    Central command for managing reference implementation surfaces: User App, Seller/Owner Portal, Admin Review, and Backend/API Modules.
-                </p>
-            </div>
-            <a class="btn btn-light px-4 shadow-sm text-primary fw-bold" href="/system-presentation-standalone.html" target="_blank" rel="noopener">
-                View Presentation
-            </a>
+<div class="mb-4">
+    <p class="text-uppercase text-muted fw-semibold mb-1" style="letter-spacing:.08em;">Admin workspace</p>
+    <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+        <div>
+            <h1 class="display-6 fw-bold mb-2">GeoGuide Admin</h1>
+            <p class="text-muted fs-5 mb-0">
+                Quan tri noi dung, duyet POI cua seller, tour va analytics. Seller va mobile la cac mat san pham rieng.
+            </p>
         </div>
-        
-        <div class="d-flex gap-2 flex-wrap mt-4 bg-white bg-opacity-10 p-3 rounded">
-            <span class="text-white align-self-center me-2 fw-bold">Legacy Management:</span>
-            <a class="btn btn-light btn-sm shadow-sm" asp-controller="PoisAdmin" asp-action="Index">POIs</a>
-            <a class="btn btn-light btn-sm shadow-sm" asp-controller="ToursAdmin" asp-action="Index">Tours</a>
-            <a class="btn btn-light btn-sm shadow-sm" asp-controller="AnalyticsAdmin" asp-action="Index">Analytics</a>
+        <div class="d-flex gap-2 flex-wrap">
+            <a class="btn btn-primary" asp-controller="PoisAdmin" asp-action="Index">Quan ly POI</a>
+            <a class="btn btn-outline-danger" asp-controller="AdminReview" asp-action="Index">Duyet seller POI</a>
         </div>
     </div>
 </div>
 
-<h3 class="mb-4 text-secondary border-bottom pb-2">Launch Pads & Role Surfaces</h3>
-<div class="row g-4 mb-5">
-    <div class="col-md-3">
-        <div class="card shadow-sm h-100 border-primary border-top border-3 role-surface-card">
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0">
             <div class="card-body">
-                <h5 class="card-title text-primary fw-bold">Seller / Owner</h5>
-                <p class="card-text text-muted small">Manage POIs as a business owner.</p>
+                <span class="badge bg-dark mb-3">Admin</span>
+                <h2 class="h5 fw-bold">Back Office</h2>
+                <p class="text-muted">Quan tri POI, tour, noi dung da ngon ngu va dashboard analytics.</p>
                 <div class="d-grid gap-2">
-                    <a href="/OwnerPortal" class="btn btn-outline-primary btn-sm">Seller Portal</a>
-                    <a href="/OwnerPortal/Register" class="btn btn-outline-secondary btn-sm">Register Seller</a>
+                    <a class="btn btn-outline-primary btn-sm" asp-controller="PoisAdmin" asp-action="Index">POI Admin</a>
+                    <a class="btn btn-outline-primary btn-sm" asp-controller="ToursAdmin" asp-action="Index">Tour Admin</a>
+                    <a class="btn btn-outline-primary btn-sm" asp-controller="AnalyticsAdmin" asp-action="Index">Analytics</a>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card shadow-sm h-100 border-danger border-top border-3 role-surface-card">
+
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0">
             <div class="card-body">
-                <h5 class="card-title text-danger fw-bold">Admin</h5>
-                <p class="card-text text-muted small">Review submissions and monitor system.</p>
+                <span class="badge bg-danger mb-3">Review queue</span>
+                <h2 class="h5 fw-bold">Seller Submissions</h2>
+                <p class="text-muted">Seller gui quan/diem den len he thong, admin duyet roi moi hien tren mobile.</p>
                 <div class="d-grid gap-2">
-                    <a href="/AdminReview" class="btn btn-outline-danger btn-sm">Admin Review</a>
-                    <a href="/ReferenceConsole" class="btn btn-outline-secondary btn-sm">Workflow Console</a>
+                    <a class="btn btn-outline-danger btn-sm" asp-controller="AdminReview" asp-action="Index">Mo hang doi duyet</a>
+                    <a class="btn btn-outline-secondary btn-sm" asp-controller="OwnerPortal" asp-action="Index">Xem Seller Portal</a>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card shadow-sm h-100 border-success border-top border-3 role-surface-card">
+
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0">
             <div class="card-body">
-                <h5 class="card-title text-success fw-bold">AI / Assistant</h5>
-                <p class="card-text text-muted small">AI tools and content enhancement.</p>
+                <span class="badge bg-success mb-3">Product tools</span>
+                <h2 class="h5 fw-bold">Reference Workflows</h2>
+                <p class="text-muted">Cong cu demo rieng cho AI, localization, TTS/audio va offline map manifest.</p>
                 <div class="d-grid gap-2">
-                    <a href="/AiAdvisor" class="btn btn-outline-success btn-sm">AI Advisor</a>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card shadow-sm h-100 border-info border-top border-3 role-surface-card">
-            <div class="card-body">
-                <h5 class="card-title text-info fw-bold">User App</h5>
-                <p class="card-text text-muted small">Mobile client end-user experience.</p>
-                <div class="d-grid gap-2">
-                    <a href="/api/v1/poi/load-all?lang=en" class="btn btn-outline-info btn-sm" target="_blank">View Raw POI Feed</a>
+                    <a class="btn btn-outline-success btn-sm" asp-controller="AiAdvisor" asp-action="Index">AI Advisor</a>
+                    <a class="btn btn-outline-success btn-sm" asp-controller="ReferenceConsole" asp-action="Index">Workflow Console</a>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<h3 class="mb-4 text-secondary border-bottom pb-2">Module Status & Endpoints (Backend/API)</h3>
 <div class="row g-4">
-    <div class="col-lg-3 col-md-4 col-sm-6">
-        <div class="card shadow-sm h-100 bg-light module-status-card">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="mb-0 fw-bold text-dark">Content API</h6>
-                    <span class="badge bg-success rounded-pill">Online</span>
+                <h2 class="h5 fw-bold mb-3">Product Surfaces</h2>
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Surface</th>
+                                <th>Who uses it</th>
+                                <th>Where</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Admin CMS</td>
+                                <td>System admin</td>
+                                <td><code>/</code>, <code>/PoisAdmin</code>, <code>/AdminReview</code></td>
+                                <td><span class="badge bg-success">Visible UI</span></td>
+                            </tr>
+                            <tr>
+                                <td>Seller Portal</td>
+                                <td>Business owner / seller</td>
+                                <td><code>/OwnerPortal</code></td>
+                                <td><span class="badge bg-success">Visible UI</span></td>
+                            </tr>
+                            <tr>
+                                <td>Mobile App</td>
+                                <td>Tourist / end user</td>
+                                <td><code>GeoGuide.Mobile.exe</code></td>
+                                <td><span class="badge bg-success">Native app</span></td>
+                            </tr>
+                            <tr>
+                                <td>Reference APIs</td>
+                                <td>Mobile + demo tools</td>
+                                <td><code>/api/v1/...</code></td>
+                                <td><span class="badge bg-primary">Backend</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-                <p class="text-muted small mb-3">Core data serving</p>
-                <a href="/api/v1/poi/load-all?lang=en" class="text-decoration-none small text-truncate d-block" target="_blank">/api/v1/poi/load-all?lang=en</a>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-lg-3 col-md-4 col-sm-6">
-        <div class="card shadow-sm h-100 bg-light module-status-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="mb-0 fw-bold text-dark">Localization</h6>
-                    <span class="badge bg-success rounded-pill">Online</span>
-                </div>
-                <p class="text-muted small mb-3">Warmup & Translation</p>
-                <span class="text-decoration-none small text-truncate d-block text-muted">/api/v1/localizations/warmup</span>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-3 col-md-4 col-sm-6">
-        <div class="card shadow-sm h-100 bg-light module-status-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="mb-0 fw-bold text-dark">Audio/TTS</h6>
-                    <span class="badge bg-success rounded-pill">Online</span>
-                </div>
-                <p class="text-muted small mb-3">Narration fallback</p>
-                <a href="/api/v1/audio/voices" class="text-decoration-none small text-truncate d-block" target="_blank">/api/v1/audio/voices</a>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-3 col-md-4 col-sm-6">
-        <div class="card shadow-sm h-100 bg-light module-status-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="mb-0 fw-bold text-dark">Maps Offline</h6>
-                    <span class="badge bg-success rounded-pill">Online</span>
-                </div>
-                <p class="text-muted small mb-3">Manifest & static assets</p>
-                <a href="/api/v1/maps/offline-manifest" class="text-decoration-none small text-truncate d-block" target="_blank">/api/v1/maps/offline-manifest</a>
             </div>
         </div>
     </div>
 
-    <div class="col-lg-3 col-md-4 col-sm-6">
-        <div class="card shadow-sm h-100 bg-light module-status-card">
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="mb-0 fw-bold text-dark">Owner Portal</h6>
-                    <span class="badge bg-success rounded-pill">Online</span>
+                <h2 class="h5 fw-bold mb-3">Quick Checks</h2>
+                <div class="d-grid gap-2">
+                    <a class="btn btn-outline-secondary btn-sm" href="/api/v1/poi/load-all?lang=en" target="_blank">POI feed</a>
+                    <a class="btn btn-outline-secondary btn-sm" href="/api/v1/audio/voices" target="_blank">Audio voices</a>
+                    <a class="btn btn-outline-secondary btn-sm" href="/api/v1/maps/offline-manifest" target="_blank">Maps manifest</a>
                 </div>
-                <p class="text-muted small mb-3">Self-service POIs</p>
-                <span class="text-decoration-none small text-truncate d-block text-muted">/OwnerPortal</span>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-3 col-md-4 col-sm-6">
-        <div class="card shadow-sm h-100 bg-light module-status-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="mb-0 fw-bold text-dark">AI Advisor</h6>
-                    <span class="badge bg-success rounded-pill">Online</span>
-                </div>
-                <p class="text-muted small mb-3">Enhancement services</p>
-                <span class="text-decoration-none small text-truncate d-block text-muted">/AiAdvisor</span>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-3 col-md-4 col-sm-6">
-        <div class="card shadow-sm h-100 bg-light module-status-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="mb-0 fw-bold text-dark">Mobile Offline</h6>
-                    <span class="badge bg-success rounded-pill">Online</span>
-                </div>
-                <p class="text-muted small mb-3">Sync readiness</p>
-                <span class="text-decoration-none small text-truncate d-block text-muted">App sync protocol</span>
             </div>
         </div>
     </div>

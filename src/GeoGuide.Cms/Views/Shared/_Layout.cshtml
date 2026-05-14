@@ -1,4 +1,5 @@
 @using GeoGuide.Cms.Models
+@using GeoGuide.Cms.Security
 @using Microsoft.AspNetCore.Identity
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
@@ -18,7 +19,7 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-dark bg-dark mb-4">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-controller="Home" asp-action="Index">GeoGuide CMS</a>
+                <a class="navbar-brand" asp-controller="Home" asp-action="Index">GeoGuide</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
@@ -26,20 +27,64 @@
                     <ul class="navbar-nav flex-grow-1">
                         @if (SignInManager.IsSignedIn(User))
                         {
+                            var isAdmin = User.IsInRole(CmsRoles.SystemAdmin);
+                            var isSeller = User.IsInRole(CmsRoles.PoiTenant);
+
+                            @if (isAdmin)
+                            {
+                                <li class="nav-item">
+                                    <span class="nav-link disabled text-uppercase small text-white-50">Admin</span>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-white" asp-controller="Home" asp-action="Index">Dashboard</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-white" asp-controller="PoisAdmin" asp-action="Index">POIs</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-white" asp-controller="AdminReview" asp-action="Index">Review</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-white" asp-controller="ToursAdmin" asp-action="Index">Tours</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-white" asp-controller="AnalyticsAdmin" asp-action="Index">Analytics</a>
+                                </li>
+                            }
+
+                            @if (isSeller && !isAdmin)
+                            {
+                                <li class="nav-item">
+                                    <span class="nav-link disabled text-uppercase small text-white-50">Seller</span>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-white" asp-controller="OwnerPortal" asp-action="Index">My Portal</a>
+                                </li>
+                            }
+                            else if (isAdmin)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-white" asp-controller="OwnerPortal" asp-action="Index">Seller Portal</a>
+                                </li>
+                            }
+
+                            @if (isAdmin)
+                            {
+                                <li class="nav-item">
+                                    <span class="nav-link disabled text-uppercase small text-white-50">Tools</span>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-white" asp-controller="ReferenceConsole" asp-action="Index">Workflow</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-white" asp-controller="AiAdvisor" asp-action="Index">AI Advisor</a>
+                                </li>
+                            }
+                        }
+                        else
+                        {
                             <li class="nav-item">
-                                <a class="nav-link text-white" asp-controller="Home" asp-action="Index">Dashboard</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white" asp-controller="PoisAdmin" asp-action="Index">POIs</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white" asp-controller="ToursAdmin" asp-action="Index">Tours</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white" asp-controller="AnalyticsAdmin" asp-action="Index">Analytics</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-white" href="/api/v1/pois">API v1</a>
+                                <a class="nav-link text-white" asp-controller="OwnerPortal" asp-action="Register">Register Seller</a>
                             </li>
                         }
                     </ul>
