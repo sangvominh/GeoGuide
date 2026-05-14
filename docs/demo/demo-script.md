@@ -4,127 +4,99 @@
 
 Show one integrated flow where CMS manages a POI, mobile consumes it, narration is triggered, and playback logging reaches the backend.
 
+## What changed by role
+
+- **User App**: Mobile UI with debug panel, map interface, sync status, offline cache fallback, and manual narration playback.
+- **Seller/Owner**: Seller portal to register, submit POIs, check status of submissions, and use AI Advisor to enhance POI descriptions.
+- **Admin**: Control center dashboard, review and approve/reject POI submissions, view system status.
+- **Backend/API**: Authentication, role-based access control (RBAC), POI CRUD, fake AI Advisor endpoint (local demo fallback), and Reference Workflow Console for Localization/Audio/Map API simulation.
+- **Demo limitations**: GPS trigger is simulated or manual. AI Advisor uses a deterministic local fallback if no Gemini key is provided. Reference Workflow Consoles simulate third-party service responses.
+
+## UI-Complete vs API/Placeholder
+
+- **UI-Complete**: Admin Control Center, Seller Portal, Admin Review Submission, Mobile Debug Panel, AI Advisor UI form, Reference Workflow Console UI.
+- **API/Placeholder**: AI Advisor real processing (has local fallback), Audio/TTS generation (simulated in console), Offline Map tile packaging (simulated in console), Localization translation (simulated in console).
+
 ## Demo Setup
 
-- Prepare at least one active POI in the database and CMS.
-- Confirm the POI has valid latitude, longitude, `triggerRadiusMeters`, `ttsScript`, and `isActive = true`.
 - Confirm backend API is reachable by the mobile app.
 - Confirm the mobile app has location permission if GPS trigger will be demonstrated.
 
-## Recommended Demo POI
-
-- Use one centrally located POI with a short narration asset.
-- Keep `triggerRadiusMeters` between `50` and `100` for stable demo behavior.
-- Keep one backup POI available in case the first record is edited incorrectly.
-
 ## Demo Sequence
 
-### 1. Show Reference Architecture
+### 1. Login Admin
 
 Say:
-
-> Before diving into the live system, let's look at the target reference architecture and how it aligns with our .NET stack.
+> First, let's log in to the CMS as an administrator to see the full control center.
 
 Do:
+1. Open the CMS login page `/Identity/Account/Login`.
+2. Log in with the SystemAdmin credentials.
 
-1. Open the CMS Dashboard.
-2. Click the **"Reference Presentation"** link in the top banner to open `/system-presentation-standalone.html`.
-3. Briefly walk through the key modules: Content, Audio, Localization, Maps, RBAC, AI, and Mobile Offline.
-4. Explain that our implementation uses .NET/PostgreSQL/MAUI instead of FastAPI/MongoDB/React.
-
-### 2. Show CMS Data
+### 2. Open Dashboard/Control Center
 
 Say:
-
-> The CMS is the source of truth for POI content. This record follows the same contract used by the API and mobile app.
+> This is the Admin Control Center, which serves as the reference architecture dashboard.
 
 Do:
+1. Navigate to the Admin Control Center (`/`).
+2. Briefly walk through the hero section, module status cards, and links to portals.
 
-1. Open the POI list in CMS.
-2. Open one POI detail.
-3. Highlight name, coordinates, trigger radius, category, narration field, and active status.
-
-### 2. Show API Consumption
+### 3. Register Seller
 
 Say:
-
-> The mobile app reads the same POI data from the backend API, without custom remapping for the demo.
+> Now, we will simulate a local business owner registering on the platform to add their Point of Interest.
 
 Do:
+1. Click on "Seller / Owner Portal".
+2. Register a new user or log in as an existing Seller.
 
-1. Open or call `GET /api/pois`.
-2. Show that the POI appears with the shared field names.
-3. If available, open `GET /api/pois/{id}` for the same record.
-
-### 3. Show Mobile Map
+### 4. Seller Submits POI
 
 Say:
-
-> The mobile app loads nearby POIs from the API and keeps a local cache for offline fallback.
+> The seller can submit a new POI and use the AI Advisor to improve their content.
 
 Do:
+1. Go to "Submit New POI" in the Seller Portal.
+2. Fill out basic details.
+3. Use the **AI Advisor** to enhance the POI description. Point out the metadata and local demo fallback status.
+4. Submit the POI. Show that its status is "Pending".
 
-1. Open the mobile map screen.
-2. Show the target POI on the map.
-3. Optionally note that the record was fetched from the backend and cached locally.
-
-### 4. Show Playback
+### 5. Admin Approves
 
 Say:
-
-> Narration can be started manually, and if the GPS scenario is stable, it can also trigger by radius.
+> The submitted POI needs approval from a system administrator before it goes live.
 
 Do:
+1. Log out and log back in as SystemAdmin (or use a secondary browser window).
+2. Go to the **Admin Review** portal.
+3. Review the pending POI submission and click "Approve".
 
-1. Preferred path: tap the POI and start playback manually.
-2. Optional path: move into the trigger radius and show automatic playback.
-3. Keep the TTS narration short and audible enough to confirm success.
-
-### 5. Show Playback Logging
+### 6. Mobile Sync / Offline Narrative
 
 Say:
-
-> After narration finishes, the mobile app posts a playback event back to the backend.
+> On the mobile side, the app will sync the newly approved POI so users can see it on the map and hear the narration.
 
 Do:
+1. Open the Mobile App (MAUI).
+2. Open the **Debug/Demo Status Panel**.
+3. Tap "Sync POIs" to fetch the new POI from the backend.
+4. Close the panel, find the POI on the map.
+5. Tap the POI and manually trigger the playback. Explain that GPS triggers work similarly when moving into the radius.
 
-1. Show the request payload for `POST /api/logs/playback` or a backend confirmation.
-2. Confirm `poiId`, `playedAt`, `triggerType`, `durationSeconds`, and `deviceId` are present.
-3. If possible, show the saved record in the database or admin view.
-
-## Fallback Script
-
-### If GPS Is Unstable
+### 7. AI Advisor / Audio / Localization / Map Console
 
 Say:
-
-> GPS accuracy is unstable in this environment, so we are using the supported manual playback path for the MVP.
-
-Do:
-
-1. Use manual POI selection.
-2. Continue with playback log submission.
-
-### If API Is Temporarily Unavailable
-
-Say:
-
-> The app has already cached POIs locally, so the user can still browse and play a previously synced record.
+> Finally, let's look at the Reference Workflow Console. These screens demonstrate how backend systems handle offline map tiles, audio processing, and translations.
 
 Do:
-
-1. Show cached POI visibility in mobile.
-2. If logging cannot be posted live, explain that the backend endpoint is part of the integrated target path.
+1. In the CMS Admin dashboard, click on "Reference Workflow Console".
+2. Walk through the mock interfaces for Localization, Audio/TTS, and Offline Maps.
+3. Explain that these are UI-complete placeholder interfaces meant to represent integration with third-party providers.
 
 ## Demo Exit Criteria
 
-- One POI is shown consistently across CMS, API, and mobile.
-- One narration action succeeds.
-- One playback log event is demonstrated or visibly accepted by the backend.
-
-## Quick Verification Checklist
-
-- [ ] `/system-presentation-standalone.html` loads from the dashboard.
-- [ ] `GET /api/pois` returns a valid JSON array of POIs.
-- [ ] `GET /api/pois/{id}` returns the expected POI detail view.
-- [ ] `POST /api/logs/playback` accepts the correct payload.
+- A new POI is created via the Seller portal and improved via AI Advisor.
+- The Admin successfully approves the POI.
+- The Mobile app syncs the new POI and plays back narration.
+- Workflow Consoles are shown to illustrate background processes.

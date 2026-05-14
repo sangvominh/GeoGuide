@@ -24,3 +24,8 @@ This document maps the abstract reference architecture concepts presented in the
 - **No Swift/Kotlin:** The mobile application is built using .NET MAUI for cross-platform support.
 
 The implemented architecture prioritizes a unified .NET stack to reduce context switching between backend and mobile development, ensuring rapid iteration while maintaining all functional capabilities shown in the reference presentation.
+
+## UI-Complete vs API/Placeholder
+
+- **UI-Complete**: Admin Control Center, Seller Portal, Admin Review Submission, Mobile Debug Panel, AI Advisor UI form, Reference Workflow Console UI.
+- **API/Placeholder**: AI Advisor real processing (has local fallback), Audio/TTS generation (simulated in console), Offline Map tile packaging (simulated in console), Localization translation (simulated in console).
