@@ -32,5 +32,13 @@ public class PoiDto
 
     public DateTimeOffset UpdatedAt { get; init; }
 
+    public double? DistanceMeters { get; init; }
+
+    public string RequestedLanguage { get; init; } = string.Empty;
+
+    public string ResolvedLanguage { get; init; } = string.Empty;
+
+    public IReadOnlyList<string> FallbackChain { get; init; } = [];
+
     public IReadOnlyList<PoiContentDto> Contents { get; init; } = [];
 }
