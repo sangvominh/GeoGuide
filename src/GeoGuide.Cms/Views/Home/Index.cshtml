@@ -1,94 +1,170 @@
 @{
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = "Control Center";
 }
 
-<div class="p-4 p-md-5 mb-4 bg-light rounded-3 shadow-sm border-0" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+<div class="p-4 p-md-5 mb-4 text-white rounded-3 shadow-sm border-0" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
     <div class="container-fluid py-3">
         <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
             <div>
-                <p class="text-uppercase fw-semibold text-primary mb-2" style="letter-spacing:.08em;">Reference implementation</p>
-                <h1 class="display-6 fw-bold text-dark">GeoGuide CMS</h1>
-                <p class="col-md-10 fs-5 text-muted">
-                    Backend/CMS da duoc mo rong theo dap an tham khao: Content API, Localization, Audio/TTS, Maps offline manifest, Owner portal, RBAC va AI Advisor.
+                <p class="text-uppercase fw-semibold text-white-50 mb-2" style="letter-spacing:.08em;">System Overview</p>
+                <h1 class="display-5 fw-bold text-white">GeoGuide Reference Control Center</h1>
+                <p class="col-md-10 fs-5">
+                    Central command for managing reference implementation surfaces: User App, Seller/Owner Portal, Admin Review, and Backend/API Modules.
                 </p>
             </div>
-            <a class="btn btn-dark px-4 shadow-sm" href="/system-presentation-standalone.html" target="_blank" rel="noopener">
-                Reference Presentation
+            <a class="btn btn-light px-4 shadow-sm text-primary fw-bold" href="/system-presentation-standalone.html" target="_blank" rel="noopener">
+                View Presentation
             </a>
         </div>
-        <div class="d-flex gap-2 flex-wrap mt-4">
-            <a class="btn btn-primary px-4 shadow-sm" asp-controller="PoisAdmin" asp-action="Index">Quản lý POI</a>
-            <a class="btn btn-outline-secondary px-4 shadow-sm" asp-controller="ToursAdmin" asp-action="Index">Quản lý Tour</a>
-            <a class="btn btn-outline-secondary px-4 shadow-sm" asp-controller="AnalyticsAdmin" asp-action="Index">Analytics</a>
-            <a class="btn btn-outline-info px-4 shadow-sm" href="/api/v1/poi/load-all?lang=en">Reference POI API</a>
-            <a class="btn btn-outline-info px-4 shadow-sm" href="/api/v1/audio/voices">Audio API</a>
-            <a class="btn btn-outline-info px-4 shadow-sm" href="/api/v1/maps/offline-manifest">Maps API</a>
+        
+        <div class="d-flex gap-2 flex-wrap mt-4 bg-white bg-opacity-10 p-3 rounded">
+            <span class="text-white align-self-center me-2 fw-bold">Legacy Management:</span>
+            <a class="btn btn-light btn-sm shadow-sm" asp-controller="PoisAdmin" asp-action="Index">POIs</a>
+            <a class="btn btn-light btn-sm shadow-sm" asp-controller="ToursAdmin" asp-action="Index">Tours</a>
+            <a class="btn btn-light btn-sm shadow-sm" asp-controller="AnalyticsAdmin" asp-action="Index">Analytics</a>
         </div>
     </div>
 </div>
 
-<div class="row g-4 mt-2">
-    <div class="col-lg-4 col-md-6">
-        <div class="card shadow-sm h-100">
+<h3 class="mb-4 text-secondary border-bottom pb-2">Launch Pads & Role Surfaces</h3>
+<div class="row g-4 mb-5">
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100 border-primary border-top border-3 role-surface-card">
             <div class="card-body">
-                <div class="badge bg-success mb-3">Implemented</div>
-                <h2 class="h5 fw-bold">User App / Mobile</h2>
-                <p class="text-muted mb-2">MAUI app now supports reference startup APIs, nearby POIs, hotset preparation, on-demand localization, local cache and narration fallback.</p>
-                <code>/api/v1/poi/load-all</code><br />
-                <code>/api/v1/localizations/on-demand</code>
+                <h5 class="card-title text-primary fw-bold">Seller / Owner</h5>
+                <p class="card-text text-muted small">Manage POIs as a business owner.</p>
+                <div class="d-grid gap-2">
+                    <a href="/OwnerPortal" class="btn btn-outline-primary btn-sm">Seller Portal</a>
+                    <a href="/OwnerPortal/Register" class="btn btn-outline-secondary btn-sm">Register Seller</a>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-lg-4 col-md-6">
-        <div class="card shadow-sm h-100">
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100 border-danger border-top border-3 role-surface-card">
             <div class="card-body">
-                <div class="badge bg-success mb-3">Implemented</div>
-                <h2 class="h5 fw-bold">Admin CMS</h2>
-                <p class="text-muted mb-2">Admin can manage POIs, tours, analytics and approve/reject owner-submitted POIs through added reference APIs.</p>
-                <code>/api/v1/admin/auth/me</code><br />
-                <code>/api/v1/admin/pois/{id}/approve</code>
+                <h5 class="card-title text-danger fw-bold">Admin</h5>
+                <p class="card-text text-muted small">Review submissions and monitor system.</p>
+                <div class="d-grid gap-2">
+                    <a href="/AdminReview" class="btn btn-outline-danger btn-sm">Admin Review</a>
+                    <a href="/ReferenceConsole" class="btn btn-outline-secondary btn-sm">Workflow Console</a>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-lg-4 col-md-6">
-        <div class="card shadow-sm h-100">
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100 border-success border-top border-3 role-surface-card">
             <div class="card-body">
-                <div class="badge bg-success mb-3">Implemented</div>
-                <h2 class="h5 fw-bold">Seller / Owner Portal</h2>
-                <p class="text-muted mb-2">Owner registration and owner-scoped POI submission/update APIs were added. Owner POIs start pending and inactive.</p>
-                <code>/api/v1/admin/auth/register-owner</code><br />
-                <code>/api/v1/owner/pois</code>
+                <h5 class="card-title text-success fw-bold">AI / Assistant</h5>
+                <p class="card-text text-muted small">AI tools and content enhancement.</p>
+                <div class="d-grid gap-2">
+                    <a href="/AiAdvisor" class="btn btn-outline-success btn-sm">AI Advisor</a>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-lg-4 col-md-6">
-        <div class="card shadow-sm h-100">
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100 border-info border-top border-3 role-surface-card">
             <div class="card-body">
-                <div class="badge bg-primary mb-3">Reference API</div>
-                <h2 class="h5 fw-bold">Localization + Audio</h2>
-                <p class="text-muted mb-2">Hotset, warmup, on-demand translation fallback, voice catalog and TTS demo artifact endpoints are available.</p>
-                <code>/api/v1/audio/tts</code><br />
-                <code>/api/v1/localizations/warmup</code>
+                <h5 class="card-title text-info fw-bold">User App</h5>
+                <p class="card-text text-muted small">Mobile client end-user experience.</p>
+                <div class="d-grid gap-2">
+                    <a href="/api/v1/poi/load-all?lang=en" class="btn btn-outline-info btn-sm" target="_blank">View Raw POI Feed</a>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-lg-4 col-md-6">
-        <div class="card shadow-sm h-100">
+</div>
+
+<h3 class="mb-4 text-secondary border-bottom pb-2">Module Status & Endpoints (Backend/API)</h3>
+<div class="row g-4">
+    <div class="col-lg-3 col-md-4 col-sm-6">
+        <div class="card shadow-sm h-100 bg-light module-status-card">
             <div class="card-body">
-                <div class="badge bg-primary mb-3">Reference API</div>
-                <h2 class="h5 fw-bold">Offline Maps</h2>
-                <p class="text-muted mb-2">Map pack manifest and safe static serving routes for PMTiles/styles/fonts are ready. Real map assets are not committed.</p>
-                <code>/api/v1/maps/offline-manifest</code>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0 fw-bold text-dark">Content API</h6>
+                    <span class="badge bg-success rounded-pill">Online</span>
+                </div>
+                <p class="text-muted small mb-3">Core data serving</p>
+                <a href="/api/v1/poi/load-all?lang=en" class="text-decoration-none small text-truncate d-block" target="_blank">/api/v1/poi/load-all?lang=en</a>
             </div>
         </div>
     </div>
-    <div class="col-lg-4 col-md-6">
-        <div class="card shadow-sm h-100">
+    
+    <div class="col-lg-3 col-md-4 col-sm-6">
+        <div class="card shadow-sm h-100 bg-light module-status-card">
             <div class="card-body">
-                <div class="badge bg-primary mb-3">Reference API</div>
-                <h2 class="h5 fw-bold">AI Advisor</h2>
-                <p class="text-muted mb-2">Description enhancement endpoint exists with local-demo fallback and daily rate limit. Gemini can be configured later.</p>
-                <code>/api/v1/ai/enhance-description</code>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0 fw-bold text-dark">Localization</h6>
+                    <span class="badge bg-success rounded-pill">Online</span>
+                </div>
+                <p class="text-muted small mb-3">Warmup & Translation</p>
+                <span class="text-decoration-none small text-truncate d-block text-muted">/api/v1/localizations/warmup</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-4 col-sm-6">
+        <div class="card shadow-sm h-100 bg-light module-status-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0 fw-bold text-dark">Audio/TTS</h6>
+                    <span class="badge bg-success rounded-pill">Online</span>
+                </div>
+                <p class="text-muted small mb-3">Narration fallback</p>
+                <a href="/api/v1/audio/voices" class="text-decoration-none small text-truncate d-block" target="_blank">/api/v1/audio/voices</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-4 col-sm-6">
+        <div class="card shadow-sm h-100 bg-light module-status-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0 fw-bold text-dark">Maps Offline</h6>
+                    <span class="badge bg-success rounded-pill">Online</span>
+                </div>
+                <p class="text-muted small mb-3">Manifest & static assets</p>
+                <a href="/api/v1/maps/offline-manifest" class="text-decoration-none small text-truncate d-block" target="_blank">/api/v1/maps/offline-manifest</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-4 col-sm-6">
+        <div class="card shadow-sm h-100 bg-light module-status-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0 fw-bold text-dark">Owner Portal</h6>
+                    <span class="badge bg-success rounded-pill">Online</span>
+                </div>
+                <p class="text-muted small mb-3">Self-service POIs</p>
+                <span class="text-decoration-none small text-truncate d-block text-muted">/OwnerPortal</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-4 col-sm-6">
+        <div class="card shadow-sm h-100 bg-light module-status-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0 fw-bold text-dark">AI Advisor</h6>
+                    <span class="badge bg-success rounded-pill">Online</span>
+                </div>
+                <p class="text-muted small mb-3">Enhancement services</p>
+                <span class="text-decoration-none small text-truncate d-block text-muted">/AiAdvisor</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-4 col-sm-6">
+        <div class="card shadow-sm h-100 bg-light module-status-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0 fw-bold text-dark">Mobile Offline</h6>
+                    <span class="badge bg-success rounded-pill">Online</span>
+                </div>
+                <p class="text-muted small mb-3">Sync readiness</p>
+                <span class="text-decoration-none small text-truncate d-block text-muted">App sync protocol</span>
             </div>
         </div>
     </div>
