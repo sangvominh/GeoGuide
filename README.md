@@ -7,7 +7,7 @@ Repo nay duoc to chuc lai de de hieu va de van hanh hon.
 - `src/GeoGuide.Mobile/`: ung dung mobile .NET MAUI
 - `src/GeoGuide.Cms/`: CMS web admin va backend API
 - `docs/product/`: PRD va acceptance criteria
-- `docs/architecture/`: architecture, ERD, workflow
+- `docs/architecture/`: architecture, ERD, workflow, va reference alignment
 - `docs/database/`: script va tai lieu database
 - `docs/demo/`: demo script
 - `docs/internal/`: tai lieu phuc vu dot song song truoc day
