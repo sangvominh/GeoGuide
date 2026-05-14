@@ -1,0 +1,117 @@
+@model GeoGuide.Cms.Models.AdminReviewIndexViewModel
+
+@{
+    ViewData["Title"] = "Admin Review";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h3 mb-1">Admin Review Portal</h1>
+        <p class="text-muted mb-0">Review pending POI submissions from owners/tenants.</p>
+    </div>
+</div>
+
+<h4 class="mb-3">Pending Approvals</h4>
+<div class="card shadow-sm mb-4">
+    <div class="table-responsive">
+        <table class="table table-striped align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>POI Name</th>
+                    <th>Tenant</th>
+                    <th>Category</th>
+                    <th>Map/Location</th>
+                    <th>Updated At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.PendingPois.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">No pending POIs to review.</td>
+                    </tr>
+                }
+                @foreach (var poi in Model.PendingPois)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">@poi.Name</div>
+                        </td>
+                        <td>@(poi.Tenant?.Name ?? "System")</td>
+                        <td>@poi.CategoryLabel</td>
+                        <td>
+                            <div>@poi.Latitude.ToString("F4"), @poi.Longitude.ToString("F4")</div>
+                            @if (!string.IsNullOrEmpty(poi.MapUrl))
+                            {
+                                <a href="@poi.MapUrl" target="_blank" class="small text-decoration-none">View Map <i class="bi bi-box-arrow-up-right"></i></a>
+                            }
+                        </td>
+                        <td>@poi.UpdatedAt.ToLocalTime().ToString("g")</td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <form asp-action="Approve" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@poi.Id" />
+                                    <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                </form>
+                                <form asp-action="Reject" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@poi.Id" />
+                                    <button type="submit" class="btn btn-sm btn-danger">Reject</button>
+                                </form>
+                                <a class="btn btn-sm btn-outline-primary" asp-controller="PoisAdmin" asp-action="Edit" asp-route-id="@poi.Id">Edit</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<h4 class="mb-3">Recently Reviewed</h4>
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-striped align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>POI Name</th>
+                    <th>Tenant</th>
+                    <th>Status</th>
+                    <th>Updated At</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.RecentPois.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">No recently reviewed POIs.</td>
+                    </tr>
+                }
+                @foreach (var poi in Model.RecentPois)
+                {
+                    <tr>
+                        <td><div class="fw-semibold">@poi.Name</div></td>
+                        <td>@(poi.Tenant?.Name ?? "System")</td>
+                        <td>
+                            @if (poi.ApprovalStatus == GeoGuide.Cms.Models.PoiApprovalStatus.Approved)
+                            {
+                                <span class="badge text-bg-success">Approved</span>
+                            }
+                            else if (poi.ApprovalStatus == GeoGuide.Cms.Models.PoiApprovalStatus.Rejected)
+                            {
+                                <span class="badge text-bg-danger">Rejected</span>
+                            }
+                        </td>
+                        <td>@poi.UpdatedAt.ToLocalTime().ToString("g")</td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-outline-secondary" asp-controller="PoisAdmin" asp-action="Edit" asp-route-id="@poi.Id">View</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
