@@ -1,3 +1,5 @@
+using MauiApp1.Models;
+
 namespace MauiApp1.Services
 {
     public sealed class WarmupResult
@@ -44,8 +46,16 @@ namespace MauiApp1.Services
 
             try
             {
+                IReadOnlyList<PointOfInterest> nearbyPois = Array.Empty<PointOfInterest>();
+
+                if (location != null)
+                {
+                    nearbyPois = await _poiRepository.GetNearbyPoisAsync(location, timeoutCts.Token);
+                    await _poiRepository.PrepareLocalizationHotsetAsync(timeoutCts.Token);
+                }
+
                 var pois = await _poiRepository.GetPoisAsync(timeoutCts.Token);
-                await PrefetchNearbyAudioAsync(pois.Pois, maxItems: 10, timeoutCts.Token);
+                await PrefetchNearbyAudioAsync(nearbyPois.Count > 0 ? nearbyPois : pois.Pois, maxItems: 10, timeoutCts.Token);
                 _ = _offlineAnalyticsLogService.SyncPendingLogsAsync(batchSize: 50, timeoutCts.Token);
 
                 return new WarmupResult

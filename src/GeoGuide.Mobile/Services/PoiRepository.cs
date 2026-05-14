@@ -1,4 +1,6 @@
 using MauiApp1.Models;
+using Microsoft.Maui.Devices.Sensors;
+using Microsoft.Maui.Storage;
 
 namespace MauiApp1.Services;
 
@@ -64,11 +66,56 @@ public class PoiRepository
         };
     }
 
+    public async Task<IReadOnlyList<PointOfInterest>> GetNearbyPoisAsync(Location location, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var languageCode = GetPreferredLanguageCode();
+            return await _poiApiService.GetNearbyPoisAsync(location.Latitude, location.Longitude, languageCode, cancellationToken);
+        }
+        catch
+        {
+            return Array.Empty<PointOfInterest>();
+        }
+    }
+
+    public async Task PrepareLocalizationHotsetAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var languageCode = GetPreferredLanguageCode();
+            await _poiApiService.PrepareLocalizationHotsetAsync(languageCode, cancellationToken);
+        }
+        catch
+        {
+        }
+    }
+
+    private static string GetPreferredLanguageCode()
+    {
+        var languageCode = Preferences.Default.Get("app_language", "vi-VN");
+        return languageCode == "en-US" ? "en-US" : "vi-VN";
+    }
+
     private async Task<IReadOnlyList<PointOfInterest>> SyncPoisAsync(CancellationToken cancellationToken)
     {
         var lastSyncAt = await _poiCacheService.GetLastSyncAtAsync(cancellationToken);
         if (!lastSyncAt.HasValue)
         {
+            try
+            {
+                var languageCode = GetPreferredLanguageCode();
+                var loadAllPois = await _poiApiService.GetAllPoisAsync(languageCode, cancellationToken);
+                if (loadAllPois.Count > 0)
+                {
+                    await _poiCacheService.SaveAsync(loadAllPois, cancellationToken);
+                    return loadAllPois;
+                }
+            }
+            catch
+            {
+            }
+
             var bootstrap = await _poiApiService.GetSyncBootstrapAsync(cancellationToken);
             var bootstrapPois = bootstrap.Pois
                 .Where(static poi => poi.IsActive && !poi.IsDeleted)

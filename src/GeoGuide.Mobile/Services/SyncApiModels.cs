@@ -35,3 +35,10 @@ public sealed class SyncPoiContentDto
     public string? TtsContent { get; init; }
     public DateTimeOffset UpdatedAt { get; init; }
 }
+
+public sealed class LocalizationResponse
+{
+    public string LanguageCode { get; init; } = string.Empty;
+    public string? AudioUrl { get; init; }
+    public string? TtsContent { get; init; }
+}
