@@ -1,0 +1,70 @@
+@model GeoGuide.Cms.Models.SellerRegisterViewModel
+
+@{
+    ViewData["Title"] = "Register as Seller";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">Register as Seller</h3>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Register" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <h5 class="mb-3">Tenant Information</h5>
+                        <div class="mb-3">
+                            <label asp-for="TenantName" class="form-label">Tenant Name</label>
+                            <input asp-for="TenantName" class="form-control" />
+                            <span asp-validation-for="TenantName" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="TenantSlug" class="form-label">Tenant Slug</label>
+                            <input asp-for="TenantSlug" class="form-control" />
+                            <span asp-validation-for="TenantSlug" class="text-danger"></span>
+                            <div class="form-text">Used for your unique URL. Only lowercase letters, numbers, and hyphens.</div>
+                        </div>
+
+                        <h5 class="mb-3">Owner Account</h5>
+                        <div class="mb-3">
+                            <label asp-for="OwnerDisplayName" class="form-label">Your Name</label>
+                            <input asp-for="OwnerDisplayName" class="form-control" />
+                            <span asp-validation-for="OwnerDisplayName" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label">Email address</label>
+                            <input asp-for="Email" class="form-control" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label">Password</label>
+                            <input asp-for="Password" class="form-control" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="ConfirmPassword" class="form-label">Confirm Password</label>
+                            <input asp-for="ConfirmPassword" class="form-control" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Register</button>
+                            <a href="/OwnerPortal" class="btn btn-light">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
