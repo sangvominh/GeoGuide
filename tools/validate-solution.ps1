@@ -4,7 +4,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$projectPath = Join-Path $repoRoot "src\GeoGuide.Mobile\GeoGuide.Mobile.csproj"
+$mobileProjectPath = Join-Path $repoRoot "src\GeoGuide.Mobile\GeoGuide.Mobile.csproj"
+$cmsProjectPath = Join-Path $repoRoot "src\GeoGuide.Cms\GeoGuide.Cms.csproj"
 $windowsTarget = "net10.0-windows10.0.19041.0"
 
 function Invoke-Step {
@@ -46,13 +47,21 @@ try {
         Invoke-CheckedCommand -FilePath "git" -Arguments @("status", "--short", "--branch")
     }
 
-        Invoke-Step -Name "Restore mobile project" -Action {
-            Invoke-CheckedCommand -FilePath "dotnet" -Arguments @("restore", $projectPath)
-        }
+    Invoke-Step -Name "Restore CMS project" -Action {
+        Invoke-CheckedCommand -FilePath "dotnet" -Arguments @("restore", $cmsProjectPath)
+    }
 
-        Invoke-Step -Name "Build mobile Windows target" -Action {
-            Invoke-CheckedCommand -FilePath "dotnet" -Arguments @("build", $projectPath, "-f", $windowsTarget, "--no-restore")
-        }
+    Invoke-Step -Name "Build CMS project" -Action {
+        Invoke-CheckedCommand -FilePath "dotnet" -Arguments @("build", $cmsProjectPath, "--no-restore")
+    }
+
+    Invoke-Step -Name "Restore mobile project" -Action {
+        Invoke-CheckedCommand -FilePath "dotnet" -Arguments @("restore", $mobileProjectPath)
+    }
+
+    Invoke-Step -Name "Build mobile Windows target" -Action {
+        Invoke-CheckedCommand -FilePath "dotnet" -Arguments @("build", $mobileProjectPath, "-f", $windowsTarget, "--no-restore")
+    }
 }
 finally {
     Pop-Location
