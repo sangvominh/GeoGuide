@@ -30,3 +30,16 @@ App tu dong migrate schema va seed 4 POI demo khi khoi dong.
 - `/`
 - `/PoisAdmin`
 - `/api/pois`
+
+## What changed by role
+
+- **User App**: Target backend API consumption is stable.
+- **Seller/Owner**: Endpoints for POI submission and AI Advisor.
+- **Admin**: Endpoints for review, approval, and rejection.
+- **Backend/API**: Implemented reference workflow capabilities like AI Advisor and Localization via UI consoles.
+- **Demo limitations**: AI Advisor and TTS APIs are fake implementations intended for UI demo purposes, utilizing hardcoded logic to avoid external dependencies.
+
+## UI-Complete vs API/Placeholder
+
+- **UI-Complete**: Admin Dashboard, Control Center, Workflow Console.
+- **API/Placeholder**: AI text generation, text-to-speech audio rendering, offline map tiles generation. All these are mocked via deterministic logic or standard fake JSON responses.
