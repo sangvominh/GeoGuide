@@ -180,11 +180,33 @@ public class NarrationService
             return;
         }
 
-        var narrationText = BuildNarrationText(item.Poi);
         var ttsSettings = _ttsSettingsService.Get();
         var targetLanguage = string.IsNullOrWhiteSpace(ttsSettings.PreferredLanguageCode)
             ? item.Poi.LanguageCode
             : ttsSettings.PreferredLanguageCode;
+
+        if (NeedsMissingTargetLanguageContent(item.Poi, targetLanguage))
+        {
+            var localization = await _poiApiService.RequestLocalizationOnDemandAsync(item.Poi.Id, targetLanguage, cancellationToken);
+            if (localization != null)
+            {
+                item.Poi.AudioUrl = localization.AudioUrl ?? item.Poi.AudioUrl;
+                item.Poi.TtsScript = localization.TtsContent ?? item.Poi.TtsScript;
+                if (!string.IsNullOrWhiteSpace(localization.LanguageCode))
+                {
+                    item.Poi.LanguageCode = localization.LanguageCode;
+                }
+            }
+        }
+
+        audioUri = await _mediaPrefetchService.ResolvePlaybackUriAsync(item.Poi.AudioUrl, cancellationToken);
+        if (audioUri != null && item.PlayAudioAsync != null)
+        {
+            await item.PlayAudioAsync(audioUri, cancellationToken);
+            return;
+        }
+
+        var narrationText = BuildNarrationText(item.Poi);
         var locale = await ResolveLocaleAsync(targetLanguage);
         var softWarning = BuildSoftVoiceWarning(targetLanguage, locale);
         if (!string.IsNullOrWhiteSpace(softWarning))
@@ -193,6 +215,13 @@ public class NarrationService
         }
 
         await SpeakWithFallbackAsync(narrationText, locale, ttsSettings, cancellationToken);
+    }
+
+    private static bool NeedsMissingTargetLanguageContent(PointOfInterest poi, string targetLanguage)
+    {
+        var languageMismatch = !string.Equals(poi.LanguageCode, targetLanguage, StringComparison.OrdinalIgnoreCase);
+        var missingAudioOrTts = string.IsNullOrWhiteSpace(poi.AudioUrl) && string.IsNullOrWhiteSpace(poi.TtsScript);
+        return languageMismatch || missingAudioOrTts;
     }
 
     private async Task<Locale?> ResolveLocaleAsync(string languageCode)
