@@ -2,17 +2,27 @@ namespace MauiApp1.Services;
 
 public sealed class OfflineAnalyticsLogService
 {
-    private const string DeviceIdPreferenceKey = "mobile_device_id";
     private const int SyncStatusPending = 0;
     private const int SyncStatusSynced = 1;
     private const int SyncStatusSkipped = 2;
+    private static readonly TimeSpan BackgroundSyncThrottle = TimeSpan.FromSeconds(20);
     private readonly LocalDatabaseService _localDatabaseService;
     private readonly PoiApiService _poiApiService;
+    private readonly DeviceIdentityService _deviceIdentityService;
+    private readonly AccessModeService _accessModeService;
+    private readonly SemaphoreSlim _backgroundSyncLock = new(1, 1);
+    private DateTimeOffset _lastBackgroundSyncUtc = DateTimeOffset.MinValue;
 
-    public OfflineAnalyticsLogService(LocalDatabaseService localDatabaseService, PoiApiService poiApiService)
+    public OfflineAnalyticsLogService(
+        LocalDatabaseService localDatabaseService,
+        PoiApiService poiApiService,
+        DeviceIdentityService deviceIdentityService,
+        AccessModeService accessModeService)
     {
         _localDatabaseService = localDatabaseService;
         _poiApiService = poiApiService;
+        _deviceIdentityService = deviceIdentityService;
+        _accessModeService = accessModeService;
     }
 
     public Task LogPositionUpdateAsync(double latitude, double longitude, CancellationToken cancellationToken = default)
@@ -77,30 +87,46 @@ public sealed class OfflineAnalyticsLogService
                 continue;
             }
 
-            if (log.EventType != (int)OfflineAnalyticsEventType.AudioCompleted)
-            {
-                await _localDatabaseService.UpdateOfflineLogSyncStatusAsync(log.Id, SyncStatusSkipped, cancellationToken);
-                continue;
-            }
-
-            if (!Guid.TryParse(log.PoiId, out _))
-            {
-                await _localDatabaseService.UpdateOfflineLogSyncStatusAsync(log.Id, SyncStatusSkipped, cancellationToken);
-                continue;
-            }
-
-            var entry = new Models.PlaybackLogEntry
-            {
-                PoiId = log.PoiId!,
-                PlayedAt = DateTimeOffset.TryParse(log.TimestampUtcIso, out var playedAt) ? playedAt : DateTimeOffset.UtcNow,
-                TriggerType = "manual",
-                DurationSeconds = Math.Max(1, log.DurationSeconds),
-                DeviceId = string.IsNullOrWhiteSpace(log.DeviceId) ? GetOrCreateDeviceId() : log.DeviceId
-            };
-
             try
             {
-                await _poiApiService.PostPlaybackLogAsync(entry, cancellationToken);
+                var occurredAt = DateTimeOffset.TryParse(log.TimestampUtcIso, out var parsedOccurredAt)
+                    ? parsedOccurredAt
+                    : DateTimeOffset.UtcNow;
+                var deviceId = string.IsNullOrWhiteSpace(log.DeviceId)
+                    ? _deviceIdentityService.GetOrCreateDeviceId()
+                    : log.DeviceId;
+                var sessionToken = string.IsNullOrWhiteSpace(log.SessionToken)
+                    ? _accessModeService.GetState().SessionToken
+                    : log.SessionToken;
+                var clientType = string.IsNullOrWhiteSpace(log.ClientType) ? "mobile" : log.ClientType;
+
+                await _poiApiService.PostBehaviorEventAsync(new Models.BehaviorEventEntry
+                {
+                    DeviceId = deviceId,
+                    PoiId = log.PoiId,
+                    EventType = MapEventType(log.EventType),
+                    Latitude = log.Latitude,
+                    Longitude = log.Longitude,
+                    DurationSeconds = Math.Max(0, log.DurationSeconds),
+                    OccurredAt = occurredAt,
+                    SessionToken = sessionToken,
+                    ClientType = clientType
+                }, cancellationToken);
+
+                if (log.EventType == (int)OfflineAnalyticsEventType.AudioCompleted && Guid.TryParse(log.PoiId, out _))
+                {
+                    await _poiApiService.PostPlaybackLogAsync(new Models.PlaybackLogEntry
+                    {
+                        PoiId = log.PoiId!,
+                        PlayedAt = occurredAt,
+                        TriggerType = "manual",
+                        DurationSeconds = Math.Max(1, log.DurationSeconds),
+                        DeviceId = deviceId,
+                        SessionToken = sessionToken,
+                        ClientType = clientType
+                    }, cancellationToken);
+                }
+
                 await _localDatabaseService.UpdateOfflineLogSyncStatusAsync(log.Id, SyncStatusSynced, cancellationToken);
                 syncedCount++;
             }
@@ -111,6 +137,11 @@ public sealed class OfflineAnalyticsLogService
         }
 
         return syncedCount;
+    }
+
+    public void TriggerBackgroundSync(int batchSize = 50)
+    {
+        _ = Task.Run(() => SyncPendingLogsThrottledAsync(batchSize));
     }
 
     private async Task LogAsync(
@@ -124,29 +155,62 @@ public sealed class OfflineAnalyticsLogService
         var record = new LocalOfflineLogRecord
         {
             Id = Guid.NewGuid().ToString("N"),
-            DeviceId = GetOrCreateDeviceId(),
+            DeviceId = _deviceIdentityService.GetOrCreateDeviceId(),
             PoiId = poiId,
             EventType = (int)eventType,
             Latitude = latitude,
             Longitude = longitude,
             DurationSeconds = Math.Max(0, durationSeconds),
+            SessionToken = _accessModeService.GetState().SessionToken,
+            ClientType = "mobile",
             TimestampUtcIso = DateTimeOffset.UtcNow.ToString("O"),
             SyncStatus = SyncStatusPending
         };
 
         await _localDatabaseService.InsertOfflineLogAsync(record, cancellationToken);
+        TriggerBackgroundSync();
     }
 
-    private static string GetOrCreateDeviceId()
+    private async Task SyncPendingLogsThrottledAsync(int batchSize)
     {
-        var existing = Preferences.Default.Get(DeviceIdPreferenceKey, string.Empty);
-        if (!string.IsNullOrWhiteSpace(existing))
+        if (DateTimeOffset.UtcNow - _lastBackgroundSyncUtc < BackgroundSyncThrottle)
         {
-            return existing;
+            return;
         }
 
-        var created = Guid.NewGuid().ToString("N");
-        Preferences.Default.Set(DeviceIdPreferenceKey, created);
-        return created;
+        if (!await _backgroundSyncLock.WaitAsync(0))
+        {
+            return;
+        }
+
+        try
+        {
+            if (DateTimeOffset.UtcNow - _lastBackgroundSyncUtc < BackgroundSyncThrottle)
+            {
+                return;
+            }
+
+            _lastBackgroundSyncUtc = DateTimeOffset.UtcNow;
+            await SyncPendingLogsAsync(batchSize);
+        }
+        catch
+        {
+        }
+        finally
+        {
+            _backgroundSyncLock.Release();
+        }
+    }
+
+    private static string MapEventType(int eventType)
+    {
+        return eventType switch
+        {
+            (int)OfflineAnalyticsEventType.PositionUpdate => "position",
+            (int)OfflineAnalyticsEventType.AudioStarted => "audio_started",
+            (int)OfflineAnalyticsEventType.AudioCompleted => "audio_completed",
+            (int)OfflineAnalyticsEventType.QrScanned => "qr_scanned",
+            _ => "position"
+        };
     }
 }

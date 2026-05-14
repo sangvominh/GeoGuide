@@ -1,0 +1,76 @@
+@model GeoGuide.Cms.Models.JoinLandingViewModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GeoGuide - Vào phiên dùng chung</title>
+    <link rel="stylesheet" href="/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <style>
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 55%, #38bdf8 100%);
+        }
+
+        .join-card {
+            max-width: 560px;
+            border: 0;
+            border-radius: 24px;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+        }
+
+        .muted-code {
+            font-size: 0.85rem;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body class="d-flex align-items-center justify-content-center p-3">
+    <div class="card join-card w-100">
+        <div class="card-body p-4 p-md-5">
+            <div class="mb-3">
+                <div class="text-uppercase text-muted small fw-semibold">GeoGuide Session</div>
+                <h1 class="h3 mb-2">Vào phiên dùng chung</h1>
+                <p class="text-muted mb-0">
+                    Session <code>@Model.SessionToken</code> đang ở chế độ <strong>@Model.AccessMode.ToUpperInvariant()</strong>.
+                </p>
+            </div>
+
+            <div class="d-grid gap-2 mb-3">
+                <a id="open-app-btn" class="btn btn-primary btn-lg" href="@Model.DeepLinkUrl">Mở bằng ứng dụng GeoGuide</a>
+                @if (Model.HasAndroidApk)
+                {
+                    <a class="btn btn-outline-secondary btn-lg" href="@Model.AndroidApkUrl">Tải APK Android</a>
+                }
+                else
+                {
+                    <button class="btn btn-outline-secondary btn-lg" type="button" disabled>Chưa có file APK trên server</button>
+                }
+            </div>
+
+            <div class="alert alert-light border mb-3">
+                <div class="fw-semibold mb-1">Cách dùng</div>
+                <div>1. Nếu máy đã cài GeoGuide, bấm <strong>Mở bằng ứng dụng GeoGuide</strong>.</div>
+                <div>2. Nếu máy chưa có app và là Android, bấm <strong>Tải APK Android</strong>, cài xong quay lại đây rồi mở app.</div>
+            </div>
+
+            <div class="text-muted small">
+                <div class="mb-1">Join URL</div>
+                <div class="muted-code"><code>@Model.JoinUrl</code></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.setTimeout(function () {
+            var button = document.getElementById("open-app-btn");
+            if (button) {
+                window.location.href = button.href;
+            }
+        }, 400);
+    </script>
+</body>
+</html>

@@ -2,6 +2,7 @@ using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
 using MauiApp1.Services;
 using SkiaSharp.Views.Maui.Controls.Hosting;
+using ZXing.Net.Maui.Controls;
 
 namespace MauiApp1
 {
@@ -14,6 +15,7 @@ namespace MauiApp1
                 .UseMauiApp<App>()
                 .UseMauiCommunityToolkitMediaElement(isAndroidForegroundServiceEnabled: false)
                 .UseSkiaSharp()
+                .UseBarcodeReader()
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -43,6 +45,7 @@ namespace MauiApp1
 
             builder.Services.AddSingleton<LocationService>();
             builder.Services.AddSingleton(apiOptions);
+            builder.Services.AddSingleton<ApiBaseUrlService>();
             builder.Services.AddSingleton<LocalDatabaseService>();
             builder.Services.AddSingleton<PoiCacheService>();
             builder.Services.AddSingleton(serviceProvider =>
@@ -50,7 +53,6 @@ namespace MauiApp1
                 var options = serviceProvider.GetRequiredService<PoiApiOptions>();
                 return new HttpClient
                 {
-                    BaseAddress = new Uri(options.BaseUrl, UriKind.Absolute),
                     Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds)
                 };
             });
@@ -61,12 +63,15 @@ namespace MauiApp1
             builder.Services.AddSingleton<TriggerGuardService>();
             builder.Services.AddSingleton<TtsSettingsService>();
             builder.Services.AddSingleton<AccessModeService>();
+            builder.Services.AddSingleton<DeviceIdentityService>();
+            builder.Services.AddSingleton<DeepLinkActivationService>();
             builder.Services.AddSingleton<OfflineAnalyticsLogService>();
             builder.Services.AddSingleton<NarrationService>();
             builder.Services.AddSingleton<StartupWarmupService>();
 
             builder.Services.AddTransient<Pages.SplashPermissionPage>();
             builder.Services.AddTransient<Pages.MainMapPage>();
+            builder.Services.AddTransient<Pages.QrScannerPage>();
 
 #if DEBUG
     		builder.Logging.AddDebug();

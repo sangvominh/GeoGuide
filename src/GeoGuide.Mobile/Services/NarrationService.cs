@@ -29,11 +29,12 @@ internal sealed class NarrationQueueItem
 
 public class NarrationService
 {
-    private const string DeviceIdPreferenceKey = "mobile_device_id";
     private readonly PoiApiService _poiApiService;
     private readonly MediaPrefetchService _mediaPrefetchService;
     private readonly TtsSettingsService _ttsSettingsService;
     private readonly OfflineAnalyticsLogService _offlineAnalyticsLogService;
+    private readonly DeviceIdentityService _deviceIdentityService;
+    private readonly AccessModeService _accessModeService;
     private readonly PriorityQueue<NarrationQueueItem, int> _queue = new();
     private readonly HashSet<string> _queuedPoiIds = [];
     private readonly SemaphoreSlim _queueLock = new(1, 1);
@@ -48,12 +49,16 @@ public class NarrationService
         PoiApiService poiApiService,
         MediaPrefetchService mediaPrefetchService,
         TtsSettingsService ttsSettingsService,
-        OfflineAnalyticsLogService offlineAnalyticsLogService)
+        OfflineAnalyticsLogService offlineAnalyticsLogService,
+        DeviceIdentityService deviceIdentityService,
+        AccessModeService accessModeService)
     {
         _poiApiService = poiApiService;
         _mediaPrefetchService = mediaPrefetchService;
         _ttsSettingsService = ttsSettingsService;
         _offlineAnalyticsLogService = offlineAnalyticsLogService;
+        _deviceIdentityService = deviceIdentityService;
+        _accessModeService = accessModeService;
     }
 
     public async Task EnqueueAsync(
@@ -266,9 +271,11 @@ public class NarrationService
         {
             PoiId = poi.Id,
             PlayedAt = DateTimeOffset.UtcNow,
-            TriggerType = triggerType,
+            TriggerType = NormalizeTriggerType(triggerType),
             DurationSeconds = Math.Max(1, (int)Math.Round((DateTimeOffset.UtcNow - startedAt).TotalSeconds)),
-            DeviceId = GetOrCreateDeviceId()
+            DeviceId = _deviceIdentityService.GetOrCreateDeviceId(),
+            SessionToken = _accessModeService.GetState().SessionToken,
+            ClientType = "mobile"
         };
     }
 
@@ -288,17 +295,14 @@ public class NarrationService
         return string.Empty;
     }
 
-    private static string GetOrCreateDeviceId()
+    private static string NormalizeTriggerType(string triggerType)
     {
-        var existing = Preferences.Default.Get(DeviceIdPreferenceKey, string.Empty);
-        if (!string.IsNullOrWhiteSpace(existing))
+        return triggerType switch
         {
-            return existing;
-        }
-
-        var created = Guid.NewGuid().ToString("N");
-        Preferences.Default.Set(DeviceIdPreferenceKey, created);
-        return created;
+            "gps" => "gps",
+            "qr" => "qr",
+            _ => "manual"
+        };
     }
 
     private void PublishPlaybackState(PointOfInterest poi, NarrationPlaybackState state, string message)

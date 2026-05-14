@@ -32,6 +32,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CmsAccessService>();
+builder.Services.AddScoped<AnalyticsQueryService>();
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
@@ -44,6 +45,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthentication();

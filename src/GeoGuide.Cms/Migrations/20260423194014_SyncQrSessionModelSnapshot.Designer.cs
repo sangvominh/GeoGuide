@@ -3,6 +3,7 @@ using System;
 using GeoGuide.Cms.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GeoGuide.Cms.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260423194014_SyncQrSessionModelSnapshot")]
+    partial class SyncQrSessionModelSnapshot
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -96,68 +99,6 @@ namespace GeoGuide.Cms.Migrations
                     b.HasIndex("TenantId");
 
                     b.ToTable("cms_users", (string)null);
-                });
-
-            modelBuilder.Entity("GeoGuide.Cms.Models.BehaviorEvent", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("ClientType")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasColumnName("client_type");
-
-                    b.Property<string>("DeviceId")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("device_id");
-
-                    b.Property<int>("DurationSeconds")
-                        .HasColumnType("integer")
-                        .HasColumnName("duration_seconds");
-
-                    b.Property<string>("EventType")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)")
-                        .HasColumnName("event_type");
-
-                    b.Property<double?>("Latitude")
-                        .HasColumnType("double precision")
-                        .HasColumnName("latitude");
-
-                    b.Property<double?>("Longitude")
-                        .HasColumnType("double precision")
-                        .HasColumnName("longitude");
-
-                    b.Property<DateTimeOffset>("OccurredAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("occurred_at");
-
-                    b.Property<Guid?>("PoiId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("poi_id");
-
-                    b.Property<string>("SessionToken")
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)")
-                        .HasColumnName("session_token");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PoiId");
-
-                    b.HasIndex("SessionToken");
-
-                    b.HasIndex("DeviceId", "OccurredAt");
-
-                    b.HasIndex("SessionToken", "DeviceId", "OccurredAt");
-
-                    b.ToTable("behavior_events", (string)null);
                 });
 
             modelBuilder.Entity("GeoGuide.Cms.Models.DeviceSessionJoin", b =>
@@ -1057,16 +998,6 @@ namespace GeoGuide.Cms.Migrations
                         .HasForeignKey("TenantId");
 
                     b.Navigation("Tenant");
-                });
-
-            modelBuilder.Entity("GeoGuide.Cms.Models.BehaviorEvent", b =>
-                {
-                    b.HasOne("GeoGuide.Cms.Models.Poi", "Poi")
-                        .WithMany()
-                        .HasForeignKey("PoiId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Poi");
                 });
 
             modelBuilder.Entity("GeoGuide.Cms.Models.PlaybackLog", b =>
