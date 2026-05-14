@@ -1,0 +1,80 @@
+@model List<GeoGuide.Cms.Models.Poi>?
+
+@{
+    ViewData["Title"] = "Seller Portal";
+}
+
+<div class="container mt-5">
+    @if (Model == null)
+    {
+        <div class="text-center py-5">
+            <h1 class="display-4 fw-bold">Welcome to GeoGuide Seller Portal</h1>
+            <p class="lead text-muted mt-3">Reach millions of travelers by listing your Point of Interest on GeoGuide.</p>
+            <div class="mt-5">
+                <a href="/OwnerPortal/Register" class="btn btn-primary btn-lg me-3 px-4 py-2">Register as Seller</a>
+                <a href="/Account/Login" class="btn btn-outline-primary btn-lg px-4 py-2">Log In</a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+            <h2>Your Points of Interest</h2>
+            <a href="/OwnerPortal/Pois/Create" class="btn btn-success"><i class="bi bi-plus-lg"></i> Create POI</a>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Status</th>
+                            <th>Active</th>
+                            <th>Created At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var poi in Model)
+                        {
+                            <tr>
+                                <td class="align-middle fw-medium">@poi.Name</td>
+                                <td class="align-middle">
+                                    @switch (poi.ApprovalStatus)
+                                    {
+                                        case GeoGuide.Cms.Models.PoiApprovalStatus.PendingApproval:
+                                            <span class="badge bg-warning text-dark">Pending</span>
+                                            break;
+                                        case GeoGuide.Cms.Models.PoiApprovalStatus.Approved:
+                                            <span class="badge bg-success">Approved</span>
+                                            break;
+                                        case GeoGuide.Cms.Models.PoiApprovalStatus.Rejected:
+                                            <span class="badge bg-danger">Rejected</span>
+                                            break;
+                                        default:
+                                            <span class="badge bg-secondary">Unknown</span>
+                                            break;
+                                    }
+                                </td>
+                                <td class="align-middle">
+                                    @(poi.IsActive ? "Yes" : "No")
+                                </td>
+                                <td class="align-middle text-muted">@poi.CreatedAt.ToString("g")</td>
+                                <td class="align-middle">
+                                    <a href="/OwnerPortal/Pois/Edit/@poi.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                                </td>
+                            </tr>
+                        }
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">You haven't created any POIs yet. Click 'Create POI' to get started.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
