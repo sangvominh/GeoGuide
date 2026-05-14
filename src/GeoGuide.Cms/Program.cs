@@ -32,6 +32,8 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CmsAccessService>();
+builder.Services.AddSingleton<LocalizationTaskStore>();
+builder.Services.AddScoped<AudioLocalizationService>();
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
@@ -49,6 +51,7 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseStaticFiles();
 app.MapStaticAssets();
 
 app.MapControllerRoute(
