@@ -25,7 +25,7 @@ namespace MauiApp1
             if (string.IsNullOrWhiteSpace(apiBaseUrl))
             {
                 apiBaseUrl = DeviceInfo.Platform == DevicePlatform.Android
-                    ? "http://10.0.2.2:5005/"
+                    ? "http://192.168.28.27:5005/"
                     : "http://localhost:5005/";
             }
 
